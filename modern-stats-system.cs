@@ -7,6 +7,7 @@ using Il2CppTMPro;
 using UnityEngine.UI;
 using Il2Cppcamp_H;
 using Il2Cppnewbattle_H;
+using Il2Cppevent_H;
 
 [assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.0.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
@@ -118,8 +119,8 @@ namespace ModernStatsSystem
                     pStock.param[id] += (sbyte)add;
                     if (datCalc.datGetPlayerParam(id) >= MAXSTATS)
                         { pStock.param[id] = MAXSTATS; }
-                    if (datCalc.datGetPlayerParam(id) < 1 + (sbyte)(pStock.skillparam[id] + (sbyte)pStock.mitamaparam[id]))
-                        { pStock.param[id] = (sbyte)(1 + (pStock.skillparam[id] + pStock.mitamaparam[id])); }
+                    if (datCalc.datGetPlayerParam(id) < 1)
+                        { pStock.param[id] = 1; }
                     rstcalc.rstSetMaxHpMp(1, ref pStock);
                 }
                 return false;
@@ -147,7 +148,7 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
-                __result = datCalc.datGetBaseParam(work, paratype);
+                __result = datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype];
                 return false;
             }
         }
@@ -218,9 +219,9 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
-                __result = (datCalc.datGetBaseParam(work, 0) + work.level) * 2;
+                __result = (datCalc.datGetParam(work, 0) + work.level) * 2;
                 if (EnableStatScaling)
-                    { __result = (datCalc.datGetBaseParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
+                    { __result = (datCalc.datGetParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
                 if ((work.badstatus & 0xFFF) == 0x40)
                     { __result = __result >> 1; }
                 return false;
@@ -233,7 +234,7 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, int nskill, datUnitWork_t s, datUnitWork_t d, int waza)
             {
                 __result = 0;
-                int paramValue = datCalc.datGetBaseParam(s, 0);
+                int paramValue = datCalc.datGetParam(s, 0);
                 int unkval = 0x30;
                 int finalvalue = 0;
                 if (EnableStatScaling)
@@ -254,7 +255,14 @@ namespace ModernStatsSystem
                         __result = finalvalue;
                     }
                 }
+                else
+                {
+                    __result = finalvalue;
+                    if (dds3ConfigMain.cfgGetBit(9) == 2)
+                        { __result = (int)(finalvalue * 1.34); }
+                }
                 __result -= datCalc.datGetDefPow(d);
+                __result = Math.Clamp(__result, 1, MAXHPMP);
                 return false;
             }
         }
@@ -267,7 +275,7 @@ namespace ModernStatsSystem
                 __result = 0;
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
-                int paramValue = datCalc.datGetBaseParam(attacker, 0);
+                int paramValue = datCalc.datGetParam(attacker, 0);
                 int unkval = 0x30;
                 int finalvalue = 0;
                 if (EnableStatScaling)
@@ -287,6 +295,12 @@ namespace ModernStatsSystem
                     {
                         __result = finalvalue;
                     }
+                }
+                else
+                {
+                    __result = finalvalue;
+                    if (dds3ConfigMain.cfgGetBit(9) == 2)
+                        { __result = (int)(finalvalue * 1.34); }
                 }
                 if (EnableStatScaling)
                     { __result = (int)Math.Clamp(__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) - datCalc.datGetDefPow(defender), 1, MAXHPMP); }
@@ -311,9 +325,9 @@ namespace ModernStatsSystem
                     { damageCalc = skillLimit; }
                 if (LevelLimit > 160)
                     { LevelLimit = 160; }
-                int param = datCalc.datGetBaseParam(work, 2);
+                int param = datCalc.datGetParam(work, 2);
                 if (EnableIntStat)
-                    { param = datCalc.datGetBaseParam(work, 1); }
+                    { param = datCalc.datGetParam(work, 1); }
                 if (EnableStatScaling)
                     { param /= POINTS_PER_LEVEL; }
                 damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
@@ -355,10 +369,14 @@ namespace ModernStatsSystem
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
-                int param2 = datCalc.datGetBaseParam(d, 2);
+                __result = damageCalc2;
                 if (EnableStatScaling)
-                    { param2 /= POINTS_PER_LEVEL; }
-                __result = damageCalc2 - param * 2 + (d.level - 1) * 2 / 5;
+                {
+                    int param2 = datCalc.datGetParam(d, 2);
+                    param2 /= POINTS_PER_LEVEL;
+                    __result -= param2 * 2 + (d.level - 1) * 2 / 5;
+                }
+                __result = Math.Clamp(__result, 1, MAXHPMP);
                 return false;
             }
         }
@@ -379,9 +397,9 @@ namespace ModernStatsSystem
                     { damageCalc = skillLimit; }
                 if (LevelLimit > 160)
                     { LevelLimit = 160; }
-                int param = datCalc.datGetBaseParam(attacker, 2);
+                int param = datCalc.datGetParam(attacker, 2);
                 if (EnableIntStat)
-                    { param = datCalc.datGetBaseParam(attacker, 1); }
+                    { param = datCalc.datGetParam(attacker, 1); }
                 if (EnableStatScaling)
                     { param /= POINTS_PER_LEVEL; }
                 damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
@@ -423,14 +441,14 @@ namespace ModernStatsSystem
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
-                int param2 = datCalc.datGetBaseParam(defender, 2);
                 if (EnableStatScaling)
                 {
+                    int param2 = datCalc.datGetParam(defender, 2);
                     param2 /= POINTS_PER_LEVEL;
                     __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7) - param2 * 2 + (defender.level - 1) * 2 / 5, 1, MAXHPMP);
                 }
                 else
-                { __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
+                    { __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
                 return false;
             }
         }
@@ -441,13 +459,14 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
             {
                 datUnitWork_t work = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
-                uint random = dds3KernelCore.dds3GetRandIntA(8,"RandomHealing");
-                int param = datCalc.datGetBaseParam(work, 2);
+                //uint random = dds3KernelCore.dds3GetRandIntA(8,"RandomHealing");
+                System.Random rng = new();
+                int param = datCalc.datGetParam(work, 2);
                 if (EnableIntStat)
-                    { param = datCalc.datGetBaseParam(work, 1); }
+                    { param = datCalc.datGetParam(work, 1); }
                 if (EnableStatScaling)
                     { param /= POINTS_PER_LEVEL; }
-                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (random + param * 4 + work.level / 10) * waza);
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (rng.Next(0,8) + param * 4 + work.level / 10) * waza);
                 return false;
             }
         }
@@ -457,11 +476,46 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, datUnitWork_t w)
             {
-                int luck = datCalc.datGetBaseParam(w, 5);
+                datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[0];
+                datDevilFormat_t devil = datDevilFormat.Get(w.id, true);
+                int playerLuck = datCalc.datGetParam(work, 5);
+                int macca = dds3GlobalWork.DDS3_GBWK.maka;
+                int luck = datCalc.datGetParam(w, 5);
+                System.Random rng = new();
+                __result = 0;
+                if (macca == 0)
+                    { return false; }
+                float formula, baseformula;
+                formula = 0.0f;
+                baseformula = 0.0f;
                 if (EnableStatScaling)
-                    { luck /= POINTS_PER_LEVEL; }
-                __result = luck / (w.level / 5 + 4) * datDevilFormat.tbl[w.id].dropmakka;
-                __result = (int)((dds3KernelCore.dds3GetRandFloatA("MaccaScatterVariance") * 2 - 1) * 0.1f * (__result * 2));
+                {
+                    luck = (MAXSTATS - luck) / POINTS_PER_LEVEL;
+                    playerLuck = (MAXSTATS - playerLuck) / POINTS_PER_LEVEL;
+                }
+                if ((w.flag >> 5 & 1) == 0)
+                {
+                    formula = Mathf.Abs((float)luck / ((float)w.level / 5.0f + 4.0f));
+                    baseformula = formula;
+                    if (formula < 0.001f)
+                        { macca = 0; }
+                    else
+                    {
+                        formula = (float)macca / 20.0f * formula;
+                        macca = (int)formula;
+                    }
+                }
+                else
+                {
+                    if (work.badstatus == 0)
+                        { return false; }
+                    formula = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f ) * (float)devil.dropmakka);
+                    baseformula = formula;
+                    macca = (int)formula;
+                }
+                //float variance = dds3KernelCore.dds3GetRandFloatA("MaccaScatterVariance");
+                float variance = (float)rng.NextDouble();
+                __result = (int)((variance * 2.0f - 1.0f) * 0.1f * ((float)macca * 2.0f));
                 if(dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
                     { __result = __result / 10; }
                 if (__result < 2)
@@ -475,13 +529,13 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
-                __result = work.level + datCalc.datGetBaseParam(work, 4) * 2;
-                int luc = datCalc.datGetBaseParam(work, 5);
+                __result = work.level + datCalc.datGetParam(work, 4) * 2;
+                int luc = datCalc.datGetParam(work, 5);
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
                     { luc = 1; }
                 __result += luc + 10;
                 if (EnableStatScaling)
-                    {__result = work.level + (datCalc.datGetBaseParam(work, 4) * 2 + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL;}
+                    {__result = work.level + (datCalc.datGetParam(work, 4) * 2 + datCalc.datGetParam(work, 5)) / POINTS_PER_LEVEL;}
                 return false;
             }
         }
@@ -491,10 +545,10 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
-                __result = work.level + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4) * 2;
+                __result = work.level + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) * 2;
                 if (EnableIntStat)
-                    { __result = work.level + datCalc.datGetBaseParam(work, 1) * 2 + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4); }
-                int luc = datCalc.datGetBaseParam(work, 5);
+                    { __result = work.level + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4); }
+                int luc = datCalc.datGetParam(work, 5);
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
                     { luc = 1; }
                 int luckValue = luc + 6;
@@ -503,9 +557,9 @@ namespace ModernStatsSystem
                 __result += luckValue >> 1 + 0xf;
                 if (EnableStatScaling)
                 {
-                    __result = work.level + (datCalc.datGetBaseParam(work, 2) * 2 + datCalc.datGetBaseParam(work, 4) * 2 + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL;
+                    __result = work.level + (datCalc.datGetParam(work, 2) * 2 + datCalc.datGetParam(work, 4) * 2 + datCalc.datGetParam(work, 5)) / POINTS_PER_LEVEL;
                     if (EnableIntStat)
-                        { __result = work.level + (datCalc.datGetBaseParam(work, 1) * 2 + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4) + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL; }
+                        { __result = work.level + (datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL; }
                 }
                 return false;
             }
@@ -518,7 +572,7 @@ namespace ModernStatsSystem
             {
                 __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
                 if (EnableStatScaling)
-                    { __result = (datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL) + (work.level - 1) / 5; }
+                    { __result = (datCalc.datGetParam(work, 3) * 2 / POINTS_PER_LEVEL) + (work.level - 1) * 2 / 5; }
                 return false;
             }
         }
@@ -528,12 +582,12 @@ namespace ModernStatsSystem
         {
             public static int GetBaseMaxHP(datUnitWork_t work)
             {
-                int result = (PatchGetBaseParam.GetParam(work, 3) + work.level) * 6;
+                int result = (datCalc.datGetBaseParam(work, 3) + work.level) * 6;
                 if (rstinit.GBWK != null)
                     { result += rstinit.GBWK.ParamOfs[3] * 6; }
                 if (EnableStatScaling)
                 {
-                    result = PatchGetBaseParam.GetParam(work, 3) * 6 / POINTS_PER_LEVEL + work.level * 6;
+                    result = datCalc.datGetBaseParam(work, 3) * 6 / POINTS_PER_LEVEL + work.level * 6;
                     if (rstinit.GBWK != null)
                         { result += rstinit.GBWK.ParamOfs[3] * 6 / POINTS_PER_LEVEL; }
                 }
@@ -554,7 +608,7 @@ namespace ModernStatsSystem
             {
                 int result = (datCalc.datGetBaseParam(work, 2) + work.level) * 3;
                 if (rstinit.GBWK != null)
-                { result += rstinit.GBWK.ParamOfs[2] * 3; }
+                    { result += rstinit.GBWK.ParamOfs[2] * 3; }
                 if (EnableStatScaling)
                 {
                     result = datCalc.datGetBaseParam(work, 2) * 3 / POINTS_PER_LEVEL + work.level * 3;
@@ -944,7 +998,6 @@ namespace ModernStatsSystem
                         cmpStatus._statusUIScr.ObjStsBar = cmpStatus._statusUIScr.ObjStsBar.Append(g).ToArray();
                         GameObject.Find("statusUI(Clone)/sstatus/sstatusnum06");
                         cmpStatus._statusUIScr.ObjStatus = cmpStatus._statusUIScr.ObjStsBar.Append(g).ToArray();
-                        MelonLogger.Msg(rstinit.GBWK.ParamCursor.CursorPos.ListNums);
                     }
                     rstinit.GBWK.ParamCursor.CursorPos.ShiftMax = 6;
                     rstinit.GBWK.ParamCursor.CursorPos.ListNums = 6;
