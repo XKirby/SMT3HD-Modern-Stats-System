@@ -1,0 +1,1311 @@
+﻿using MelonLoader;
+using HarmonyLib;
+using Il2Cpp;
+using Il2Cppnewdata_H;
+using UnityEngine;
+using Il2CppTMPro;
+using UnityEngine.UI;
+using Il2Cppcamp_H;
+using Il2Cppnewbattle_H;
+
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.0.0", "X Kirby")]
+[assembly: MelonGame("アトラス", "smt3hd")]
+
+namespace ModernStatsSystem
+{
+    public class ModernStatsSystem : MelonMod
+    {
+        private const int MAXSTATS = 100;
+        private const int MAXHPMP = 9999;
+        private const int POINTS_PER_LEVEL = 2;
+        private const bool EnableIntStat = true;
+        private const bool EnableStatScaling = true;
+        private const string BundlePath = "smt3hd_Data/StreamingAssets/PC/";
+        private const float BAR_SCALE_X = (float)(40.0f / MAXSTATS) + (float)(16.0f / MAXSTATS);
+        private const float BAR_SEGMENT_X = 18*(float)(40.0f / MAXSTATS) - (float)(14.0f / MAXSTATS / 2);
+        private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), MAXSTATS);
+        private static AssetBundle barData = null;
+        private static Texture2D[] barAsset = { null, null, null, null, null, null };
+        private static Sprite[] barSprite = { null, null, null, null, null, null };
+        private const string barSpriteName = "sstatusbar_base_empty";
+        private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
+        private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
+        private static string[] StockBarValues = { "barhp", "barmp" };
+        private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
+        private static string[] PartyBarValues = { "barhp", "barmp" };
+        private static bool SettingAsignParam;
+        private static bool EvoCheck;
+
+        public override void OnInitializeMelon()
+        {
+            System.Random rng = new(5318008); // lol I had to. For real btw, I didn't want Int to be completely random for every demon on-load.
+            for (int i = 0; i < datDevilFormat.tbl.Length; i++)
+            {
+                int sign;
+                do
+                    { sign = rng.Next(-1, 1); }
+                while (sign == 0);
+                if (EnableIntStat)
+                    {datDevilFormat.tbl[i].param[1] = (sbyte)Math.Clamp(datDevilFormat.tbl[i].param[2] + datDevilFormat.tbl[i].param[2] * sign * 10 / 100, 1, MAXSTATS);}
+                if (EnableStatScaling)
+                {
+                    for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
+                        { datDevilFormat.tbl[i].param[j] *= POINTS_PER_LEVEL; }
+                }
+            }
+            for (int i = 0; i < tblHearts.fclHeartsTbl.Length; i++)
+            {
+                int sign;
+                if (EnableIntStat)
+                {
+                    do
+                        { sign = rng.Next(-1, 1); }
+                    while (sign == 0);
+                    tblHearts.fclHeartsTbl[i].GrowParamTbl[0] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].GrowParamTbl[2] + tblHearts.fclHeartsTbl[i].GrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
+                    do
+                        { sign = rng.Next(-1, 1); }
+                    while (sign == 0);
+                    tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[0] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] + tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
+                }
+                if (EnableStatScaling)
+                {
+                    for (int j = 0; j < tblHearts.fclHeartsTbl[i].GrowParamTbl.Length; j++)
+                    {
+                        tblHearts.fclHeartsTbl[i].GrowParamTbl[j] *= POINTS_PER_LEVEL;
+                        tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] *= POINTS_PER_LEVEL;
+                    }
+                }
+            }
+            if (EnableIntStat)
+            {
+                fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(3 + 1).ToArray();
+                fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(1 + 1).ToArray();
+                fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(1 + 1).ToArray();
+                fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(2 + 1).ToArray();
+            }
+            LoggerInstance.Msg("Modern Stats System Initialized.");
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstChkParamLimitAll))]
+        private class PatchChkParamLimitAll
+        {
+            private static bool Prefix(ref int __result, datUnitWork_t pStock, bool paramSet = true)
+            {
+                __result = 0;
+                if (PatchGetBaseParam.GetParam(pStock, 0) >= MAXSTATS)
+                {
+                    if (EnableIntStat && PatchGetBaseParam.GetParam(pStock, 1) < MAXSTATS) { return false; }
+                    if (PatchGetBaseParam.GetParam(pStock, 2) < MAXSTATS) { return false; }
+                    if (PatchGetBaseParam.GetParam(pStock, 3) < MAXSTATS) { return false; }
+                    if (PatchGetBaseParam.GetParam(pStock, 4) < MAXSTATS) { return false; }
+                    if (PatchGetBaseParam.GetParam(pStock, 5) < MAXSTATS) { return false; }
+                    if (paramSet)
+                        { rstcalc.rstSetMaxHpMp(0, ref pStock); }
+                    __result = 1;
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datAddPlayerParam))]
+        private class PatchAddPlayerParam
+        {
+            private static bool Prefix(int id, int add)
+            {
+                foreach (datUnitWork_t work in dds3GlobalWork.DDS3_GBWK.unitwork.Where(x => x.id == 0))
+                {
+                    datUnitWork_t pStock = work;
+                    pStock.param[id] += (sbyte)add;
+                    if (datCalc.datGetPlayerParam(id) >= MAXSTATS)
+                        { pStock.param[id] = MAXSTATS; }
+                    if (datCalc.datGetPlayerParam(id) < 1 + (sbyte)(pStock.skillparam[id] + (sbyte)pStock.mitamaparam[id]))
+                        { pStock.param[id] = (sbyte)(1 + (pStock.skillparam[id] + pStock.mitamaparam[id])); }
+                    rstcalc.rstSetMaxHpMp(1, ref pStock);
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetBaseParam))]
+        private class PatchGetBaseParam
+        {
+            private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
+            {
+                __result = GetParam(work, paratype);
+                return false;
+            }
+            public static int GetParam(datUnitWork_t work, int paratype)
+            {
+                int result = work.param[paratype];
+                result = Math.Clamp(result, 0, MAXSTATS);
+                return result;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetParam))]
+        private class PatchGetParam
+        {
+            private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
+            {
+                __result = datCalc.datGetBaseParam(work, paratype);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(cmpMisc), nameof(cmpMisc.cmpUseItemKou))]
+        private class PatchIncense
+        {
+            private static bool Prefix(ushort ItemID, datUnitWork_t pStock)
+            {
+                int statID = ItemID - 0x26;
+                if (statID > -1 && statID < 6)
+                {
+                    if (rstCalcCore.cmbGetParamBase(ref pStock, statID) < MAXSTATS)
+                    {
+                        pStock.param[statID]++;
+                        rstcalc.rstSetMaxHpMp(1, ref pStock);
+                    }
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(fclCombineCalcCore), nameof(fclCombineCalcCore.cmbCalcParamPowerUp))]
+        private class PatchMitamaPowerUp
+        {
+            private static bool Prefix(out sbyte __result, ushort MitamaID, datUnitWork_t pStock)
+            {
+                __result = 0;
+                int mitama = MitamaID -= 40;
+                if (mitama < 0 || mitama >= 4)
+                    { return false; }
+                if (EnableIntStat && pStock.param[0] + pStock.mitamaparam[0] >= MAXSTATS &&
+                    pStock.param[1] + pStock.mitamaparam[1] >= MAXSTATS &&
+                    pStock.param[2] + pStock.mitamaparam[2] >= MAXSTATS &&
+                    pStock.param[3] + pStock.mitamaparam[3] >= MAXSTATS &&
+                    pStock.param[4] + pStock.mitamaparam[4] >= MAXSTATS &&
+                    pStock.param[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                    { return false; }
+                else if (pStock.param[0] + pStock.mitamaparam[0] >= MAXSTATS &&
+                    pStock.param[2] + pStock.mitamaparam[2] >= MAXSTATS &&
+                    pStock.param[3] + pStock.mitamaparam[3] >= MAXSTATS &&
+                    pStock.param[4] + pStock.mitamaparam[4] >= MAXSTATS &&
+                    pStock.param[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                    { return false; }
+                System.Random rng = new();
+                ushort paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
+                if (paramID < 0)
+                    { return false; }
+                if (paramID < pStock.param.Length && paramID < pStock.mitamaparam.Length)
+                {
+                    int paramNewValue = (pStock.param[paramID] * fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100 - pStock.param[paramID];
+                    if (paramNewValue <= 0)
+                        { paramNewValue = 1; }
+                    paramNewValue += pStock.mitamaparam[paramID];
+                    if (pStock.param[paramID] + paramNewValue < MAXSTATS)
+                    {
+                        pStock.mitamaparam[paramID] = (sbyte)paramNewValue;
+                        __result = 1;
+                    }
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetNormalAtkPow))]
+        private class PatchGetNormalAtkPow
+        {
+            private static bool Prefix(out int __result, datUnitWork_t work)
+            {
+                __result = (datCalc.datGetBaseParam(work, 0) + work.level) * 2;
+                if (EnableStatScaling)
+                    { __result = (datCalc.datGetBaseParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
+                if ((work.badstatus & 0xFFF) == 0x40)
+                    { __result = __result >> 1; }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.GetButuriAttack))]
+        private class PatchDatGetPhysicalPow
+        {
+            private static bool Prefix(out int __result, int nskill, datUnitWork_t s, datUnitWork_t d, int waza)
+            {
+                __result = 0;
+                int paramValue = datCalc.datGetBaseParam(s, 0);
+                int unkval = 0x30;
+                int finalvalue = 0;
+                if (EnableStatScaling)
+                    { paramValue /= POINTS_PER_LEVEL; }
+                finalvalue = (int)(((datCalc.datGetNormalAtkPow(s) * 2 + paramValue * 2) * 1.33f) * 0.8f);
+                if (nskill != 0)
+                    { finalvalue = (int)((((datCalc.datGetNormalAtkPow(s) * 2 + paramValue * 2) * waza) / 23.2f) * 0.8f); unkval = 0x32; }
+                int reduction = 0;
+                if(s.level + 10 != 0)
+                    { reduction = unkval / (s.level + 10); }
+                finalvalue = (int)(finalvalue * 0.6f - reduction);
+                __result = finalvalue;
+                if (dds3ConfigMain.cfgGetBit(9) == 3)
+                {
+                    __result = (int)(finalvalue * 1.34f);
+                    if (!EventBit.evtBitCheck(0x8a0))
+                    {
+                        __result = finalvalue;
+                    }
+                }
+                __result -= datCalc.datGetDefPow(d);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetButuriAttack))]
+        private class PatchGetNBPhysicalPow
+        {
+            private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
+            {
+                __result = 0;
+                datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+                int paramValue = datCalc.datGetBaseParam(attacker, 0);
+                int unkval = 0x30;
+                int finalvalue = 0;
+                if (EnableStatScaling)
+                    { paramValue /= POINTS_PER_LEVEL; }
+                finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2 + paramValue * 2) * 1.33f) * 0.8f);
+                if (nskill != 0)
+                    { finalvalue = (int)((((datCalc.datGetNormalAtkPow(attacker) * 2 + paramValue * 2) * waza) / 23.2f) * 0.8f); unkval = 0x32; }
+                int reduction = 0;
+                if (attacker.level + 10 != 0)
+                    { reduction = unkval / (attacker.level + 10); }
+                finalvalue = (int)(finalvalue * 0.6f - reduction);
+                __result = finalvalue;
+                if (dds3ConfigMain.cfgGetBit(9) == 3)
+                {
+                    __result = (int)(finalvalue * 1.34f);
+                    if (!EventBit.evtBitCheck(0x8a0))
+                    {
+                        __result = finalvalue;
+                    }
+                }
+                if (EnableStatScaling)
+                    { __result = (int)Math.Clamp(__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) - datCalc.datGetDefPow(defender), 1, MAXHPMP); }
+                else
+                    { __result = (int)Math.Clamp(__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.GetMagicAttack))]
+        private class PatchDatGetMagicPow
+        {
+            private static bool Prefix(out int __result, int nskill, datUnitWork_t s, datUnitWork_t d, int waza)
+            {
+                datUnitWork_t work = s;
+                int LevelLimit = work.level;
+                int skillDamage = datNormalSkill.tbl[nskill].hpn;
+                int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
+                int skillBase = datNormalSkill.tbl[nskill].magicbase;
+                int damageCalc = (waza * 2 * work.level) / 21 + skillDamage;
+                if (damageCalc > skillLimit)
+                    { damageCalc = skillLimit; }
+                if (LevelLimit > 160)
+                    { LevelLimit = 160; }
+                int param = datCalc.datGetBaseParam(work, 2);
+                if (EnableIntStat)
+                    { param = datCalc.datGetBaseParam(work, 1); }
+                if (EnableStatScaling)
+                    { param /= POINTS_PER_LEVEL; }
+                damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                int damageCalc2 = damageCalc;
+                if (work.level > 100)
+                {
+                    int wazaCalc = waza * 200;
+                    int levelcheck = 100;
+                    do
+                    {
+                        damageCalc2 = (wazaCalc * work.level) / 21 + skillDamage;
+                        if (damageCalc2 > skillLimit)
+                            { damageCalc2 = skillLimit; }
+                        LevelLimit = levelcheck;
+                        if (LevelLimit > 160)
+                            { LevelLimit = 160; }
+                        levelcheck++;
+                        wazaCalc += waza * 2;
+                        damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                        if (damageCalc <= damageCalc2)
+                            { damageCalc = damageCalc2; }
+                        damageCalc2 = damageCalc;
+                    }
+                    while (levelcheck < work.level);
+                }
+                if ((work.flag >> 5 & 1) != 0)
+                {
+                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (work.level + 10));
+                    if (dds3ConfigMain.cfgGetBit(9) == 3)
+                    {
+                        damageCalc2 = (int)(damageCalc * 1.34f);
+                        if (!EventBit.evtBitCheck(0x8a0))
+                            { damageCalc2 = damageCalc; }
+                    }
+                    else
+                    {
+                        damageCalc2 = damageCalc;
+                        if (dds3ConfigMain.cfgGetBit(9) == 2)
+                            { damageCalc2 = (int)(damageCalc * 1.34f); }
+                    }
+                }
+                int param2 = datCalc.datGetBaseParam(d, 2);
+                if (EnableStatScaling)
+                    { param2 /= POINTS_PER_LEVEL; }
+                __result = damageCalc2 - param * 2 + (d.level - 1) * 2 / 5;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetMagicAttack))]
+        private class PatchNBGetMagicPow
+        {
+            private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
+            {
+                datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                int LevelLimit = attacker.level;
+                int skillDamage = datNormalSkill.tbl[nskill].hpn;
+                int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
+                int skillBase = datNormalSkill.tbl[nskill].magicbase;
+                int damageCalc = (waza * 2 * attacker.level) / 21 + skillDamage;
+                if (damageCalc > skillLimit)
+                    { damageCalc = skillLimit; }
+                if (LevelLimit > 160)
+                    { LevelLimit = 160; }
+                int param = datCalc.datGetBaseParam(attacker, 2);
+                if (EnableIntStat)
+                    { param = datCalc.datGetBaseParam(attacker, 1); }
+                if (EnableStatScaling)
+                    { param /= POINTS_PER_LEVEL; }
+                damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                int damageCalc2 = damageCalc;
+                if (attacker.level > 100)
+                {
+                    int wazaCalc = waza * 200;
+                    int levelcheck = 100;
+                    do
+                    {
+                        damageCalc2 = (wazaCalc * attacker.level) / 21 + skillDamage;
+                        if (damageCalc2 > skillLimit)
+                            { damageCalc2 = skillLimit; }
+                        LevelLimit = levelcheck;
+                        if (LevelLimit > 160)
+                            { LevelLimit = 160; }
+                        levelcheck++;
+                        wazaCalc += waza * 2;
+                        damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                        if (damageCalc <= damageCalc2)
+                            { damageCalc = damageCalc2; }
+                        damageCalc2 = damageCalc;
+                    }
+                    while (levelcheck < attacker.level);
+                }
+                if ((attacker.flag >> 5 & 1) != 0)
+                {
+                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
+                    if (dds3ConfigMain.cfgGetBit(9) == 3)
+                    {
+                        damageCalc2 = (int)(damageCalc * 1.34f);
+                        if (!EventBit.evtBitCheck(0x8a0))
+                            { damageCalc2 = damageCalc; }
+                    }
+                    else
+                    {
+                        damageCalc2 = damageCalc;
+                        if(dds3ConfigMain.cfgGetBit(9) == 2)
+                            { damageCalc2 = (int)(damageCalc * 1.34f); }
+                    }
+                }
+                int param2 = datCalc.datGetBaseParam(defender, 2);
+                if (EnableStatScaling)
+                {
+                    param2 /= POINTS_PER_LEVEL;
+                    __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7) - param2 * 2 + (defender.level - 1) * 2 / 5, 1, MAXHPMP);
+                }
+                else
+                { __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetMagicKaifuku))]
+        private class PatchGetMagicHealing
+        {
+            private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
+            {
+                datUnitWork_t work = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                uint random = dds3KernelCore.dds3GetRandIntA(8,"RandomHealing");
+                int param = datCalc.datGetBaseParam(work, 2);
+                if (EnableIntStat)
+                    { param = datCalc.datGetBaseParam(work, 1); }
+                if (EnableStatScaling)
+                    { param /= POINTS_PER_LEVEL; }
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (random + param * 4 + work.level / 10) * waza);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetMakaBaramaki))]
+        private class PatchGetMaccaScattering
+        {
+            private static bool Prefix(out int __result, datUnitWork_t w)
+            {
+                int luck = datCalc.datGetBaseParam(w, 5);
+                if (EnableStatScaling)
+                    { luck /= POINTS_PER_LEVEL; }
+                __result = luck / (w.level / 5 + 4) * datDevilFormat.tbl[w.id].dropmakka;
+                __result = (int)((dds3KernelCore.dds3GetRandFloatA("MaccaScatterVariance") * 2 - 1) * 0.1f * (__result * 2));
+                if(dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
+                    { __result = __result / 10; }
+                if (__result < 2)
+                    { __result = 1; }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetSakePow))]
+        private class PatchGetSakePow
+        {
+            private static bool Prefix(out int __result, datUnitWork_t work)
+            {
+                __result = work.level + datCalc.datGetBaseParam(work, 4) * 2;
+                int luc = datCalc.datGetBaseParam(work, 5);
+                if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
+                    { luc = 1; }
+                __result += luc + 10;
+                if (EnableStatScaling)
+                    {__result = work.level + (datCalc.datGetBaseParam(work, 4) * 2 + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL;}
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetMagicHitPow))]
+        private class PatchGetMagicAccuracy
+        {
+            private static bool Prefix(out int __result, datUnitWork_t work)
+            {
+                __result = work.level + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4) * 2;
+                if (EnableIntStat)
+                    { __result = work.level + datCalc.datGetBaseParam(work, 1) * 2 + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4); }
+                int luc = datCalc.datGetBaseParam(work, 5);
+                if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
+                    { luc = 1; }
+                int luckValue = luc + 6;
+                if (luc + 5 > -1)
+                    { luckValue = luc + 5; }
+                __result += luckValue >> 1 + 0xf;
+                if (EnableStatScaling)
+                {
+                    __result = work.level + (datCalc.datGetBaseParam(work, 2) * 2 + datCalc.datGetBaseParam(work, 4) * 2 + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL;
+                    if (EnableIntStat)
+                        { __result = work.level + (datCalc.datGetBaseParam(work, 1) * 2 + datCalc.datGetBaseParam(work, 2) + datCalc.datGetBaseParam(work, 4) + datCalc.datGetBaseParam(work, 5)) / POINTS_PER_LEVEL; }
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetDefPow))]
+        private class PatchGetDefPow
+        {
+            private static bool Prefix(out int __result, datUnitWork_t work)
+            {
+                __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
+                if (EnableStatScaling)
+                    { __result = (datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL) + (work.level - 1) / 5; }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetBaseMaxHp))]
+        private class PatchGetBaseMaxHP
+        {
+            public static int GetBaseMaxHP(datUnitWork_t work)
+            {
+                int result = (PatchGetBaseParam.GetParam(work, 3) + work.level) * 6;
+                if (rstinit.GBWK != null)
+                    { result += rstinit.GBWK.ParamOfs[3] * 6; }
+                if (EnableStatScaling)
+                {
+                    result = PatchGetBaseParam.GetParam(work, 3) * 6 / POINTS_PER_LEVEL + work.level * 6;
+                    if (rstinit.GBWK != null)
+                        { result += rstinit.GBWK.ParamOfs[3] * 6 / POINTS_PER_LEVEL; }
+                }
+                return result;
+            }
+
+            private static bool Prefix(ref int __result, datUnitWork_t work)
+            {
+                __result = GetBaseMaxHP(work);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetBaseMaxMp))]
+        private class PatchGetBaseMaxMP
+        {
+            public static int GetBaseMaxMP(datUnitWork_t work)
+            {
+                int result = (datCalc.datGetBaseParam(work, 2) + work.level) * 3;
+                if (rstinit.GBWK != null)
+                { result += rstinit.GBWK.ParamOfs[2] * 3; }
+                if (EnableStatScaling)
+                {
+                    result = datCalc.datGetBaseParam(work, 2) * 3 / POINTS_PER_LEVEL + work.level * 3;
+                    if (rstinit.GBWK != null)
+                        { result += rstinit.GBWK.ParamOfs[2] * 3 / POINTS_PER_LEVEL; }
+                }
+                return result;
+            }
+
+            private static bool Prefix(ref int __result, datUnitWork_t work)
+            {
+                __result = GetBaseMaxMP(work);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetMaxHp))]
+        private class PatchGetMaxHP
+        {
+            public static uint GetMaxHP(datUnitWork_t work)
+            {
+                uint result = (uint)PatchGetBaseMaxHP.GetBaseMaxHP(work);
+                result += datCalc.datCheckSyojiSkill(work, 0x122) == 1 ? (uint)(result * 0.1) : 0;
+                result += datCalc.datCheckSyojiSkill(work, 0x123) == 1 ? (uint)(result * 0.2) : 0;
+                result += datCalc.datCheckSyojiSkill(work, 0x124) == 1 ? (uint)(result * 0.3) : 0;
+                result = Math.Clamp(result, 1, MAXHPMP);
+                return result;
+            }
+
+            private static bool Prefix(ref uint __result, datUnitWork_t work)
+            {
+                __result = PatchGetMaxHP.GetMaxHP(work);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetMaxMp))]
+        private class PatchGetMaxMP
+        {
+            public static uint GetMaxMP(datUnitWork_t work)
+            {
+                uint result = (uint)PatchGetBaseMaxMP.GetBaseMaxMP(work);
+                result += datCalc.datCheckSyojiSkill(work, 0x125) == 1 ? (uint)(result * 0.1) : 0;
+                result += datCalc.datCheckSyojiSkill(work, 0x126) == 1 ? (uint)(result * 0.2) : 0;
+                result += datCalc.datCheckSyojiSkill(work, 0x127) == 1 ? (uint)(result * 0.3) : 0;
+                result = Math.Clamp(result, 1, MAXHPMP);
+                return result;
+            }
+            private static bool Prefix(ref uint __result, datUnitWork_t work)
+            {
+                __result = (uint)PatchGetMaxMP.GetMaxMP(work);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstSetMaxHpMp))]
+        private class PatchSetMaxHPMP
+        {
+            private static bool Prefix(sbyte Mode, ref datUnitWork_t pStock)
+            {
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+                if (Mode == 1)
+                {
+                    pStock.hp = pStock.maxhp;
+                    pStock.mp = pStock.maxmp;
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstAddLevel))]
+        private class PatchAddLevel
+        {
+            private static bool Prefix(int Val, datUnitWork_t pStock)
+            {
+                pStock.level = (ushort)Math.Clamp(pStock.level + Val, 1, 0xff);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbAddLevelUpParamEx))]
+        private class PatchAddLevelUpParamEx
+        {
+            private static bool Prefix(out sbyte __result, ref datUnitWork_t pStock, sbyte Mode)
+            {
+                __result = AddLevelUpParam(ref pStock, Mode);
+                return false;
+            }
+
+            public static sbyte AddLevelUpParam(ref datUnitWork_t pStock, sbyte Mode)
+            {
+                bool[] paramChecks = { false, false, false, false, false, false };
+                for (int i = 0; i < paramChecks.Length; i++)
+                {
+                    if (pStock.param[i] + rstinit.GBWK.ParamOfs[i] >= MAXSTATS)
+                        {paramChecks[i] = true;}
+                }
+                do
+                {
+                    int ctr = (int)(fclMisc.FCL_RAND() % paramChecks.Length);
+                    if (paramChecks[ctr] == true)
+                        { continue; }
+                    if (ctr > 0 && !EnableIntStat)
+                        { ctr++; }
+                    if (rstinit.GBWK.ParamOfs.Length <= ctr)
+                        { break; }
+                    rstinit.GBWK.ParamOfs[ctr]++;
+                    if (pStock.param[ctr] + rstinit.GBWK.ParamOfs[ctr] <= 0)
+                        { return 0x7f; }
+                    return (sbyte)ctr;
+                }
+                while (true);
+                return 6;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstAutoAsignDevilParam))]
+        private class PatchAutoAsignDevilParam
+        {
+            private static bool Prefix()
+            {
+                EvoCheck = false;
+                int i = 0;
+                for (i = 0; i < rstinit.GBWK.ParamOfs.Length; i++)
+                {
+                    if (i == 1 && !EnableIntStat)
+                        { continue; }
+                    rstinit.GBWK.ParamOfs[i] = 0;
+                }
+                i = 0;
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+                do
+                {
+                    if (rstinit.GBWK.AsignParam * POINTS_PER_LEVEL <= i)
+                        { break; }
+                    var paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 0);
+                    if (paramID > 5 || paramID == -1)
+                        { continue; }
+                    if (pStock.param[paramID] + rstinit.GBWK.ParamOfs[paramID] >= MAXSTATS)
+                        { pStock.param[paramID] = MAXSTATS; }
+                    else
+                        { pStock.param[paramID] += rstinit.GBWK.ParamOfs[paramID]; }
+                    i++;
+                }
+                while (true);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCalcEvo))]
+        private class PatchChkDevilEvo
+        {
+            private static bool Prefix()
+                { EvoCheck = true; return true; }
+        }
+
+        [HarmonyPatch(typeof(cmpPanel), nameof(cmpPanel.cmpDrawDevilInfo))]
+        private class PatchDrawDevilInfo
+        {
+            private static void Postfix(int X, int Y, uint Z, uint Col, sbyte SelFlag, sbyte DrawType, datUnitWork_t pStock, cmpCursorEff_t pEff, int FadeRate, GameObject obj, int MatCol)
+            {
+                int[] StockStats = new int[] { pStock.hp, pStock.mp };
+                for (int i = 0; i < 2; i++)
+                {
+                    GameObject g2 = GameObject.Find(obj.name + "/" + StockBarValues[i]);
+                    if (g2 == null)
+                    { continue; }
+                    if (g2.GetComponent<CounterCtr>().image.Length < 4)
+                    {
+                        GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
+                        g.transform.parent = g2.transform;
+                        g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                        for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
+                        {
+                            bool chk = g2.GetComponent<CounterCtr>().image[j].gameObject.active;
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = true;
+                            g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(118 - j * 25, 31, -4);
+                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;
+                        }
+                        GameObject.DontDestroyOnLoad(g);
+                    }
+                    g2.GetComponent<CounterCtr>().Set(StockStats[i], Color.white, 0);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(nbPanelProcess), nameof(nbPanelProcess.nbPanelPartyDraw))]
+        private class PatchPanelPartyDraw
+        {
+            private static void Postfix()
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    nbParty_t party = nbMainProcess.nbGetPartyFromFormindex(i);
+                    if (party == null)
+                        { continue; }
+                    if (i > 0 && party.statindex == 0)
+                        { continue; }
+                    datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[party.statindex];
+                    int[] PartyStats = new int[] { pStock.hp, pStock.mp };
+
+                    for (int k = 0; k < 2; k++)
+                    {
+                        GameObject g2 = GameObject.Find("bparty(Clone)/bparty_window0" + (i + 1) + "/" + PartyBarValues[k]);
+                        if (g2 == null)
+                        { continue; }
+                        if (g2.GetComponent<CounterCtrBattle>().image.Length < 4)
+                        {
+                            GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtrBattle>().image[0].gameObject);
+                            g.transform.parent = g2.transform;
+                            g.transform.position = g2.GetComponent<CounterCtrBattle>().image[0].transform.position;
+                            g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                            for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
+                            {
+                                bool chk = g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active;
+                                g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = true;
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
+                                g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
+                            }
+                            GameObject.DontDestroyOnLoad(g);
+                        }
+                        g2.GetComponent<CounterCtrBattle>().Set(PartyStats[k], Color.white, 0);
+                    }
+                }
+
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int k = 0; k < 2; k++)
+                    {
+                        GameObject g2 = GameObject.Find("summon_command/bmenu_command/bmenu_command_s0" + (i + 1) + "/" + PartyBarValues[k]);
+                        if (g2 == null)
+                        { continue; }
+                        if (g2.GetComponent<CounterCtrBattle>().image.Length < 4)
+                        {
+                            GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtrBattle>().image[0].gameObject);
+                            g.transform.parent = g2.transform;
+                            g.transform.position = g2.GetComponent<CounterCtrBattle>().image[0].transform.position;
+                            g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                            g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                            for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
+                            {
+                                bool chk = g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active;
+                                g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = true;
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
+                                g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
+                            }
+                            GameObject.DontDestroyOnLoad(g);
+                        }
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(nbPanelProcess), nameof(nbPanelProcess.nbPanelAnalyzeRun))]
+        private class PatchPanelAnalyzeRun
+        {
+            private static void Postfix()
+            {
+                datUnitWork_t unit = nbPanelProcess.pNbPanelAnalyzeUnitWork;
+                if (unit != null)
+                {
+                    int[] AnalyzeStats = new int[] { unit.hp, unit.maxhp, unit.mp, unit.maxmp };
+                    for (int k = 0; k < 2; k++)
+                    {
+                        GameObject g2 = GameObject.Find(AnalyzeBarValues[k]);
+                        for (int i = 0; i < 2; i++)
+                        {
+                            if (g2.GetComponentsInChildren<CounterCtr>()[i].image.Length < 5)
+                            {
+                                for (int j = g2.GetComponentsInChildren<CounterCtr>()[i].image.Length; j < 5; j++)
+                                {
+                                    GameObject g = GameObject.Instantiate(g2.GetComponentsInChildren<CounterCtr>()[i].image[1].gameObject);
+                                    g.transform.parent = g2.transform;
+                                    g.transform.position = g2.GetComponentsInChildren<CounterCtr>()[i].transform.position;
+                                    g.transform.localPosition = g2.GetComponentsInChildren<CounterCtr>()[i].transform.localPosition;
+                                    g2.GetComponentsInChildren<CounterCtr>()[i].image = g2.GetComponentsInChildren<CounterCtr>()[i].image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                                    GameObject.DontDestroyOnLoad(g);
+                                }
+                                for (int j = 0; j < g2.GetComponentsInChildren<CounterCtr>()[i].image.Length; j++)
+                                {
+                                    bool chk = g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active;
+                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active = true;
+                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localPosition = new Vector3(i * 130 + 86 - j * 20 + 5, 32, -8);
+                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale = new Vector3(g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale.x * 0.80f, g2.GetComponentsInChildren<CounterCtr>()[0].image[j].transform.localScale.y, g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale.z);
+                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active = chk;
+                                }
+                            }
+                            g2.GetComponentsInChildren<CounterCtr>()[i].Set(AnalyzeStats[i + k * 2], Color.white, 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstResetAsignParam))]
+        private class PatchResetAsignParam
+        {
+            private static bool Prefix()
+            {
+                ResetParam();
+                return false;
+            }
+            public static void ResetParam()
+            {
+                rstinit.GBWK.AsignParam = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+                rstinit.GBWK.AsignParamMax = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+                for (int i = 0; i < rstinit.GBWK.ParamOfs.Length; i++)
+                    { rstinit.GBWK.ParamOfs[i] = 0; }
+                rstinit.SetPointAnime(rstinit.GBWK.AsignParam);
+            }
+        }
+
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstUpdateSeqAsignPlayerParam))]
+        private class PatchUpdateAsignPlayerParam
+        {
+            public static sbyte YesResponse()
+            {
+                rstinit.GBWK.SeqInfo.Current = 0x18;
+                return 1;
+            }
+            public static sbyte NoResponse()
+            {
+                rstupdate.rstResetAsignParam();
+                return 0;
+            }
+            private static bool Prefix(ref datUnitWork_t pStock)
+            {
+                if (fclMisc.fclChkMessage() == 2)
+                {
+                    if (fclMisc.fclGetSelMessagePos() == 0
+                        && dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK)
+                        && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
+                    {
+                        if (fclMisc.fclChkSelMessage() == 1)
+                            { YesResponse(); }
+                    }
+                    if ((fclMisc.fclGetSelMessagePos() == 1
+                        && dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK)
+                        && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true) ||
+                        (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL)
+                        && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL) == true))
+                    {
+                        if (fclMisc.fclChkSelMessage() == 1)
+                            { NoResponse(); }
+                    }
+                    return false;
+                }
+                if (SettingAsignParam == false)
+                {
+                    SettingAsignParam = true;
+                    EvoCheck = false;
+                    PatchResetAsignParam.ResetParam();
+                }
+                if (rstinit.GBWK.LevelUpCnt <= 0)
+                    { SettingAsignParam = false; }
+                if (EnableIntStat && pStock.param[0] + rstinit.GBWK.ParamOfs[0] >= MAXSTATS &&
+                    pStock.param[1] + rstinit.GBWK.ParamOfs[1] >= MAXSTATS &&
+                    pStock.param[2] + rstinit.GBWK.ParamOfs[2] >= MAXSTATS &&
+                    pStock.param[3] + rstinit.GBWK.ParamOfs[3] >= MAXSTATS &&
+                    pStock.param[4] + rstinit.GBWK.ParamOfs[4] >= MAXSTATS &&
+                    pStock.param[5] + rstinit.GBWK.ParamOfs[5] >= MAXSTATS)
+                    { YesResponse(); return false; }
+                else if (pStock.param[0] + rstinit.GBWK.ParamOfs[0] >= MAXSTATS &&
+                    pStock.param[2] + rstinit.GBWK.ParamOfs[2] >= MAXSTATS &&
+                    pStock.param[3] + rstinit.GBWK.ParamOfs[3] >= MAXSTATS &&
+                    pStock.param[4] + rstinit.GBWK.ParamOfs[4] >= MAXSTATS &&
+                    pStock.param[5] + rstinit.GBWK.ParamOfs[5] >= MAXSTATS)
+                    { YesResponse(); return false; }
+                if (cmpStatus.statusObj == null)
+                    { YesResponse(); return false; }
+                if (fclMisc.fclChkMessage() != 0)
+                    { return false; }
+                int cursorIndex = cmpMisc.cmpGetCursorIndex(rstinit.GBWK.ParamCursor);
+                sbyte cursorParam = (sbyte)cursorIndex;
+                if (!EnableIntStat)
+                    { cursorParam = cmpMisc.cmpExchgParamIndex((sbyte)cursorIndex); }
+                else
+                {
+                    if (cmpStatus._statusUIScr.ObjStsBar.Length < 6)
+                    {
+                        GameObject g = GameObject.Find("statusUI(Clone)/sstatus/sstatusbar06");
+                        cmpStatus._statusUIScr.ObjStsBar = cmpStatus._statusUIScr.ObjStsBar.Append(g).ToArray();
+                        GameObject.Find("statusUI(Clone)/sstatus/sstatusnum06");
+                        cmpStatus._statusUIScr.ObjStatus = cmpStatus._statusUIScr.ObjStsBar.Append(g).ToArray();
+                        MelonLogger.Msg(rstinit.GBWK.ParamCursor.CursorPos.ListNums);
+                    }
+                    rstinit.GBWK.ParamCursor.CursorPos.ShiftMax = 6;
+                    rstinit.GBWK.ParamCursor.CursorPos.ListNums = 6;
+                }
+                cmpUpdate.cmpSetupObject(cmpStatus._statusUIScr.gameObject, true);
+                cmpUpdate.cmpMenuCursor(cursorIndex, cmpStatus._statusUIScr.stsCursor, cmpStatus._statusUIScr.ObjStsBar);
+                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.U) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.U) == true)
+                {
+                    cursorIndex = cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 0);
+                    if (EnableIntStat && cursorIndex < 6)
+                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, -1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    else if (cursorIndex < 5)
+                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, -1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    else
+                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
+                    rstinit.SetPointAnime(cursorIndex);
+                }
+                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.D) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.D) == true)
+                {
+                    cursorIndex = cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 0);
+                    if (EnableIntStat && cursorIndex < 6)
+                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    else if (cursorIndex < 5)
+                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    else
+                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
+                    rstinit.SetPointAnime(cursorIndex);
+                }
+                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL) == true)
+                {
+                    rstupdate.rstResetAsignParam();
+                    cmpMisc.cmpPlaySE(2 & 0xFFFF);
+                }
+                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
+                {
+                    if (pStock.param[cursorParam] + rstinit.GBWK.ParamOfs[cursorParam] > MAXSTATS)
+                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    if (rstinit.GBWK.AsignParam > 0)
+                    {
+                        rstinit.GBWK.ParamOfs[cursorParam]++;
+                        rstinit.GBWK.AsignParam--;
+                        cmpMisc.cmpPlaySE(1 & 0xFFFF);
+                    }
+                    if (rstinit.GBWK.AsignParam == 0)
+                    {
+                        fclMisc.fclStartMessage(2);
+                        fclMisc.fclStartSelMessage(0x2b);
+                        fclMisc.gSelMsgNo = 0x2b;
+                    }
+                }
+                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) == true)
+                {
+                    if (rstinit.GBWK.ParamOfs[cursorParam] < 1)
+                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    else
+                    {
+                        rstinit.GBWK.ParamOfs[cursorParam]--;
+                        rstinit.GBWK.AsignParam++;
+                        cmpMisc.cmpPlaySE(2 & 0xFFFF);
+                    }
+                }
+                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(cmpDrawStatus), nameof(cmpDrawStatus.cmpDrawParamPanel))]
+        private class PatchDrawParamPanel
+        {
+            private static void CreateParamGauge(sbyte ctr2, int X, int Y, uint[] pBaseCol, datUnitWork_t pStock, sbyte CursorPos, sbyte CursorMode, sbyte FlashMode)
+            {
+                if (ctr2 > pStock.param.Length || pBaseCol.Length == 0 || cmpStatus.statusObj == null)
+                    { return; }
+                if (pStock.param[ctr2] >= MAXSTATS)
+                    { pStock.param[ctr2] = MAXSTATS; }
+                GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
+                if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
+                    { stsObj.GetComponentsInChildren<TMP_Text>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].SetText(Localize.GetLocalizeText(paramNames[ctr2])); }
+                if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
+                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 -1 : ctr2].Set(pStock.param[ctr2], Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+                if (-1 < CursorPos)
+                    { FlashMode = 2; }
+                PatchDrawParamGauge.ReworkParamGauge(pBaseCol, 0x14, (sbyte)ctr2, (sbyte)ctr2, FlashMode, pStock, stsObj);
+            }
+            private static bool Prefix(int X, int Y, uint[] pBaseCol, sbyte[] pParamOfs, datUnitWork_t pStock, sbyte CursorPos, sbyte CursorMode, sbyte FlashMode)
+            {
+                if (cmpStatus.statusObj == null)
+                    { return false; }
+                if (pStock == null)
+                    { return false; }
+                int[] StatusStats = new int[] { pStock.hp, pStock.maxhp, pStock.mp, pStock.maxmp };
+                GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
+                if (stsObj == null)
+                    { return false; }
+                if (stsObj.activeSelf == false)
+                    { return false; }
+                if (GameObject.Find(stsObj.name + "/sstatusbar_cursur") && EnableIntStat)
+                {
+                    Vector3 newScale = new(1, 0.9f, 1);
+                    GameObject.Find(stsObj.name + "/sstatusbar_cursur").transform.localScale = newScale;
+                }
+                if (!GameObject.Find(stsObj.name + "/sstatusbar06") && EnableIntStat)
+                {
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusbar01");
+                    if (g2 != null)
+                    {
+                        GameObject g = GameObject.Instantiate(g2);
+                        GameObject.DontDestroyOnLoad(g);
+                        g.name = "sstatusbar06";
+                        g.transform.parent = g2.transform.parent;
+                        g.transform.position = g2.transform.position;
+                        g.transform.localPosition = new Vector3(g2.transform.localPosition.x, g2.transform.localPosition.y - 48 * 5, g2.transform.localPosition.z);
+                        g.transform.localScale = g2.transform.localScale;
+                        for (int i = 0; i < 6; i++)
+                        {
+                            GameObject g3 = GameObject.Find("sstatusbar0" + (i + 1));
+                            if (g3 == null)
+                                { continue; }
+                            Vector3 newScale = g3.transform.localScale;
+                            Vector3 newPos = g3.transform.localPosition;
+                            newPos.x *= 1;
+                            newPos.y *= 0.9f;
+                            newPos.x *= 1;
+                            newScale.x *= 1;
+                            newScale.y *= 0.9f;
+                            newScale.z *= 1;
+                            g3.transform.localScale = newScale;
+                            g3.transform.localPosition = newPos;
+                        }
+                    }
+                }
+                if (!GameObject.Find(stsObj.name + "/sstatusnum06") && EnableIntStat)
+                {
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum01");
+                    if (g2 != null)
+                    {
+                        GameObject g = GameObject.Instantiate(g2);
+                        GameObject.DontDestroyOnLoad(g);
+                        g.name = "sstatusnum06";
+                        g.transform.parent = g2.transform.parent;
+                        g.transform.position = g2.transform.position;
+                        g.transform.localPosition = new Vector3(g2.transform.localPosition.x, g2.transform.localPosition.y - 48 * 5, g2.transform.localPosition.z);
+                        g.transform.localScale = g2.transform.localScale;
+                        for (int i = 0; i < 6; i++)
+                        {
+                            GameObject g3 = GameObject.Find("sstatusnum0" + (i + 1));
+                            if (g3 == null)
+                                { continue; }
+                            Vector3 newScale = g3.transform.localScale;
+                            Vector3 newPos = g3.transform.localPosition;
+                            newPos.x *= 1;
+                            newPos.y *= 0.9f;
+                            newPos.x *= 1;
+                            newScale.x *= 1;
+                            newScale.y *= 0.9f;
+                            newScale.z *= 1;
+                            g3.transform.localScale = newScale;
+                            g3.transform.localPosition = newPos;
+                        }
+                    }
+                }
+                if (!GameObject.Find(stsObj.name + "/Text_stat06TM") && EnableIntStat)
+                {
+                    GameObject g2 = GameObject.Find(stsObj.name + "/Text_stat01TM");
+                    if (g2 != null)
+                    {
+                        GameObject g = GameObject.Instantiate(g2);
+                        GameObject.DontDestroyOnLoad(g);
+                        g.name = "Text_stat06TM";
+                        g.transform.parent = g2.transform.parent;
+                        g.transform.position = g2.transform.position;
+                        g.transform.localPosition = new Vector3(g2.transform.localPosition.x, g2.transform.localPosition.y - 48 * 5, g2.transform.localPosition.z);
+                        g.transform.localScale = g2.transform.localScale;
+                        for (int i = 0; i < 6; i++)
+                        {
+                            GameObject g3 = GameObject.Find("Text_stat0" + (i + 1) + "TM");
+                            if (g3 == null)
+                                { continue; }
+                            Vector3 newScale = g3.transform.localScale;
+                            Vector3 newPos = g3.transform.localPosition;
+                            newPos.x *= 1;
+                            newPos.y *= 0.9f;
+                            newPos.x *= 1;
+                            newScale.x *= 1;
+                            newScale.y *= 0.9f;
+                            newScale.z *= 1;
+                            g3.transform.localScale = newScale;
+                            g3.transform.localPosition = newPos;
+                        }
+                    }
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    GameObject g2 = GameObject.Find(stsObj.name + "/" + StatusBarValues[i]);
+                    if (g2 == null)
+                        { continue; }
+                    if (g2.GetComponent<CounterCtr>().image.Length < 4)
+                    {
+                        GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
+                        g.transform.parent = g2.transform;
+                        g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                        for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
+                        {
+                            bool chk = g2.GetComponent<CounterCtr>().image[j].gameObject.active;
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = true;
+                            g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(60 - j * 25, 0, -4);
+                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;
+                        }
+                        GameObject.DontDestroyOnLoad(g);
+                    }
+                    g2.GetComponent<CounterCtr>().Set(StatusStats[i], Color.white, 0);
+                }
+                int bars = 5;
+                if (EnableIntStat)
+                    { bars = 6; }
+                for (int i = 0; i < bars; i++)
+                {
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum0" + (i+1));
+                    if (g2 == null)
+                        { continue; }
+                    if (g2.activeSelf == false)
+                        { continue; }
+                    if (g2.GetComponent<CounterCtr>().image.Length < 3)
+                    {
+                        GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
+                        g.transform.parent = g2.transform;
+                        g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                        for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
+                        {
+                            bool chk = g2.GetComponent<CounterCtr>().image[j].gameObject.active;
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = true;
+                            g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(30 - j * 25 + 5, 0, -4);
+                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
+                            g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;
+                        }
+                        GameObject.DontDestroyOnLoad(g);
+                    }
+                    int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
+                    int levelstat = 0;
+                    if (rstinit.GBWK != null && !EvoCheck)
+                        { levelstat = rstinit.GBWK.ParamOfs[stat]; }
+                    g2.GetComponent<CounterCtr>().Set(rstCalcCore.cmbGetParam(pStock, stat) + levelstat, Color.white, 0);
+                }
+                if (stsObj.GetComponentsInChildren<sstatusbarUI>() == null)
+                    { return false; }
+                for (int i = 0; i < 6; i++)
+                {
+                    if (i == 1 && !EnableIntStat)
+                        { continue; }
+                    if (stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i-1 : i] == null)
+                        { continue; }
+                    if (!stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i-1 : i].gameObject.activeSelf)
+                        { continue; }
+                    CreateParamGauge((sbyte)i, (int)(X * 3.75), (int)(Y * 2.25), pBaseCol, pStock, CursorPos, CursorMode, FlashMode);
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(cmpDrawStatus), nameof(cmpDrawStatus.cmpDrawParamGauge))]
+        private class PatchDrawParamGauge
+        {
+            private static bool Prefix(int X, int Y, uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
+            {
+                if (pStock == null || stsObj == null)
+                    { return false; }
+                ReworkParamGauge(pBaseCol, StepY, Pos, ParamOfs, FlashMode, pStock, stsObj);
+                return false;
+            }
+            public static void ReworkParamGauge(uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
+            {
+                if (stsObj.GetComponentsInChildren<sstatusbarUI>().Length < 6 && EnableIntStat)
+                    { return; }
+                else if (stsObj.GetComponentsInChildren<sstatusbarUI>().Length < 5)
+                    { return; }
+                int stat = ParamOfs;
+                if (stat > 0 && !EnableIntStat)
+                    { stat--; }
+                if (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length != MAXSTATS)
+                {
+                    GameObject g;
+                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length < MAXSTATS)
+                    {
+                        g = GameObject.Instantiate(stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject);
+                        g.transform.parent = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.transform;
+                        g.transform.position = g.transform.parent.position;
+                        g.transform.localPosition = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject.transform.localPosition;
+                    }
+                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length > MAXSTATS)
+                    {
+                        GameObject.Destroy(stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length - 1].gameObject);
+                    }
+                    for (int len = MAXSTATS - 1; len >= 0; len--)
+                    {
+                        Vector3 barScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale;
+                        Vector3 barPos = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition;
+                        barScale.x = BAR_SCALE_X;
+                        barScale.y = 1;
+                        barScale.z = 1;
+                        barPos.x = 250 + (len) * BAR_SEGMENT_X + (18 - BAR_SEGMENT_X) + 2 / BAR_SCALE_X;
+                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale = barScale;
+                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition = barPos;
+                    }
+                    if (barData == null)
+                        { barData = AssetBundle.LoadFromFile(AppContext.BaseDirectory + BundlePath + barSpriteName); AssetBundle.DontDestroyOnLoad(barData); }
+                    barAsset[stat] = barData.LoadAsset(barSpriteName).Cast<Texture2D>();
+                    Texture2D.DontDestroyOnLoad(barAsset[stat]);
+                    barSprite[stat] = Sprite.Create(barAsset[stat], new Rect(0, 0, barAsset[stat].width, barAsset[stat].height), Vector2.zero);
+                    barSprite[stat].texture.Apply();
+                    Sprite.DontDestroyOnLoad(barSprite[stat]);
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Image>().sprite = barSprite[stat];
+                }
+                int heartValue = 0;
+                if ((pStock.flag >> 2 & 1) == 0)
+                    { heartValue = 0; }
+                else if (FlashMode == 5 )
+                    { heartValue = rstCalcCore.cmbGetHeartsParamEx((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs, 0); }
+                else
+                    { heartValue = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs); }
+                int paramValue = pStock.param[ParamOfs];
+                int levelupValue = 0;
+                int mitamaValue = pStock.mitamaparam[ParamOfs];
+                if (rstinit.GBWK != null && !EvoCheck)
+                    { levelupValue = rstinit.GBWK.ParamOfs[ParamOfs]; }
+                for (int ctr = 0; ctr < paramValue + levelupValue + mitamaValue; ctr++)
+                {
+                    if (MAXSTATS <= ctr)
+                        { break; }
+                    int segmentColor = 3;
+                    if (paramValue + levelupValue + mitamaValue - heartValue > ctr)
+                        { segmentColor = 4; }
+                    if (paramValue + levelupValue - heartValue > ctr)
+                        { segmentColor = 2; }
+                    if (paramValue - heartValue > ctr)
+                        { segmentColor = 1; }
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[ctr].SetInteger("sstatusbar_color", segmentColor);
+                }
+                for(int ctr = paramValue + levelupValue + mitamaValue; ctr < MAXSTATS; ctr++)
+                    { stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[ctr].SetInteger("sstatusbar_color", 0); }
+                int newFlashMode = FlashMode;
+                if (Pos >= cmpDrawStatus.gStatusBlinkQue.Length)
+                    { Pos = (sbyte)(cmpDrawStatus.gStatusBlinkQue.Length - 1); }
+                if (FlashMode == 0)
+                {
+                    if (cmpDrawStatus.gStatusBlinkQue[Pos] != 0)
+                        {FlashMode = 2;}
+                }
+                if (FlashMode == 1 || FlashMode == 2)
+                    { cmpDrawStatus.cmpStatMakeBlinkCol(cmpDrawStatus.gStatusBlinkQue[Pos], (sbyte)newFlashMode, pCol); }
+                if (FlashMode == 3)
+                {
+                    if (cmpDrawStatus.gStatusBlinkQue[Pos] != 0)
+                        { cmpDrawStatus.cmpStatMakeBlinkCol(cmpDrawStatus.gStatusBlinkQue[Pos], 0, pCol); }
+                }
+                if (FlashMode == 4 || FlashMode == 5)
+                    { cmpDrawStatus.cmpStatMakeBlinkCol(cmpDrawStatus.gStatusBlinkQue[Pos], FlashMode, pCol); }
+                return;
+            }
+        }
+    }
+}
