@@ -7,7 +7,6 @@ using Il2CppTMPro;
 using UnityEngine.UI;
 using Il2Cppcamp_H;
 using Il2Cppnewbattle_H;
-using Il2Cppevent_H;
 
 [assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.0.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
@@ -28,8 +27,8 @@ namespace ModernStatsSystem
         private static AssetBundle barData = null;
         private static Texture2D[] barAsset = { null, null, null, null, null, null };
         private static Sprite[] barSprite = { null, null, null, null, null, null };
-        private const string barSpriteName = "sstatusbar_base_empty";
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
+        private const string barSpriteName = "sstatusbar_base_empty";
         private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
         private static string[] StockBarValues = { "barhp", "barmp" };
         private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
@@ -39,7 +38,6 @@ namespace ModernStatsSystem
 
         public override void OnInitializeMelon()
         {
-            datNormalSkill.tbl[216].badlevel = 255; // Panic Voice accuracy.
             System.Random rng = new(5318008); // lol I had to. For real btw, I didn't want Int to be completely random for every demon on-load.
             for (int i = 0; i < datDevilFormat.tbl.Length; i++)
             {
@@ -63,11 +61,11 @@ namespace ModernStatsSystem
                     do
                         { sign = rng.Next(-1, 1); }
                     while (sign == 0);
-                    tblHearts.fclHeartsTbl[i].GrowParamTbl[0] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].GrowParamTbl[2] + tblHearts.fclHeartsTbl[i].GrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
+                    tblHearts.fclHeartsTbl[i].GrowParamTbl[1] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].GrowParamTbl[2] + tblHearts.fclHeartsTbl[i].GrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
                     do
                         { sign = rng.Next(-1, 1); }
                     while (sign == 0);
-                    tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[0] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] + tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
+                    tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[1] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] + tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
                 }
                 if (EnableStatScaling)
                 {
@@ -262,8 +260,7 @@ namespace ModernStatsSystem
                     if (dds3ConfigMain.cfgGetBit(9) == 2)
                         { __result = (int)(finalvalue * 1.34); }
                 }
-                __result -= datCalc.datGetDefPow(d);
-                __result = Math.Clamp(__result, 1, MAXHPMP);
+                __result = (int)Mathf.Min((float)__result * (10f / (float)(datCalc.datGetDefPow(d) / 8.5f)), __result);
                 return false;
             }
         }
@@ -303,10 +300,11 @@ namespace ModernStatsSystem
                     if (dds3ConfigMain.cfgGetBit(9) == 2)
                         { __result = (int)(finalvalue * 1.34); }
                 }
+                __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 if (EnableStatScaling)
-                    { __result = (int)Math.Clamp(__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) - datCalc.datGetDefPow(defender), 1, MAXHPMP); }
+                    { __result = (int)Mathf.Min((float)__result * (10f / (float)(datCalc.datGetDefPow(defender) / 8.5f)), (float)__result); }
                 else
-                    { __result = (int)Math.Clamp(__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
+                    { __result = (int)((float)__result); }
                 return false;
             }
         }
@@ -333,51 +331,86 @@ namespace ModernStatsSystem
                     { param /= POINTS_PER_LEVEL; }
                 damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
                 int damageCalc2 = damageCalc;
-                if (work.level > 100)
+                if (!EnableStatScaling)
                 {
-                    int wazaCalc = waza * 200;
-                    int levelcheck = 100;
-                    do
+                    if (s.level > 100)
                     {
-                        damageCalc2 = (wazaCalc * work.level) / 21 + skillDamage;
-                        if (damageCalc2 > skillLimit)
+                        int wazaCalc = waza * 200;
+                        int levelcheck = 100;
+                        do
+                        {
+                            damageCalc2 = (wazaCalc * s.level) / 21 + skillBase;
+                            if (damageCalc2 > skillLimit)
                             { damageCalc2 = skillLimit; }
-                        LevelLimit = levelcheck;
-                        if (LevelLimit > 160)
+                            LevelLimit = levelcheck;
+                            if (LevelLimit > 160)
                             { LevelLimit = 160; }
-                        levelcheck++;
-                        wazaCalc += waza * 2;
-                        damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                        if (damageCalc <= damageCalc2)
+                            levelcheck++;
+                            wazaCalc += waza * 2;
+                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                            if (damageCalc <= damageCalc2)
                             { damageCalc = damageCalc2; }
-                        damageCalc2 = damageCalc;
+                            damageCalc2 = damageCalc;
+                        }
+                        while (levelcheck < s.level);
                     }
-                    while (levelcheck < work.level);
-                }
-                if ((work.flag >> 5 & 1) != 0)
-                {
-                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (work.level + 10));
-                    if (dds3ConfigMain.cfgGetBit(9) == 3)
+                    if ((s.flag >> 5 & 1) != 0)
                     {
-                        damageCalc2 = (int)(damageCalc * 1.34f);
-                        if (!EventBit.evtBitCheck(0x8a0))
+                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (s.level + 10));
+                        if (dds3ConfigMain.cfgGetBit(9) == 3)
+                        {
+                            damageCalc2 = (int)(damageCalc * 1.34f);
+                            if (!EventBit.evtBitCheck(0x8a0))
                             { damageCalc2 = damageCalc; }
-                    }
-                    else
-                    {
-                        damageCalc2 = damageCalc;
-                        if (dds3ConfigMain.cfgGetBit(9) == 2)
+                        }
+                        else
+                        {
+                            damageCalc2 = damageCalc;
+                            if (dds3ConfigMain.cfgGetBit(9) == 2)
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
+                        }
+                    }
+                }
+                else
+                {
+                    /* for Diminishing Returns on Magic Damage
+                    if (attacker.level > 100)
+                    {
+                        int wazaCalc = waza * 200;
+                        int levelcheck = 100;
+                        do
+                        {
+                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
+                            LevelLimit = levelcheck;
+                            levelcheck++;
+                            wazaCalc += (int)(waza * 2f / (attacker.level / 100f * (1 - (attacker.level - 1) / 255f)));
+                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                        }
+                        while (levelcheck < attacker.level);
+                    }*/
+                    if ((s.flag >> 5 & 1) != 0)
+                    {
+                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (s.level + 10));
+                        if (dds3ConfigMain.cfgGetBit(9) == 3)
+                        {
+                            damageCalc2 = (int)(damageCalc * 1.34f);
+                            if (!EventBit.evtBitCheck(0x8a0))
+                            { damageCalc2 = damageCalc; }
+                        }
+                        else
+                        {
+                            damageCalc2 = damageCalc;
+                            if (dds3ConfigMain.cfgGetBit(9) == 2)
+                            { damageCalc2 = (int)(damageCalc * 1.34f); }
+                        }
                     }
                 }
                 __result = damageCalc2;
                 if (EnableStatScaling)
                 {
                     int param2 = datCalc.datGetParam(d, 2);
-                    param2 /= POINTS_PER_LEVEL;
-                    __result -= param2 * 2 + (d.level - 1) * 2 / 5;
+                    __result = (int)Mathf.Min((float)__result * (10f / (((float)param2 / (float)POINTS_PER_LEVEL * 2f + (float)d.level) / 8.5f)), (float)__result);
                 }
-                __result = Math.Clamp(__result, 1, MAXHPMP);
                 return false;
             }
         }
@@ -390,13 +423,12 @@ namespace ModernStatsSystem
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 int LevelLimit = attacker.level;
-                int skillDamage = datNormalSkill.tbl[nskill].hpn;
                 int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
                 int skillBase = datNormalSkill.tbl[nskill].magicbase;
-                int damageCalc = (waza * 2 * attacker.level) / 21 + skillDamage;
-                if (damageCalc > skillLimit)
+                int damageCalc = (waza * 2 * attacker.level) / 21 + skillBase;
+                if (damageCalc > skillLimit && !EnableStatScaling)
                     { damageCalc = skillLimit; }
-                if (LevelLimit > 160)
+                if (LevelLimit > 160 && !EnableStatScaling)
                     { LevelLimit = 160; }
                 int param = datCalc.datGetParam(attacker, 2);
                 if (EnableIntStat)
@@ -405,51 +437,86 @@ namespace ModernStatsSystem
                     { param /= POINTS_PER_LEVEL; }
                 damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
                 int damageCalc2 = damageCalc;
-                if (attacker.level > 100)
+                if (!EnableStatScaling)
                 {
-                    int wazaCalc = waza * 200;
-                    int levelcheck = 100;
-                    do
+                    if (attacker.level > 100)
                     {
-                        damageCalc2 = (wazaCalc * attacker.level) / 21 + skillDamage;
-                        if (damageCalc2 > skillLimit)
+                        int wazaCalc = waza * 200;
+                        int levelcheck = 100;
+                        do
+                        {
+                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
+                            if (damageCalc2 > skillLimit)
                             { damageCalc2 = skillLimit; }
-                        LevelLimit = levelcheck;
-                        if (LevelLimit > 160)
+                            LevelLimit = levelcheck;
+                            if (LevelLimit > 160)
                             { LevelLimit = 160; }
-                        levelcheck++;
-                        wazaCalc += waza * 2;
-                        damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                        if (damageCalc <= damageCalc2)
+                            levelcheck++;
+                            wazaCalc += waza * 2;
+                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                            if (damageCalc <= damageCalc2)
                             { damageCalc = damageCalc2; }
-                        damageCalc2 = damageCalc;
+                            damageCalc2 = damageCalc;
+                        }
+                        while (levelcheck < attacker.level);
                     }
-                    while (levelcheck < attacker.level);
-                }
-                if ((attacker.flag >> 5 & 1) != 0)
-                {
-                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
-                    if (dds3ConfigMain.cfgGetBit(9) == 3)
+                    if ((attacker.flag >> 5 & 1) != 0)
                     {
-                        damageCalc2 = (int)(damageCalc * 1.34f);
-                        if (!EventBit.evtBitCheck(0x8a0))
+                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
+                        if (dds3ConfigMain.cfgGetBit(9) == 3)
+                        {
+                            damageCalc2 = (int)(damageCalc * 1.34f);
+                            if (!EventBit.evtBitCheck(0x8a0))
                             { damageCalc2 = damageCalc; }
-                    }
-                    else
-                    {
-                        damageCalc2 = damageCalc;
-                        if(dds3ConfigMain.cfgGetBit(9) == 2)
+                        }
+                        else
+                        {
+                            damageCalc2 = damageCalc;
+                            if (dds3ConfigMain.cfgGetBit(9) == 2)
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
+                        }
                     }
                 }
+                else
+                {
+                    /* for Diminishing Returns on Magic Damage
+                    if (attacker.level > 100)
+                    {
+                        int wazaCalc = waza * 200;
+                        int levelcheck = 100;
+                        do
+                        {
+                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
+                            LevelLimit = levelcheck;
+                            levelcheck++;
+                            wazaCalc += (int)(waza * 2f / (attacker.level / 100f * (1 - (attacker.level - 1) / 255f)));
+                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                        }
+                        while (levelcheck < attacker.level);
+                    }*/
+                    if ((attacker.flag >> 5 & 1) != 0)
+                    {
+                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
+                        if (dds3ConfigMain.cfgGetBit(9) == 3)
+                        {
+                            damageCalc2 = (int)(damageCalc * 1.34f);
+                            if (!EventBit.evtBitCheck(0x8a0))
+                            { damageCalc2 = damageCalc; }
+                        }
+                        else
+                        {
+                            damageCalc2 = damageCalc;
+                            if (dds3ConfigMain.cfgGetBit(9) == 2)
+                            { damageCalc2 = (int)(damageCalc * 1.34f); }
+                        }
+                    }
+                }
+                __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 if (EnableStatScaling)
                 {
                     int param2 = datCalc.datGetParam(defender, 2);
-                    param2 /= POINTS_PER_LEVEL;
-                    __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7) - param2 * 2 + (defender.level - 1) * 2 / 5, 1, MAXHPMP);
+                    __result = (int)Mathf.Min((float)__result * (10f / (((float)param2 / (float)POINTS_PER_LEVEL * 2f + (float)defender.level) / 8.5f)), (float)__result);
                 }
-                else
-                    { __result = (int)Math.Clamp(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7), 1, MAXHPMP); }
                 return false;
             }
         }
@@ -466,7 +533,7 @@ namespace ModernStatsSystem
                     { param = datCalc.datGetParam(work, 1); }
                 if (EnableStatScaling)
                     { param /= POINTS_PER_LEVEL; }
-                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (rng.Next(0,8) + param * 4 + work.level / 10) * waza);
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (rng.Next(0, 8) + param * 4 + work.level / 10) * waza);
                 return false;
             }
         }
@@ -491,21 +558,21 @@ namespace ModernStatsSystem
                 baseform = 0.0f;
                 if (EnableStatScaling)
                 {
-                    luck = (MAXSTATS - luck) / POINTS_PER_LEVEL;
+                    luck = luck / POINTS_PER_LEVEL;
                     playerLuck = (MAXSTATS - playerLuck) / POINTS_PER_LEVEL;
                 }
                 if ((w.flag >> 5 & 1) == 0)
                 {
                     baseform = Mathf.Abs((float)luck / ((float)w.level / 5.0f + 4.0f));
                     if (EnableStatScaling)
-                        { baseform = Mathf.Abs((float)w.level / 5f + 0.5f + (float)luck / 2f + 0.5f); }
+                        { baseform = Mathf.Abs(30f * ((float)w.level / 25.5f + (float)luck / 2f + 1)); }
                     if (baseform < 0.001f)
                         { adjform = 0; }
                     else
                     {
                         adjform = (float)macca / 20.0f * baseform;
                         if (EnableStatScaling)
-                            { adjform = (float)macca * baseform; }
+                            { adjform = (float)(macca) * baseform; }
                     }
                 }
                 else
@@ -513,12 +580,16 @@ namespace ModernStatsSystem
                     if (work.badstatus == 0)
                         { return false; }
                     baseform = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f));
-                    adjform = baseform * (float)devil.dropmakka;
+                    if (EnableStatScaling)
+                    {
+                        baseform = Mathf.Abs(30f * ((float)work.level / 25.5f / 2f + (float)playerLuck / 2 + 1));
+                    }
+                    adjform = (float)devil.dropmakka * baseform;
                 }
                 float variance = (float)rng.NextDouble();
-                __result = (int)((variance * 2.0f - 1.0f) * 0.1f * ((float)adjform * 2.0f));
+                __result = (int)Mathf.Abs((variance - 0.5f) * 2f * 0.1f * ((float)adjform * 2.0f));
                 if (EnableStatScaling)
-                    { __result = (int)(Mathf.Pow((float)adjform, 1.25f) * (1f + Mathf.Log10(adjform)) * (0.5f + variance) / (baseform * 25)); }
+                    { __result = (int)Mathf.Abs(Mathf.Pow((float)adjform, 1.125f) * (1f + Mathf.Log10(adjform)) * (0.1f + variance * 2 / 3) / baseform); }
                 if(dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
                     { __result = __result / 10; }
                 if (__result < 2)
@@ -575,7 +646,7 @@ namespace ModernStatsSystem
             {
                 __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
                 if (EnableStatScaling)
-                    { __result = (datCalc.datGetParam(work, 3) * 2 / POINTS_PER_LEVEL) + (work.level - 1) * 2 / 5; }
+                    { __result = (int)(datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL * 2 + work.level); }
                 return false;
             }
         }
@@ -785,6 +856,8 @@ namespace ModernStatsSystem
                         GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
                         g.transform.parent = g2.transform;
                         g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g.transform.localPosition = g2.GetComponent<CounterCtr>().image[0].transform.localPosition;
+                        g.transform.localScale = g2.GetComponent<CounterCtr>().image[0].transform.localScale;
                         g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                         for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
                         {
@@ -826,6 +899,8 @@ namespace ModernStatsSystem
                             GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtrBattle>().image[0].gameObject);
                             g.transform.parent = g2.transform;
                             g.transform.position = g2.GetComponent<CounterCtrBattle>().image[0].transform.position;
+                            g.transform.localPosition = g2.GetComponent<CounterCtrBattle>().image[0].transform.localPosition;
+                            g.transform.localScale = g2.GetComponent<CounterCtrBattle>().image[0].transform.localScale;
                             g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                             for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
                             {
@@ -853,6 +928,8 @@ namespace ModernStatsSystem
                             GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtrBattle>().image[0].gameObject);
                             g.transform.parent = g2.transform;
                             g.transform.position = g2.GetComponent<CounterCtrBattle>().image[0].transform.position;
+                            g.transform.localPosition = g2.GetComponent<CounterCtrBattle>().image[0].transform.localPosition;
+                            g.transform.localScale = g2.GetComponent<CounterCtrBattle>().image[0].transform.localScale;
                             g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                             g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                             for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
@@ -879,33 +956,35 @@ namespace ModernStatsSystem
                 if (unit != null)
                 {
                     int[] AnalyzeStats = new int[] { unit.hp, unit.maxhp, unit.mp, unit.maxmp };
-                    for (int k = 0; k < 2; k++)
+                    string[] images = { "num_hp01", "num_hpfull01", "num_mp01", "num_mpfull01", };
+                    for (int i = 0; i < 4; i++)
                     {
-                        GameObject g2 = GameObject.Find(AnalyzeBarValues[k]);
-                        for (int i = 0; i < 2; i++)
+                        GameObject g2 = GameObject.Find(AnalyzeBarValues[i / 2] + "/" + images[i]);
+                        if (g2 == null)
+                            { continue; }
+                        if (g2.GetComponent<CounterCtr>() == null)
+                            { continue; }
+                        if (g2.GetComponent<CounterCtr>().image.Length < 5)
                         {
-                            if (g2.GetComponentsInChildren<CounterCtr>()[i].image.Length < 5)
+                            for (int j = g2.GetComponent<CounterCtr>().image.Length; j < 5; j++)
                             {
-                                for (int j = g2.GetComponentsInChildren<CounterCtr>()[i].image.Length; j < 5; j++)
-                                {
-                                    GameObject g = GameObject.Instantiate(g2.GetComponentsInChildren<CounterCtr>()[i].image[1].gameObject);
-                                    g.transform.parent = g2.transform;
-                                    g.transform.position = g2.GetComponentsInChildren<CounterCtr>()[i].transform.position;
-                                    g.transform.localPosition = g2.GetComponentsInChildren<CounterCtr>()[i].transform.localPosition;
-                                    g2.GetComponentsInChildren<CounterCtr>()[i].image = g2.GetComponentsInChildren<CounterCtr>()[i].image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
-                                    GameObject.DontDestroyOnLoad(g);
-                                }
-                                for (int j = 0; j < g2.GetComponentsInChildren<CounterCtr>()[i].image.Length; j++)
-                                {
-                                    bool chk = g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active;
-                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active = true;
-                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localPosition = new Vector3(i * 130 + 86 - j * 20 + 5, 32, -8);
-                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale = new Vector3(g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale.x * 0.80f, g2.GetComponentsInChildren<CounterCtr>()[0].image[j].transform.localScale.y, g2.GetComponentsInChildren<CounterCtr>()[i].image[j].transform.localScale.z);
-                                    g2.GetComponentsInChildren<CounterCtr>()[i].image[j].gameObject.active = chk;
-                                }
+                                GameObject g = GameObject.Instantiate(g2);
+                                GameObject.Destroy(g.GetComponent<CounterCtr>());
+                                g.name = images[i].Replace("1","") + (i + 1);
+                                g.transform.parent = g2.transform.parent;
+                                g.transform.position = g2.GetComponent<CounterCtr>().transform.position;
+                                g.transform.localPosition = g2.GetComponent<CounterCtr>().transform.localPosition;
+                                g.transform.localScale = g2.GetComponent<CounterCtr>().transform.localScale;
+                                g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
+                                GameObject.DontDestroyOnLoad(g);
                             }
-                            g2.GetComponentsInChildren<CounterCtr>()[i].Set(AnalyzeStats[i + k * 2], Color.white, 0);
+                            for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
+                            {
+                                g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3((i % 2) * 130 + 86 - j * 20 + 5, 32, -8);
+                                g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(0.8f, 1, 1);
+                            }
                         }
+                        g2.GetComponent<CounterCtr>().Set(AnalyzeStats[i], Color.white, 0);
                     }
                 }
             }
@@ -1067,6 +1146,138 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(cmpMisc), nameof(cmpMisc.cmpGetParamName))]
+        private class PatchGetParamName
+        {
+            private static bool Prefix(out string __result, sbyte Index)
+            {
+                Index = (sbyte)Math.Clamp((int)Index, 0, 5);
+                __result = paramNames[Index];
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(cmpDrawDH), nameof(cmpDrawDH.cmpDrawHeartsInfo))]
+        private class PatchDrawMagatamaInfo
+        {
+            private static bool Prefix(cmpHeartsInfo_t pHeartsInfo, sbyte HeartsID)
+            {
+                if (!EnableIntStat)
+                    { return true; }
+                int i = 0;
+                GameObject g = GameObject.Find("magUI(Clone)/magstatus");
+                if (g == null)
+                    { return false; }
+                if (g.activeSelf == false)
+                    { return false; }
+                if(!GameObject.Find("magUI(Clone)/magstatus/magstatus_base06"))
+                {
+                    GameObject orig = GameObject.Find("magUI(Clone)/magstatus/magstatus_base01");
+                    GameObject g2 = GameObject.Instantiate(orig);
+                    GameObject.DontDestroyOnLoad(g2);
+                    g2.name = "magstatus_base06";
+                    g2.transform.parent = g.transform;
+                    g2.transform.position = orig.transform.position;
+                    g2.transform.localScale = orig.transform.localScale;
+                    g2.transform.localPosition = new(orig.transform.localPosition.x, orig.transform.localPosition.y - 56 * 5, orig.transform.localPosition.z);
+                    for (i = 0; i < 6; i++)
+                    {
+                        GameObject g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_base0" + (i + 1));
+                        if (g3 == null)
+                            { continue; }
+                        Vector3 newScale = g3.transform.localScale;
+                        Vector3 newPos = g3.transform.localPosition;
+                        newPos.x *= 1;
+                        newPos.y *= 0.825f;
+                        newPos.x *= 1;
+                        newScale.x *= 0.825f;
+                        newScale.y *= 0.825f;
+                        newScale.z *= 1;
+                        g3.transform.localScale = newScale;
+                        g3.transform.localPosition = newPos;
+                    }
+                }
+                if (!GameObject.Find("magUI(Clone)/magstatus/magstatus_item06"))
+                {
+                    GameObject orig = GameObject.Find("magUI(Clone)/magstatus/magstatus_item01");
+                    GameObject g2 = GameObject.Instantiate(orig);
+                    GameObject.DontDestroyOnLoad(g2.gameObject);
+                    g2.name = "magstatus_item06";
+                    g2.transform.parent = g.transform;
+                    g2.transform.position = orig.transform.position;
+                    g2.transform.localScale = orig.transform.localScale;
+                    g2.transform.localPosition = new(orig.transform.localPosition.x, orig.transform.localPosition.y - 56 * 5, orig.transform.localPosition.z);
+                    for (i = 0; i < 6; i++)
+                    {
+                        GameObject g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i + 1));
+                        if (g3 == null)
+                            { continue; }
+                        Vector3 newScale = g3.transform.localScale;
+                        Vector3 newPos = g3.transform.localPosition;
+                        newPos.x *= 1;
+                        newPos.y *= 0.825f;
+                        newPos.x *= 1;
+                        newScale.x *= 0.825f;
+                        newScale.y *= 0.825f;
+                        newScale.z *= 1;
+                        g3.transform.localScale = newScale;
+                        g3.transform.localPosition = newPos;
+                    }
+                }
+                fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, new(4), 0xb, 0, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
+                fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, new(4), 0xb, 1, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
+                uint color = fclMisc.fclGetBlendColor(0x80808080,0x40404080,(uint)pHeartsInfo.Timer);
+                uint[] colorptr = { color ,color ,color ,color };
+                do
+                {
+                    int unk = 0;
+                    if (paramNames.Length < i)
+                        { break; }
+                    g = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i+1));
+                    if (g == null)
+                        { i++; continue; }
+                    cmpUpdate.cmpSetupObject(g, true);
+                    GameObject g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/TextTM");
+                    if (g2 == null)
+                        { i++; continue; }
+                    g2.GetComponentInChildren<TMP_Text>().SetText(Localize.GetLocalizeText(cmpMisc.cmpGetParamName((sbyte)i)));
+                    fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, colorptr, 0xb, 3, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
+                    fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, colorptr, 0xb, (ushort)(i + 4), cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
+                    cmpUpdate.cmpSetupObject(g2, true);
+                    g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/magtex");
+                    if (g2 == null)
+                        { i++; continue; }
+                    int heartParam = rstCalcCore.cmbGetHeartsParam(HeartsID, (sbyte)i);
+                    if (heartParam == 0)
+                        { unk = 0xb; }
+                    else
+                    {
+                        unk = 9;
+                        if (heartParam < 1)
+                            { unk = 10; }
+                    }
+                    fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, colorptr, 0xb, (ushort)unk, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
+                    cmpUpdate.cmpSetupObject(g2, true);
+                    g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/magtex/num_mag");
+                    Color rgb = cmpInit.GetToRGBA(heartParam != 0 ? 0xFFFFFFFF : 0x80808080);
+                    if (g2.GetComponent<CounterCtr>() == null)
+                        { i++; continue; }
+                    g2.GetComponent<CounterCtr>().Set(heartParam, rgb);
+                    cmpUpdate.cmpSetupObject(g2, true);
+                    i++;
+                }
+                while (i < 6);
+                cmpDrawDH.cmpDrawHeartsHelpPanel(pHeartsInfo.Timer);
+                cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, HeartsID);
+                g = cmpInitDH.DHeartsObj;
+                if (g == null)
+                    { return false; }
+                cmpUpdate.cmpSetupObject(g, true);
+                cmpDrawDH.cmpDrawDisactiveGrad(pHeartsInfo.Timer);
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(cmpDrawStatus), nameof(cmpDrawStatus.cmpDrawParamPanel))]
         private class PatchDrawParamPanel
         {
@@ -1078,7 +1289,7 @@ namespace ModernStatsSystem
                     { pStock.param[ctr2] = MAXSTATS; }
                 GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
                 if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
-                    { stsObj.GetComponentsInChildren<TMP_Text>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].SetText(Localize.GetLocalizeText(paramNames[ctr2])); }
+                    { stsObj.GetComponentsInChildren<TMP_Text>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].SetText(Localize.GetLocalizeText(cmpMisc.cmpGetParamName(ctr2))); }
                 if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
                     { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 -1 : ctr2].Set(pStock.param[ctr2], Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
                 if (-1 < CursorPos)
@@ -1202,6 +1413,8 @@ namespace ModernStatsSystem
                         GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
                         g.transform.parent = g2.transform;
                         g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g.transform.localPosition = g2.GetComponent<CounterCtr>().image[0].transform.localPosition;
+                        g.transform.localScale = g2.GetComponent<CounterCtr>().image[0].transform.localScale;
                         g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                         for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
                         {
@@ -1230,6 +1443,8 @@ namespace ModernStatsSystem
                         GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtr>().image[0].gameObject);
                         g.transform.parent = g2.transform;
                         g.transform.position = g2.GetComponent<CounterCtr>().image[0].transform.position;
+                        g.transform.localPosition = g2.GetComponent<CounterCtr>().image[0].transform.localPosition;
+                        g.transform.localScale = g2.GetComponent<CounterCtr>().image[0].transform.localScale;
                         g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                         for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
                         {
@@ -1291,6 +1506,7 @@ namespace ModernStatsSystem
                         g.transform.parent = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.transform;
                         g.transform.position = g.transform.parent.position;
                         g.transform.localPosition = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject.transform.localPosition;
+                        g.transform.localScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject.transform.localScale;
                     }
                     while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length > MAXSTATS)
                     {
@@ -1301,8 +1517,6 @@ namespace ModernStatsSystem
                         Vector3 barScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale;
                         Vector3 barPos = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition;
                         barScale.x = BAR_SCALE_X;
-                        barScale.y = 1;
-                        barScale.z = 1;
                         barPos.x = 250 + (len) * BAR_SEGMENT_X + (18 - BAR_SEGMENT_X) + 2 / BAR_SCALE_X;
                         stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale = barScale;
                         stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition = barPos;
@@ -1319,8 +1533,6 @@ namespace ModernStatsSystem
                 int heartValue = 0;
                 if ((pStock.flag >> 2 & 1) == 0)
                     { heartValue = 0; }
-                else if (FlashMode == 5 )
-                    { heartValue = rstCalcCore.cmbGetHeartsParamEx((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs, 0); }
                 else
                     { heartValue = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs); }
                 int paramValue = pStock.param[ParamOfs];
@@ -1334,7 +1546,7 @@ namespace ModernStatsSystem
                         { break; }
                     int segmentColor = 3;
                     if (paramValue + levelupValue + mitamaValue - heartValue > ctr)
-                        { segmentColor = 4; }
+                        { segmentColor = 3; }
                     if (paramValue + levelupValue - heartValue > ctr)
                         { segmentColor = 2; }
                     if (paramValue - heartValue > ctr)
