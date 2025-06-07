@@ -39,6 +39,7 @@ namespace ModernStatsSystem
 
         public override void OnInitializeMelon()
         {
+            datNormalSkill.tbl[216].badlevel = 255; // Panic Voice accuracy.
             System.Random rng = new(5318008); // lol I had to. For real btw, I didn't want Int to be completely random for every demon on-load.
             for (int i = 0; i < datDevilFormat.tbl.Length; i++)
             {
@@ -459,7 +460,6 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
             {
                 datUnitWork_t work = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
-                //uint random = dds3KernelCore.dds3GetRandIntA(8,"RandomHealing");
                 System.Random rng = new();
                 int param = datCalc.datGetParam(work, 2);
                 if (EnableIntStat)
@@ -480,14 +480,15 @@ namespace ModernStatsSystem
                 datDevilFormat_t devil = datDevilFormat.Get(w.id, true);
                 int playerLuck = datCalc.datGetParam(work, 5);
                 int macca = dds3GlobalWork.DDS3_GBWK.maka;
+                int baseMacca = macca;
                 int luck = datCalc.datGetParam(w, 5);
                 System.Random rng = new();
                 __result = 0;
                 if (macca == 0)
                     { return false; }
-                float formula, baseformula;
-                formula = 0.0f;
-                baseformula = 0.0f;
+                float adjform, baseform;
+                adjform = 0.0f;
+                baseform = 0.0f;
                 if (EnableStatScaling)
                 {
                     luck = (MAXSTATS - luck) / POINTS_PER_LEVEL;
@@ -495,27 +496,29 @@ namespace ModernStatsSystem
                 }
                 if ((w.flag >> 5 & 1) == 0)
                 {
-                    formula = Mathf.Abs((float)luck / ((float)w.level / 5.0f + 4.0f));
-                    baseformula = formula;
-                    if (formula < 0.001f)
-                        { macca = 0; }
+                    baseform = Mathf.Abs((float)luck / ((float)w.level / 5.0f + 4.0f));
+                    if (EnableStatScaling)
+                        { baseform = Mathf.Abs((float)w.level / 5f + 0.5f + (float)luck / 2f + 0.5f); }
+                    if (baseform < 0.001f)
+                        { adjform = 0; }
                     else
                     {
-                        formula = (float)macca / 20.0f * formula;
-                        macca = (int)formula;
+                        adjform = (float)macca / 20.0f * baseform;
+                        if (EnableStatScaling)
+                            { adjform = (float)macca * baseform; }
                     }
                 }
                 else
                 {
                     if (work.badstatus == 0)
                         { return false; }
-                    formula = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f ) * (float)devil.dropmakka);
-                    baseformula = formula;
-                    macca = (int)formula;
+                    baseform = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f));
+                    adjform = baseform * (float)devil.dropmakka;
                 }
-                //float variance = dds3KernelCore.dds3GetRandFloatA("MaccaScatterVariance");
                 float variance = (float)rng.NextDouble();
-                __result = (int)((variance * 2.0f - 1.0f) * 0.1f * ((float)macca * 2.0f));
+                __result = (int)((variance * 2.0f - 1.0f) * 0.1f * ((float)adjform * 2.0f));
+                if (EnableStatScaling)
+                    { __result = (int)(Mathf.Pow((float)adjform, 1.25f) * (1f + Mathf.Log10(adjform)) * (0.5f + variance) / (baseform * 25)); }
                 if(dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
                     { __result = __result / 10; }
                 if (__result < 2)
