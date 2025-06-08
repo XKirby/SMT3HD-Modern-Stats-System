@@ -1,12 +1,12 @@
-﻿using MelonLoader;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Il2Cpp;
-using Il2Cppnewdata_H;
-using UnityEngine;
-using Il2CppTMPro;
-using UnityEngine.UI;
 using Il2Cppcamp_H;
 using Il2Cppnewbattle_H;
+using Il2Cppnewdata_H;
+using Il2CppTMPro;
+using MelonLoader;
+using UnityEngine;
+using UnityEngine.UI;
 
 [assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.0.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
@@ -39,6 +39,14 @@ namespace ModernStatsSystem
         public override void OnInitializeMelon()
         {
             System.Random rng = new(5318008); // lol I had to. For real btw, I didn't want Int to be completely random for every demon on-load.
+            for (int i = 0; i < datNormalSkill.tbl.Length; i++)
+            {
+                if (datNormalSkill.tbl[i].targetrandom == 1 && datNormalSkill.tbl[i].targettype == 0 && datNormalSkill.tbl[i].targetcntmax > 1)
+                {
+                    datNormalSkill.tbl[i].targettype = 2;
+                    datNormalSkill.tbl[i].targetrandom = 0;
+                }
+            }
             for (int i = 0; i < datDevilFormat.tbl.Length; i++)
             {
                 int sign;
@@ -51,6 +59,14 @@ namespace ModernStatsSystem
                 {
                     for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
                         { datDevilFormat.tbl[i].param[j] *= POINTS_PER_LEVEL; }
+                    if (i < 254 && dds3GlobalWork.DDS3_GBWK.unitwork.Length > i)
+                    {
+                        datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[i];
+                        datDevilFormat.tbl[i].maxhp = (ushort)datCalc.datGetMaxHp(work);
+                        datDevilFormat.tbl[i].hp = datDevilFormat.tbl[i].maxhp;
+                        datDevilFormat.tbl[i].maxmp = (ushort)datCalc.datGetMaxHp(work);
+                        datDevilFormat.tbl[i].mp = datDevilFormat.tbl[i].maxmp;
+                    }
                 }
             }
             for (int i = 0; i < tblHearts.fclHeartsTbl.Length; i++)
@@ -274,7 +290,7 @@ namespace ModernStatsSystem
                 }
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * (0.25f + 0.75f * (defender.level / 75)))); }
+                    { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * (defender.level / 100))); }
                 return false;
             }
         }
@@ -287,9 +303,10 @@ namespace ModernStatsSystem
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 int LevelLimit = attacker.level;
+                int skillPower = datNormalSkill.tbl[nskill].hpn;
                 int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
                 int skillBase = datNormalSkill.tbl[nskill].magicbase;
-                int damageCalc = (int)(((float)waza * (float)attacker.level * 2f) / 21 + (float)skillBase);
+                int damageCalc = (int)((float)waza * (float)attacker.level * 2f / 21 + (float)skillBase);
                 if (EnableStatScaling)
                     { damageCalc = (int)((float)waza * (float)attacker.level * 2f / 20f + (float)skillBase); }
                 if (damageCalc > skillLimit)
@@ -302,7 +319,7 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     param /= POINTS_PER_LEVEL;
-                    damageCalc = (int)((float)damageCalc * 3.5 / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f);
+                    damageCalc = (int)((float)damageCalc + ((float)skillPower + (float)skillBase) * 2 + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f);
                 }
                 else
                     { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
@@ -330,62 +347,29 @@ namespace ModernStatsSystem
                         }
                         while (levelcheck < attacker.level);
                     }
-                    if ((attacker.flag >> 5 & 1) != 0)
-                    {
-                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
-                        if (dds3ConfigMain.cfgGetBit(9) == 3)
-                        {
-                            damageCalc2 = (int)(damageCalc * 1.34f);
-                            if (!EventBit.evtBitCheck(0x8a0))
-                            { damageCalc2 = damageCalc; }
-                        }
-                        else
-                        {
-                            damageCalc2 = damageCalc;
-                            if (dds3ConfigMain.cfgGetBit(9) == 2)
-                            { damageCalc2 = (int)(damageCalc * 1.34f); }
-                        }
-                    }
                 }
-                else
+                if ((attacker.flag >> 5 & 1) != 0)
                 {
-                    /* for Diminishing Returns on Magic Damage
-                    if (attacker.level > 100)
+                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
+                    if (dds3ConfigMain.cfgGetBit(9) == 3)
                     {
-                        int wazaCalc = waza * 200;
-                        int levelcheck = 100;
-                        do
-                        {
-                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
-                            LevelLimit = levelcheck;
-                            levelcheck++;
-                            wazaCalc += (int)(waza * 2f / (attacker.level / 100f * (1 - (attacker.level - 1) / 255f)));
-                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                        }
-                        while (levelcheck < attacker.level);
-                    }*/
-                    if ((attacker.flag >> 5 & 1) != 0)
+                        damageCalc2 = (int)(damageCalc * 1.34f);
+                        if (!EventBit.evtBitCheck(0x8a0))
+                        { damageCalc2 = damageCalc; }
+                    }
+                    else
                     {
-                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
-                        if (dds3ConfigMain.cfgGetBit(9) == 3)
-                        {
-                            damageCalc2 = (int)(damageCalc * 1.34f);
-                            if (!EventBit.evtBitCheck(0x8a0))
-                            { damageCalc2 = damageCalc; }
-                        }
-                        else
-                        {
-                            damageCalc2 = damageCalc;
-                            if (dds3ConfigMain.cfgGetBit(9) == 2)
-                            { damageCalc2 = (int)(damageCalc * 1.34f); }
-                        }
+                        damageCalc2 = damageCalc;
+                        if (dds3ConfigMain.cfgGetBit(9) == 2)
+                        { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
+
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 if (EnableStatScaling)
                 {
                     int param2 = datCalc.datGetParam(defender, 2);
-                    { __result = (int)((float)__result * 255f / (255f + ((float)param2 * 1.5f + defender.level) * 2 * (0.25f + 0.75f * (defender.level / 75)))); }
+                    { __result = (int)((float)__result * 255f / (255f + ((float)param2 * 2f + defender.level) * 2f * (defender.level / 100f))); }
                 }
                 return false;
             }
@@ -516,7 +500,7 @@ namespace ModernStatsSystem
             {
                 __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
                 if (EnableStatScaling)
-                    { __result = (int)(datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL + work.level) * 2; }
+                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
                 return false;
             }
         }
@@ -531,9 +515,9 @@ namespace ModernStatsSystem
                     { result += rstinit.GBWK.ParamOfs[3] * 6; }
                 if (EnableStatScaling)
                 {
-                    result = datCalc.datGetBaseParam(work, 3) * 6 / POINTS_PER_LEVEL + work.level * 6;
+                    result = (int)((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6;
                     if (rstinit.GBWK != null)
-                        { result += rstinit.GBWK.ParamOfs[3] * 6 / POINTS_PER_LEVEL; }
+                        { result += (int)((float)rstinit.GBWK.ParamOfs[3] / (float)POINTS_PER_LEVEL) * 6; }
                 }
                 return result;
             }
