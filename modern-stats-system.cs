@@ -227,44 +227,6 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(datCalc), nameof(datCalc.GetButuriAttack))]
-        private class PatchDatGetPhysicalPow
-        {
-            private static bool Prefix(out int __result, int nskill, datUnitWork_t s, datUnitWork_t d, int waza)
-            {
-                __result = 0;
-                int paramValue = datCalc.datGetParam(s, 0);
-                int unkval = 0x30;
-                int finalvalue = 0;
-                if (EnableStatScaling)
-                    { paramValue /= POINTS_PER_LEVEL; }
-                finalvalue = (int)(((datCalc.datGetNormalAtkPow(s) * 2 + paramValue * 2) * 1.33f) * 0.8f);
-                if (nskill != 0)
-                    { finalvalue = (int)((((datCalc.datGetNormalAtkPow(s) * 2 + paramValue * 2) * waza) / 23.2f) * 0.8f); unkval = 0x32; }
-                int reduction = 0;
-                if(s.level + 10 != 0)
-                    { reduction = unkval / (s.level + 10); }
-                finalvalue = (int)(finalvalue * 0.6f - reduction);
-                __result = finalvalue;
-                if (dds3ConfigMain.cfgGetBit(9) == 3)
-                {
-                    __result = (int)(finalvalue * 1.34f);
-                    if (!EventBit.evtBitCheck(0x8a0))
-                    {
-                        __result = finalvalue;
-                    }
-                }
-                else
-                {
-                    __result = finalvalue;
-                    if (dds3ConfigMain.cfgGetBit(9) == 2)
-                        { __result = (int)(finalvalue * 1.34); }
-                }
-                __result = (int)Mathf.Min((float)__result * (10f / (float)(datCalc.datGetDefPow(d) / 8.5f)), __result);
-                return false;
-            }
-        }
-
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetButuriAttack))]
         private class PatchGetNBPhysicalPow
         {
@@ -274,17 +236,27 @@ namespace ModernStatsSystem
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
                 int paramValue = datCalc.datGetParam(attacker, 0);
-                int unkval = 0x30;
+                int unkval = 48;
                 int finalvalue = 0;
                 if (EnableStatScaling)
                     { paramValue /= POINTS_PER_LEVEL; }
-                finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2 + paramValue * 2) * 1.33f) * 0.8f);
+                finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2) * 1.33f) * 0.8f);
+                System.Random rng = new();
+                if (EnableStatScaling)
+                    { unkval = 64; }
                 if (nskill != 0)
-                    { finalvalue = (int)((((datCalc.datGetNormalAtkPow(attacker) * 2 + paramValue * 2) * waza) / 23.2f) * 0.8f); unkval = 0x32; }
-                int reduction = 0;
-                if (attacker.level + 10 != 0)
-                    { reduction = unkval / (attacker.level + 10); }
-                finalvalue = (int)(finalvalue * 0.6f - reduction);
+                {
+                    finalvalue = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza * 2 / 23.2f * 0.8f);
+                    unkval = 50;
+                    if (EnableStatScaling)
+                        { unkval = 64; }
+                }
+                int reduction = unkval / (attacker.level + 10);
+                if (!EnableStatScaling)
+                    { finalvalue = (int)((float)finalvalue * 0.6f); }
+                finalvalue = (int)(finalvalue - reduction);
+                if (EnableStatScaling && nskill != 0)
+                    { finalvalue -= (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza * 2); }
                 __result = finalvalue;
                 if (dds3ConfigMain.cfgGetBit(9) == 3)
                 {
@@ -302,115 +274,7 @@ namespace ModernStatsSystem
                 }
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 if (EnableStatScaling)
-                    { __result = (int)Mathf.Min((float)__result * (10f / (float)(datCalc.datGetDefPow(defender) / 8.5f)), (float)__result); }
-                else
-                    { __result = (int)((float)__result); }
-                return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(datCalc), nameof(datCalc.GetMagicAttack))]
-        private class PatchDatGetMagicPow
-        {
-            private static bool Prefix(out int __result, int nskill, datUnitWork_t s, datUnitWork_t d, int waza)
-            {
-                datUnitWork_t work = s;
-                int LevelLimit = work.level;
-                int skillDamage = datNormalSkill.tbl[nskill].hpn;
-                int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
-                int skillBase = datNormalSkill.tbl[nskill].magicbase;
-                int damageCalc = (waza * 2 * work.level) / 21 + skillDamage;
-                if (damageCalc > skillLimit)
-                    { damageCalc = skillLimit; }
-                if (LevelLimit > 160)
-                    { LevelLimit = 160; }
-                int param = datCalc.datGetParam(work, 2);
-                if (EnableIntStat)
-                    { param = datCalc.datGetParam(work, 1); }
-                if (EnableStatScaling)
-                    { param /= POINTS_PER_LEVEL; }
-                damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                int damageCalc2 = damageCalc;
-                if (!EnableStatScaling)
-                {
-                    if (s.level > 100)
-                    {
-                        int wazaCalc = waza * 200;
-                        int levelcheck = 100;
-                        do
-                        {
-                            damageCalc2 = (wazaCalc * s.level) / 21 + skillBase;
-                            if (damageCalc2 > skillLimit)
-                            { damageCalc2 = skillLimit; }
-                            LevelLimit = levelcheck;
-                            if (LevelLimit > 160)
-                            { LevelLimit = 160; }
-                            levelcheck++;
-                            wazaCalc += waza * 2;
-                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                            if (damageCalc <= damageCalc2)
-                            { damageCalc = damageCalc2; }
-                            damageCalc2 = damageCalc;
-                        }
-                        while (levelcheck < s.level);
-                    }
-                    if ((s.flag >> 5 & 1) != 0)
-                    {
-                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (s.level + 10));
-                        if (dds3ConfigMain.cfgGetBit(9) == 3)
-                        {
-                            damageCalc2 = (int)(damageCalc * 1.34f);
-                            if (!EventBit.evtBitCheck(0x8a0))
-                            { damageCalc2 = damageCalc; }
-                        }
-                        else
-                        {
-                            damageCalc2 = damageCalc;
-                            if (dds3ConfigMain.cfgGetBit(9) == 2)
-                            { damageCalc2 = (int)(damageCalc * 1.34f); }
-                        }
-                    }
-                }
-                else
-                {
-                    /* for Diminishing Returns on Magic Damage
-                    if (attacker.level > 100)
-                    {
-                        int wazaCalc = waza * 200;
-                        int levelcheck = 100;
-                        do
-                        {
-                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
-                            LevelLimit = levelcheck;
-                            levelcheck++;
-                            wazaCalc += (int)(waza * 2f / (attacker.level / 100f * (1 - (attacker.level - 1) / 255f)));
-                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                        }
-                        while (levelcheck < attacker.level);
-                    }*/
-                    if ((s.flag >> 5 & 1) != 0)
-                    {
-                        damageCalc = (int)(damageCalc2 * 0.75f + -50 / (s.level + 10));
-                        if (dds3ConfigMain.cfgGetBit(9) == 3)
-                        {
-                            damageCalc2 = (int)(damageCalc * 1.34f);
-                            if (!EventBit.evtBitCheck(0x8a0))
-                            { damageCalc2 = damageCalc; }
-                        }
-                        else
-                        {
-                            damageCalc2 = damageCalc;
-                            if (dds3ConfigMain.cfgGetBit(9) == 2)
-                            { damageCalc2 = (int)(damageCalc * 1.34f); }
-                        }
-                    }
-                }
-                __result = damageCalc2;
-                if (EnableStatScaling)
-                {
-                    int param2 = datCalc.datGetParam(d, 2);
-                    __result = (int)Mathf.Min((float)__result * (10f / (((float)param2 / (float)POINTS_PER_LEVEL * 2f + (float)d.level) / 8.5f)), (float)__result);
-                }
+                    { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * (0.25f + 0.75f * (defender.level / 75)))); }
                 return false;
             }
         }
@@ -425,8 +289,10 @@ namespace ModernStatsSystem
                 int LevelLimit = attacker.level;
                 int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
                 int skillBase = datNormalSkill.tbl[nskill].magicbase;
-                int damageCalc = (waza * 2 * attacker.level) / 21 + skillBase;
-                if (damageCalc > skillLimit && !EnableStatScaling)
+                int damageCalc = (int)(((float)waza * (float)attacker.level * 2f) / 21 + (float)skillBase);
+                if (EnableStatScaling)
+                    { damageCalc = (int)((float)waza * (float)attacker.level * 2f / 20f + (float)skillBase); }
+                if (damageCalc > skillLimit)
                     { damageCalc = skillLimit; }
                 if (LevelLimit > 160 && !EnableStatScaling)
                     { LevelLimit = 160; }
@@ -434,8 +300,12 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                     { param = datCalc.datGetParam(attacker, 1); }
                 if (EnableStatScaling)
-                    { param /= POINTS_PER_LEVEL; }
-                damageCalc = (int)((damageCalc + (damageCalc / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
+                {
+                    param /= POINTS_PER_LEVEL;
+                    damageCalc = (int)((float)damageCalc * 3.5 / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f);
+                }
+                else
+                    { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
                 int damageCalc2 = damageCalc;
                 if (!EnableStatScaling)
                 {
@@ -515,7 +385,7 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     int param2 = datCalc.datGetParam(defender, 2);
-                    __result = (int)Mathf.Min((float)__result * (10f / (((float)param2 / (float)POINTS_PER_LEVEL * 2f + (float)defender.level) / 8.5f)), (float)__result);
+                    { __result = (int)((float)__result * 255f / (255f + ((float)param2 * 1.5f + defender.level) * 2 * (0.25f + 0.75f * (defender.level / 75)))); }
                 }
                 return false;
             }
@@ -646,7 +516,7 @@ namespace ModernStatsSystem
             {
                 __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
                 if (EnableStatScaling)
-                    { __result = (int)(datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL * 2 + work.level); }
+                    { __result = (int)(datCalc.datGetParam(work, 3) / POINTS_PER_LEVEL + work.level) * 2; }
                 return false;
             }
         }
