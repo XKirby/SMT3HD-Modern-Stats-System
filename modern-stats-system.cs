@@ -530,16 +530,16 @@ namespace ModernStatsSystem
                         if ((a.data.party[a.data.form[i].partyindex].flag >> 5 & 1) == 0)
                         {
                             if (a.timelist.Length <= i)
-                            { return true; }
+                                { return true; }
                             if (a.timelist[i].hp != 0 || (nbCalc.nbGetDevilFormatFlag(i) >> 8 & 1) != 0)
-                            { i++; continue; }
+                                { i++; continue; }
                         }
                         select = (uint)(select & (i ^ -1));
                     }
                     i++;
                 }
                 while (i < 0xf);
-                int effectID = rng.Next(4, a.timelist.Length - 1);
+                int effectID = -1;
                 i = 0;
                 int j = 0;
                 int enemycnt = 0;
@@ -548,10 +548,17 @@ namespace ModernStatsSystem
                     j = 0;
                     do
                     {
-                        effectID = rng.Next(4, a.timelist.Length - 1);
+                        effectID = rng.Next(0, a.timelist.Length - 1);
+                        if ((
+                            (a.data.form[effectID].formindex < 4 && a.form.formindex >= 4) ||
+                            (a.data.form[effectID].formindex >= 4 && a.form.formindex < 4)) &&
+                            a.timelist[effectID].hp > 0)
+                            { break; }
+                        else
+                            { effectID = -1; }
                         j++;
                     }
-                    while (a.timelist[effectID].hp == 0 && j < 100);
+                    while (j < 1000);
                     bool found = false;
                     for (j = 0; j < a.timelist.Length; j++)
                     {
