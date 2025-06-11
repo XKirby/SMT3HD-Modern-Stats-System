@@ -7,7 +7,9 @@ using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using Il2CppTMPro;
 using MelonLoader;
+using System.Collections;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.Intrinsics.Arm;
 using UnityEngine;
 using UnityEngine.UI;
@@ -494,6 +496,81 @@ namespace ModernStatsSystem
                 __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
                 if (EnableStatScaling)
                     { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbActionProcess), nameof(nbActionProcess.GetKoukaList))]
+        private class PatchGetTargetList
+        {
+            private static bool Prefix(ref nbActionProcessData_t a, Il2CppReferenceArray<Il2CppStructArray<sbyte>> koukalist, uint select, int nskill)
+            {
+                Il2CppReferenceArray<Il2CppStructArray<sbyte>> effectlist = koukalist;
+                if (datNormalSkill.tbl[nskill].targetrandom < 1 || effectlist.Length == 0)
+                    { return true; }
+                int i = 0;
+                do
+                {
+                    if (effectlist[i].Length < 2)
+                        { return true; }
+                    effectlist[i][0] = -1;
+                    effectlist[i][1] = 0;
+                    i++;
+                }
+                while (i < effectlist.Length);
+                System.Random rng = new();
+                int hitcount = rng.Next(datNormalSkill.tbl[nskill].targetcntmin, datNormalSkill.tbl[nskill].targetcntmax);
+                i = 0;
+                do
+                {
+                    if (((1 << i & 0x1f) & select) != 0)
+                    {
+                        if (a.data.form[i].partyindex >= a.data.party.Length)
+                        { return true; }
+                        if ((a.data.party[a.data.form[i].partyindex].flag >> 5 & 1) == 0)
+                        {
+                            if (a.timelist.Length <= i)
+                            { return true; }
+                            if (a.timelist[i].hp != 0 || (nbCalc.nbGetDevilFormatFlag(i) >> 8 & 1) != 0)
+                            { i++; continue; }
+                        }
+                        select = (uint)(select & (i ^ -1));
+                    }
+                    i++;
+                }
+                while (i < 0xf);
+                int effectID = rng.Next(4, a.timelist.Length - 1);
+                i = 0;
+                int j = 0;
+                int enemycnt = 0;
+                do
+                {
+                    j = 0;
+                    do
+                    {
+                        effectID = rng.Next(4, a.timelist.Length - 1);
+                        j++;
+                    }
+                    while (a.timelist[effectID].hp == 0 && j < 100);
+                    bool found = false;
+                    for (j = 0; j < a.timelist.Length; j++)
+                    {
+                        if (effectlist[j][0] == (sbyte)a.data.form[effectID].formindex)
+                        {
+                            found = true;
+                            effectlist[j][1]++;
+                        }
+                    }
+                    if (found == false)
+                    {
+                        effectlist[enemycnt][0] = (sbyte)a.data.form[effectID].formindex;
+                        effectlist[enemycnt][1]++;
+                        enemycnt++;
+                    }
+                    i++;
+                }
+                while (i < hitcount);
+                koukalist = effectlist;
                 return false;
             }
         }
