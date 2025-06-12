@@ -514,11 +514,11 @@ namespace ModernStatsSystem
                 // Multiply the final value by the attacker's Magic buffs and the defender's Magic buffs.
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
-                // If enabled, add some more damage mitigation based on the defender's Mag.
+                // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by the hitcount average.
                 if (EnableStatScaling)
                 {
                     int param2 = datCalc.datGetParam(defender, 2) / POINTS_PER_LEVEL;
-                    __result = (int)((float)__result * 255f / (255f + ((float)param2 * 2f + defender.level) * 2f * ((float)defender.level / 100f)));
+                    __result = (int)((float)__result / Math.Ceiling(((float)datNormalSkill.tbl[nskill].targetcntmin + (float)datNormalSkill.tbl[nskill].targetcntmax) / 2) * 255f / (255f + ((float)param2 * 2f + defender.level) * 2f * ((float)defender.level / 100f)));
                 }
                 return false;
             }
@@ -956,12 +956,13 @@ namespace ModernStatsSystem
                 uint result = (uint)PatchGetBaseMaxHP.GetBaseMaxHP(work);
 
                 // Add a percentage of your Max HP to your Max HP with certain special Skills.
-                result += datCalc.datCheckSyojiSkill(work, 0x122) == 1 ? (uint)(result * 0.1) : 0;
-                result += datCalc.datCheckSyojiSkill(work, 0x123) == 1 ? (uint)(result * 0.2) : 0;
-                result += datCalc.datCheckSyojiSkill(work, 0x124) == 1 ? (uint)(result * 0.3) : 0;
+                float boost = 0.0f;
+                boost += datCalc.datCheckSyojiSkill(work, 0x122) == 1 ? 0.1f : 0;
+                boost += datCalc.datCheckSyojiSkill(work, 0x123) == 1 ? 0.2f : 0;
+                boost += datCalc.datCheckSyojiSkill(work, 0x124) == 1 ? 0.3f : 0;
 
                 // Clamp the result.
-                result = Math.Clamp(result, 1, MAXHPMP);
+                result = Math.Clamp((uint)((float)result * boost), 1, MAXHPMP);
                 return result;
             }
 
@@ -982,12 +983,13 @@ namespace ModernStatsSystem
                 uint result = (uint)PatchGetBaseMaxMP.GetBaseMaxMP(work);
 
                 // Like before, add percentages of it to it based on certain Skills.
-                result += datCalc.datCheckSyojiSkill(work, 0x125) == 1 ? (uint)(result * 0.1) : 0;
-                result += datCalc.datCheckSyojiSkill(work, 0x126) == 1 ? (uint)(result * 0.2) : 0;
-                result += datCalc.datCheckSyojiSkill(work, 0x127) == 1 ? (uint)(result * 0.3) : 0;
+                float boost = 0.0f;
+                boost += datCalc.datCheckSyojiSkill(work, 0x125) == 1 ? 0.1f : 0;
+                boost += datCalc.datCheckSyojiSkill(work, 0x126) == 1 ? 0.2f : 0;
+                boost += datCalc.datCheckSyojiSkill(work, 0x127) == 1 ? 0.3f : 0;
 
                 // Clamp.
-                result = Math.Clamp(result, 1, MAXHPMP);
+                result = Math.Clamp((uint)((float)result * boost), 1, MAXHPMP);
 
                 // Return.
                 return result;
