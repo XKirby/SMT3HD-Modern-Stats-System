@@ -153,10 +153,7 @@ namespace ModernStatsSystem
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
                 if (EnableStatScaling)
-                {
-                    param /= POINTS_PER_LEVEL;
-                    damageCalc = (int)((float)damageCalc + ((float)waza + (float)skillBase) * 2 + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f);
-                }
+                    { damageCalc = (int)((float)damageCalc + ((float)skillBase * (float)waza / 25) * 2 + (float)damageCalc / 100f * ((float)param / 2f - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
                 else
                     { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
 
@@ -383,21 +380,28 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
-                __result = work.level + datCalc.datGetParam(work, 4) * 2;
+                __result = work.level * (EnableStatScaling ? POINTS_PER_LEVEL : 1) + datCalc.datGetParam(work, 4) * 2;
 
                 // Grabs the user's Luc.
                 int luc = datCalc.datGetParam(work, 5);
 
+                // If enabled, scale them differently.
+                if (EnableStatScaling)
+                {
+                    __result = (int)((float)__result / (float)POINTS_PER_LEVEL);
+                    luc = (int)((float)luc / (float)POINTS_PER_LEVEL);
+                }
+
                 // If it's under 2 or some weird "badstatus" flag nonsense is true, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
-                { luc = 1; }
+                    { luc = 1; }
+
+                // Adjust the Result by some additional math found in the original formula.
+                __result += 5;
+                __result = (int)((float)__result * 1.5f);
 
                 // Add Luc + 10 to the result.
                 __result += luc + 10;
-
-                // If enabled, recalculate.
-                if (EnableStatScaling)
-                    { __result = work.level + (datCalc.datGetParam(work, 4) * 2 + luc) / POINTS_PER_LEVEL + 10; }
                 return false;
             }
         }
@@ -409,11 +413,15 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs Level, Mag, and Agi and does some math.
-                __result = work.level + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) * 2;
+                __result = work.level + datCalc.datGetParam(work, 2) * 2;
 
                 // If enabled, lowers Mag scaling and adds Int scaling.
                 if (EnableIntStat)
-                    { __result = work.level + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4); }
+                    { __result = (int)((float)((float)work.level / 2f * POINTS_PER_LEVEL + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4))); }
+
+                // If enable, scale it differently.
+                if (EnableStatScaling)
+                    { __result += (int)((float)__result / (float)POINTS_PER_LEVEL); }
 
                 // Grabs Luc.
                 int luc = datCalc.datGetParam(work, 5);
@@ -422,7 +430,7 @@ namespace ModernStatsSystem
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
                 { luc = 1; }
 
-                // Adjust Luc by 6, then if Luc + 5 is > -1 (which it *should* be due to the above), Adjust Luc by 5.
+                // Adjust Luc by 6, then if Luc + 5 is > -1 (which it *should* be due to the above), Adjust Luc by 5 instead.
                 // Really I have no idea why this is here. It shows up in the actual formula.
                 int luckValue = luc + 6;
                 if (luc + 5 > -1)
@@ -430,16 +438,6 @@ namespace ModernStatsSystem
 
                 // Bitshift the above result by 1 and add 15.
                 __result += luckValue >> 1 + 0xf;
-
-                // If enable, scale it differently.
-                if (EnableStatScaling)
-                {
-                    __result = work.level + (datCalc.datGetParam(work, 2) * 2 + datCalc.datGetParam(work, 4) * 2 + luckValue >> 1 + 0xf) / POINTS_PER_LEVEL;
-
-                    // If enabled, scale with Int.
-                    if (EnableIntStat)
-                        { __result = work.level + (datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) + luckValue >> 1 + 0xf) / POINTS_PER_LEVEL; }
-                }
                 return false;
             }
         }
@@ -456,6 +454,125 @@ namespace ModernStatsSystem
                 // If enabled, do some actual math.
                 if (EnableStatScaling)
                     { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetKoukaType))]
+        private class PatchTargetHitRate
+        {
+            private static bool Prefix(int nskill, int sformindex, int dformindex, out int __result)
+            {
+                // Result init.
+                __result = 0;
+
+                // If the Skill is a larger ID than the table size, return and do the original function instead.
+                if (datSkill.tbl.Length <= nskill)
+                    { return true; }
+
+                // If the Skill's Attribute is not zero (Physical Damage), return and do the original function instead.
+                if (datSkill.tbl[nskill].skillattr != 0)
+                    { return true; }
+
+                // Grab the Process Data.
+                nbMainProcessData_t a = nbMainProcess.nbGetMainProcessData();
+
+                // Set up the attacker/defender objects from the indices.
+                datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+
+                // More flag nonsense.
+                if (((a.stat + 1) >> 2 & 1) != 0 &&
+                    (attacker.flag >> 5 & 1) != 0)
+                {
+                    // A bit more flag nonsense.
+                    // If this all passes, return a result of 0xb (11).
+                    if (((a.form[dformindex].stat + 1) >> 4 & 1) != 0)
+                        { __result = 0xb; return false; }
+
+                    // Checks if the Skill Attribute is a Utility Skill.
+                    // Also checks if there's more than 1 enemy party I'm guessing. Not sure.
+                    else if (datSkill.tbl[nskill].skillattr != 0xe && a.enemypcnt != 1)
+                        { __result = 5; return false; }
+                }
+
+                // Grab the Difficulty bit's value and do some math.
+                float basepower = datNormalSkill.tbl[nskill].hpn * 0.01f;
+                float multi = basepower * 0.7f;
+
+                // If Difficulty is Merciful or Normal.
+                if(dds3ConfigMain.cfgGetBit(9) <= 1 && datNormalSkill.tbl[nskill].badlevel == 1 && (attacker.flag & 0x20) != 0)
+                    { multi = basepower; }
+                // If Difficulty is specifically Merciful.
+                if (dds3ConfigMain.cfgGetBit(9) == 0)
+                {
+                    // Flags for days here.
+                    if ((attacker.flag >> 5 & 1) == 0)
+                    {
+                        if ((defender.flag >> 5 & 1) == 0)
+                            { basepower = 0.25f; }
+                        else
+                            { basepower = 0.4f; }
+                    }
+
+                    // If the first one is not zero, do this instead.
+                    else
+                        { basepower = 2.5f; }
+
+                    // Multiply the "basepower".
+                    basepower *= multi;
+                }
+
+                // If it's not set to Merciful.
+                else
+                {
+                    // At-base just multiply the current "basepower" variable.
+                    basepower *= multi;
+
+                    // Set this to be a backup.
+                    multi = basepower;
+
+                    // Cut the hit chance down a bit.
+                    basepower *= 0.7f;
+
+                    // If Difficulty is Normal, undo the above.
+                    if(dds3ConfigMain.cfgGetBit(9) == 1 && (attacker.flag & 0x20) != 0)
+                        { basepower = multi; }
+
+                    // Finalize the multiplier.
+                    multi = basepower;
+                }
+
+                // I'm assuming these line up with Agi and Vit respectively.
+                // I could be wrong, they might both be Agi.
+                float atkBuffs = nbCalc.nbGetHojoRitu(sformindex, 8);
+                float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
+
+                // Grab both users' Agi and math out the difference.
+                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / ((float)attacker.level / 5f + 3f) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / ((float)defender.level / 5f + 3f) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+
+                // Calculate the overall hit chance.
+                float hitChanceCalc = multi * atkBuffs * defBuffs * (((defAgiCalc * 100f) - (atkAgiCalc * 100f)) * 0.0625f + (100 - nbCalc.GetFailpoint(nskill)));
+                if (hitChanceCalc <= 1.0f)
+                    { hitChanceCalc = 1.0f; }
+
+                // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
+                multi = hitChanceCalc * 0.25f;
+                if ((attacker.badstatus & 0xFFF) != 0x100)
+                    { multi = hitChanceCalc; }
+
+                // Check hit chance against a random integer from 0 to 99.
+                // If you don't hit, set the result to zero.
+                System.Random rng = new();
+                if (rng.Next(100) < multi)
+                    { __result = 0; return false; }
+
+                // Whatever this "Devil Format Flag" is, if it's zero, return a different result.
+                if ((nbCalc.nbGetDevilFormatFlag(dformindex) & 0x800) != 0)
+                    { __result = 5; return false; }
+
+                __result = 4;
                 return false;
             }
         }
