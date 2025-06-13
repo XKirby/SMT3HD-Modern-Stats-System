@@ -3,12 +3,12 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
-		<RootNamespace>stat_unlimiter</RootNamespace>
+		<RootNamespace>ModernStatsSystem</RootNamespace>
 		<IsPackable>false</IsPackable>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<FileVersion>1.0.0.0</FileVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
-		<AssemblyName>stat_unlimiter</AssemblyName>
+		<AssemblyName>ModernStatsSystem</AssemblyName>
 		<LangVersion>10</LangVersion>
 	</PropertyGroup>
 
@@ -253,6 +253,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="combat-adjustments.cs" />
+		<Compile Include="cursed-gospel-adjustment.cs" />
+		<Compile Include="incense-adjustments.cs" />
 		<Compile Include="modern-stats-system.cs" />
 	</ItemGroup>
 	
