@@ -43,25 +43,25 @@ namespace ModernStatsSystem
 
         public override void OnInitializeMelon()
         {
-            // Seeded random number generator
-            // I had to. I didn't want Int to be completely random for every demon every time you booted the game.
-            System.Random rng = new(5318008);
+            // Grant Demi-Fiend the Intelligence Stat.
+            if (EnableIntStat)
+                { datHuman.datHumanUnitWork.param[1] = datHuman.datHumanUnitWork.param[2]; }
+
+            // Alter Demi-Fiend's Base Stats then recalculate HP/MP.
+            if (EnableStatScaling)
+            {
+                datUnitWork_t work = datHuman.datHumanUnitWork;
+                for (int i = 0; i < work.param.Length; i++)
+                    { work.param[i] *= POINTS_PER_LEVEL; }
+                rstcalc.rstSetMaxHpMp(1, ref work);
+            }
 
             // Search through all of the demons.
-            for (int i = 0; i < datDevilFormat.tbl.Length; i++)
+            for (int i = 1; i < datDevilFormat.tbl.Length; i++)
             {
                 // If enabled, give the demons Int.
                 if (EnableIntStat)
-                {
-                    // Make sure the offset of stats for Int is positive or negative.
-                    int sign;
-                    do
-                    { sign = rng.Next(-1, 1); }
-                    while (sign == 0);
-
-                    // Set up Int.
-                    datDevilFormat.tbl[i].param[1] = (sbyte)Math.Clamp(datDevilFormat.tbl[i].param[2] + datDevilFormat.tbl[i].param[2] * sign * 10 / 100, 1, MAXSTATS);
-                }
+                    { datDevilFormat.tbl[i].param[1] = datDevilFormat.tbl[i].param[2]; }
                 
                 // If enabled, scale each demon's stats by how many points per level is set.
                 // Additionally, recalculate HP/MP for anything that isn't a boss or forced encounter.
@@ -86,15 +86,9 @@ namespace ModernStatsSystem
                 // If enabled, gives the Magatama Int.
                 if (EnableIntStat)
                 {
-                    // Like above, make sure the bonus is positive or negative.
-                    int sign;
-                    do
-                        { sign = rng.Next(-1, 1); }
-                    while (sign == 0);
-
                     // Set up Int.
-                    tblHearts.fclHeartsTbl[i].GrowParamTbl[1] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].GrowParamTbl[2] + tblHearts.fclHeartsTbl[i].GrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
-                    tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[1] = (sbyte)Math.Clamp(tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] + tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2] * sign * 10 / 100, 1, MAXSTATS);
+                    tblHearts.fclHeartsTbl[i].GrowParamTbl[1] = tblHearts.fclHeartsTbl[i].GrowParamTbl[2];
+                    tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[1] = tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2];
                 }
 
                 // If enabled, scale the Magatamas by how many points per level is set.
@@ -148,13 +142,13 @@ namespace ModernStatsSystem
                 __result = 0;
                 
                 // If your stats are not capped completely, return.
-                if (PatchGetBaseParam.GetParam(pStock, 0) >= MAXSTATS)
+                if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS)
                 {
-                    if (EnableIntStat && PatchGetBaseParam.GetParam(pStock, 1) < MAXSTATS) { return false; }
-                    if (PatchGetBaseParam.GetParam(pStock, 2) < MAXSTATS) { return false; }
-                    if (PatchGetBaseParam.GetParam(pStock, 3) < MAXSTATS) { return false; }
-                    if (PatchGetBaseParam.GetParam(pStock, 4) < MAXSTATS) { return false; }
-                    if (PatchGetBaseParam.GetParam(pStock, 5) < MAXSTATS) { return false; }
+                    if (EnableIntStat && datCalc.datGetBaseParam(pStock, 1) < MAXSTATS) { return false; }
+                    if (datCalc.datGetBaseParam(pStock, 2) < MAXSTATS) { return false; }
+                    if (datCalc.datGetBaseParam(pStock, 3) < MAXSTATS) { return false; }
+                    if (datCalc.datGetBaseParam(pStock, 4) < MAXSTATS) { return false; }
+                    if (datCalc.datGetBaseParam(pStock, 5) < MAXSTATS) { return false; }
 
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
@@ -208,7 +202,7 @@ namespace ModernStatsSystem
             {
                 // Pulls the parameter for the other function and clamps it between 0 and the new maximum.
                 int result = work.param[paratype];
-                result = Math.Clamp(result, 0, MAXSTATS);
+                result = Math.Clamp(result, 1, MAXSTATS);
                 return result;
             }
         }
@@ -220,6 +214,8 @@ namespace ModernStatsSystem
             {
                 // Returns the base stat of the given parameter, plus whatever Mitama bonuses the user has.
                 __result = datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype];
+                if (rstinit.GBWK != null)
+                    { __result += rstinit.GBWK.ParamOfs[paratype]; }
                 return false;
             }
         }
@@ -302,7 +298,7 @@ namespace ModernStatsSystem
                 // If enabled, scale differently.
                 if (EnableStatScaling)
                 {
-                    result = (int)((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6;
+                    result = (int)(((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL) + (float)work.level * 6f);
                     if (rstinit.GBWK != null)
                         { result += (int)((float)rstinit.GBWK.ParamOfs[3] / (float)POINTS_PER_LEVEL) * 6; }
                 }
@@ -357,10 +353,10 @@ namespace ModernStatsSystem
             public static uint GetMaxHP(datUnitWork_t work)
             {
                 // Grab the Base Max HP.
-                uint result = (uint)PatchGetBaseMaxHP.GetBaseMaxHP(work);
+                uint result = (uint)datCalc.datGetBaseMaxHp(work);
 
                 // Add a percentage of your Max HP to your Max HP with certain special Skills.
-                float boost = 0.0f;
+                float boost = 1.0f;
                 boost += datCalc.datCheckSyojiSkill(work, 0x122) == 1 ? 0.1f : 0;
                 boost += datCalc.datCheckSyojiSkill(work, 0x123) == 1 ? 0.2f : 0;
                 boost += datCalc.datCheckSyojiSkill(work, 0x124) == 1 ? 0.3f : 0;
@@ -384,10 +380,10 @@ namespace ModernStatsSystem
             public static uint GetMaxMP(datUnitWork_t work)
             {
                 // Grab the Base Max MP.
-                uint result = (uint)PatchGetBaseMaxMP.GetBaseMaxMP(work);
+                uint result = (uint)datCalc.datGetBaseMaxMp(work);
 
                 // Like before, add percentages of it to it based on certain Skills.
-                float boost = 0.0f;
+                float boost = 1.0f;
                 boost += datCalc.datCheckSyojiSkill(work, 0x125) == 1 ? 0.1f : 0;
                 boost += datCalc.datCheckSyojiSkill(work, 0x126) == 1 ? 0.2f : 0;
                 boost += datCalc.datCheckSyojiSkill(work, 0x127) == 1 ? 0.3f : 0;
@@ -1333,9 +1329,15 @@ namespace ModernStatsSystem
                 // If there's text objects in the Status Menu's children, set up the Stat Names.
                 if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
                     { stsObj.GetComponentsInChildren<TMP_Text>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].SetText(Localize.GetLocalizeText(cmpMisc.cmpGetParamName(ctr2))); }
+
+                // If the object's not null and you're not evolving, set the LevelUp stat value.
+                int levelstat = pStock.mitamaparam[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2];
+                if (rstinit.GBWK != null && !EvoCheck)
+                    { levelstat += rstinit.GBWK.ParamOfs[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2]; }
+
                 // If there's Counter objects in the Status Menu's children, set up their values and colors.
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
-                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 -1 : ctr2].Set(pStock.param[ctr2], Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 -1 : ctr2].Set(pStock.param[ctr2] + levelstat, Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
                 
                 // If your Cursor Position is over -1, set the FlashMode to 2.
                 // Not sure what this does.
@@ -1645,12 +1647,12 @@ namespace ModernStatsSystem
                     int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
 
                     // If the object's not null and you're not evolving, set the LevelUp stat value.
-                    int levelstat = 0;
+                    int levelstat = pStock.mitamaparam[stat];
                     if (rstinit.GBWK != null && !EvoCheck)
-                        { levelstat = rstinit.GBWK.ParamOfs[stat]; }
+                        { levelstat += rstinit.GBWK.ParamOfs[stat]; }
 
                     // Set Stat value and color.
-                    g2.GetComponent<CounterCtr>().Set(rstCalcCore.cmbGetParam(pStock, stat) + levelstat, Color.white, 0);
+                    g2.GetComponent<CounterCtr>().Set(pStock.param[stat] + levelstat, Color.white, 0);
                 }
 
                 // If the Status Bar UI components don't exist, return.
@@ -1820,19 +1822,12 @@ namespace ModernStatsSystem
                     { stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[ctr].SetInteger("sstatusbar_color", 0); }
 
                 // If Stat Position is greater than or equal to Blink que length, cap it.
-                if (Pos >= cmpDrawStatus.gStatusBlinkQue.Length)
+                if (Pos >= cmpDrawStatus.gStatusBlinkQue.Length && cmpDrawStatus.gStatusBlinkQue.Length > 0)
                     { Pos = (sbyte)(cmpDrawStatus.gStatusBlinkQue.Length - 1); }
 
-                // If FlashMode is 0 and the Blink que value is not zero, set FlashMode to 2.
-                if (FlashMode == 0)
-                {
-                    if (cmpDrawStatus.gStatusBlinkQue[Pos] != 0)
-                        {FlashMode = 2;}
-                }
-
-                // If FlashMode is 1 or 2, set the Blink color to FlashMode.
-                if (FlashMode == 1 || FlashMode == 2)
-                    { cmpDrawStatus.cmpStatMakeBlinkCol(cmpDrawStatus.gStatusBlinkQue[Pos], (sbyte)FlashMode, pCol); }
+                // If FlashMode is at least 0 or higher but under 3, set the Blink Color to FlashMode.
+                if (FlashMode >= 0 && FlashMode < 3)
+                { cmpDrawStatus.cmpStatMakeBlinkCol(cmpDrawStatus.gStatusBlinkQue[Pos], FlashMode, pCol); }
 
                 // If FlashMode is 3.
                 if (FlashMode == 3)

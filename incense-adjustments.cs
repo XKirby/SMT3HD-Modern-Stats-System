@@ -8,6 +8,16 @@ namespace ModernStatsSystem
 {
     internal partial class ModernStatsSystem : MelonMod
     {
+
+        [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
+        private class PatchOnInitializeIncense
+        {
+            private static void Postfix()
+            {
+                // Set the Intelligence Incense to use the same skill as the other Incense items.
+                datItem.tbl[0x27].use = 1;
+            }
+        }
         [HarmonyPatch(typeof(cmpMisc), nameof(cmpMisc.cmpUseItemKou))]
         private class PatchIncense
         {
@@ -50,12 +60,12 @@ namespace ModernStatsSystem
             {
                 // If this is the Int Incense, write its help message properly.
                 if (id == 0x27)
-                { __result = "Raises Intelligence by 1 and full HP recovery for one ally."; }
+                    { __result = "Raises Intelligence by 1\nand full HP recovery\nfor one ally."; }
             }
         }
 
         [HarmonyPatch(typeof(fclShopCalc), nameof(fclShopCalc.shpCreateItemList))]
-        private class PatchLastShopIncenseStorage
+        private class PatchFinalShopAddIncense
         {
             private static void Postfix(ref fclDataShop_t pData)
             {

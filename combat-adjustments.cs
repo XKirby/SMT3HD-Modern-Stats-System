@@ -20,11 +20,11 @@ namespace ModernStatsSystem
 
                 // If Enabled, use a new formula.
                 if (EnableStatScaling)
-                { __result = (datCalc.datGetParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
+                    { __result = (datCalc.datGetParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
-                { __result = __result >> 1; }
+                    { __result = __result >> 1; }
                 return false;
             }
         }
@@ -54,7 +54,7 @@ namespace ModernStatsSystem
 
                 // If enabled, divide the stats by points per level's amount.
                 if (EnableStatScaling)
-                { paramValue /= POINTS_PER_LEVEL; }
+                    { paramValue /= POINTS_PER_LEVEL; }
 
                 // Do some initial math for basic attacks.
                 finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2) * 1.33f) * 0.8f);
@@ -69,7 +69,7 @@ namespace ModernStatsSystem
 
                 // If enabled, that damage output will scale a bit differently.
                 if (EnableStatScaling)
-                { unkval = 64; }
+                    { unkval = 64; }
 
                 // Use that number and the attacker's level to figure out some damage reduction.
                 int reduction = unkval / (attacker.level + 10);
@@ -105,7 +105,7 @@ namespace ModernStatsSystem
 
                 // If enabled, introduce some further damage mitigation that never got used and do some extra math to it.
                 if (EnableStatScaling)
-                { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * ((float)defender.level / 100))); }
+                    { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * ((float)defender.level / 100))); }
                 return false;
             }
         }
@@ -131,24 +131,24 @@ namespace ModernStatsSystem
 
                 // If you exceeded the damage limit, scale it back.
                 if (damageCalc > skillLimit)
-                { damageCalc = skillLimit; }
+                    { damageCalc = skillLimit; }
 
                 // If enabled, scale it slightly less harshly and make sure it's uncapped.
                 if (EnableStatScaling)
-                { damageCalc = (int)((float)waza * (float)attacker.level * 2f / 20f + (float)skillBase); }
+                    { damageCalc = (int)((float)waza * (float)attacker.level * 2f / 20f + (float)skillBase); }
 
                 // If not enabled and the Level Limit is over 160, cap it to 160.
                 // This means it'll stop scaling past level 160.
                 // The maximum level is 255, but really you'll probably not get there without some insane grinding.
                 if (LevelLimit > 160 && !EnableStatScaling)
-                { LevelLimit = 160; }
+                    { LevelLimit = 160; }
 
                 // Grab the attacker's Mag.
                 int param = datCalc.datGetParam(attacker, 2);
 
                 // If Enabled, grab Int instead.
                 if (EnableIntStat)
-                { param = datCalc.datGetParam(attacker, 1); }
+                    { param = datCalc.datGetParam(attacker, 1); }
 
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
@@ -158,7 +158,7 @@ namespace ModernStatsSystem
                     damageCalc = (int)((float)damageCalc + ((float)waza + (float)skillBase) * 2 + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f);
                 }
                 else
-                { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
+                    { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
 
                 // This second "damageCalc" number is to make sure things don't get out of hand normally.
                 int damageCalc2 = damageCalc;
@@ -217,7 +217,7 @@ namespace ModernStatsSystem
                     {
                         damageCalc2 = (int)(damageCalc * 1.34f);
                         if (!EventBit.evtBitCheck(0x8a0))
-                        { damageCalc2 = damageCalc; }
+                            { damageCalc2 = damageCalc; }
                     }
 
                     // Otherwise, if the difficulty is 2, do the same thing.
@@ -225,7 +225,7 @@ namespace ModernStatsSystem
                     {
                         damageCalc2 = damageCalc;
                         if (dds3ConfigMain.cfgGetBit(9) == 2)
-                        { damageCalc2 = (int)(damageCalc * 1.34f); }
+                            { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
 
@@ -234,10 +234,7 @@ namespace ModernStatsSystem
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by the hitcount average.
                 if (EnableStatScaling)
-                {
-                    int param2 = datCalc.datGetParam(defender, 2) / POINTS_PER_LEVEL;
-                    __result = (int)((float)__result / Math.Ceiling(((float)datNormalSkill.tbl[nskill].targetcntmin + (float)datNormalSkill.tbl[nskill].targetcntmax) / 2) * 255f / (255f + ((float)param2 * 2f + defender.level) * 2f * ((float)defender.level / 100f)));
-                }
+                    { __result = (int)((float)__result / Math.Ceiling(((float)datNormalSkill.tbl[nskill].targetcntmax - (float)datNormalSkill.tbl[nskill].targetcntmax) + 2) * 255f / (255f + ((float)defender.param[2] / (float)POINTS_PER_LEVEL * 2f + (float)defender.level) * 2f * ((float)defender.level / 100f))); }
                 return false;
             }
         }
@@ -258,11 +255,11 @@ namespace ModernStatsSystem
 
                 // If enabled, get Int instead.
                 if (EnableIntStat)
-                { param = datCalc.datGetParam(work, 1); }
+                    { param = datCalc.datGetParam(work, 1); }
 
                 // If enabled, scale.
                 if (EnableStatScaling)
-                { param /= POINTS_PER_LEVEL; }
+                    { param /= POINTS_PER_LEVEL; }
 
                 // Final number considers your Magic buffs.
                 __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (rng.Next(0, 8) + param * 4 + work.level / 10) * waza);
@@ -281,15 +278,15 @@ namespace ModernStatsSystem
                 // Get whatever demon is dropping Macca.
                 datDevilFormat_t devil = datDevilFormat.Get(w.id, true);
 
+                // Get the above demon's Luc.
+                int luck = datCalc.datGetParam(w, 5);
+
                 // Grab Demi-Fiend's Luc.
                 int playerLuck = datCalc.datGetParam(work, 5);
 
                 // Grab the player's total Macca.
                 int macca = dds3GlobalWork.DDS3_GBWK.maka;
                 int baseMacca = macca;
-
-                // Get the above demon's Luc.
-                int luck = datCalc.datGetParam(w, 5);
 
                 // Unseeded rng.
                 System.Random rng = new();
@@ -310,9 +307,7 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     luck = luck / POINTS_PER_LEVEL;
-
-                    // This makes sure the formula makes sense later.
-                    playerLuck = (MAXSTATS - playerLuck) / POINTS_PER_LEVEL;
+                    playerLuck = playerLuck / POINTS_PER_LEVEL;
                 }
 
                 // Flag nonsense again.
@@ -323,11 +318,12 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                    { baseform = Mathf.Abs(30f * ((float)w.level / 25.5f + (float)luck / 2f + 1)); }
+                        { baseform = Mathf.Abs(30f * ((float)w.level / 25.5f + (float)luck / 2f + 1)); }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
-                    { adjform = 0; }
+                        { adjform = 0; }
+
                     // Otherwise, grab a small segment of your Macca.
                     else
                     {
@@ -335,7 +331,7 @@ namespace ModernStatsSystem
 
                         // If enabled, grab the whole stack instead.
                         if (EnableStatScaling)
-                        { adjform = (float)(macca) * baseform; }
+                            { adjform = (float)(macca) * baseform; }
                     }
                 }
 
@@ -346,16 +342,14 @@ namespace ModernStatsSystem
                     // If you're fine, return.
                     // Basically this checks if you're not suffering from Panic.
                     if (work.badstatus == 0)
-                    { return false; }
+                        { return false; }
 
                     // Base formula math again.
                     baseform = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f));
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                    {
-                        baseform = Mathf.Abs(30f * ((float)work.level / 25.5f / 2f + (float)playerLuck / 2 + 1));
-                    }
+                        { baseform = Mathf.Abs(30f * ((float)work.level / 25.5f / 2f + (float)playerLuck / 2 + 1)); }
 
                     // Grab the enemy's whole stack.
                     adjform = (float)devil.dropmakka * baseform;
@@ -369,15 +363,15 @@ namespace ModernStatsSystem
 
                 // If enabled, scale it differently.
                 if (EnableStatScaling)
-                { __result = (int)Mathf.Abs(Mathf.Pow((float)adjform, 1.125f) * (1f + Mathf.Log10(adjform)) * (0.1f + variance * 2 / 3) / baseform); }
+                    { __result = (int)Mathf.Abs(Mathf.Pow((float)adjform, 1.125f) * (1f + Mathf.Log10(adjform)) * (0.1f + variance * 2 / 3) / baseform); }
 
                 // If difficulty bit is 1 or lower and some more flag nonsense, divide by 10.
                 if (dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
-                { __result = __result / 10; }
+                    { __result = __result / 10; }
 
                 // If result is less than 2, set it to 1.
                 if (__result < 2)
-                { __result = 1; }
+                    { __result = 1; }
                 return false;
             }
         }
@@ -403,7 +397,7 @@ namespace ModernStatsSystem
 
                 // If enabled, recalculate.
                 if (EnableStatScaling)
-                { __result = work.level + (datCalc.datGetParam(work, 4) * 2 + luc) / POINTS_PER_LEVEL + 10; }
+                    { __result = work.level + (datCalc.datGetParam(work, 4) * 2 + luc) / POINTS_PER_LEVEL + 10; }
                 return false;
             }
         }
@@ -419,7 +413,7 @@ namespace ModernStatsSystem
 
                 // If enabled, lowers Mag scaling and adds Int scaling.
                 if (EnableIntStat)
-                { __result = work.level + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4); }
+                    { __result = work.level + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4); }
 
                 // Grabs Luc.
                 int luc = datCalc.datGetParam(work, 5);
@@ -432,7 +426,7 @@ namespace ModernStatsSystem
                 // Really I have no idea why this is here. It shows up in the actual formula.
                 int luckValue = luc + 6;
                 if (luc + 5 > -1)
-                { luckValue = luc + 5; }
+                    { luckValue = luc + 5; }
 
                 // Bitshift the above result by 1 and add 15.
                 __result += luckValue >> 1 + 0xf;
@@ -444,7 +438,7 @@ namespace ModernStatsSystem
 
                     // If enabled, scale with Int.
                     if (EnableIntStat)
-                    { __result = work.level + (datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) + luckValue >> 1 + 0xf) / POINTS_PER_LEVEL; }
+                        { __result = work.level + (datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4) + luckValue >> 1 + 0xf) / POINTS_PER_LEVEL; }
                 }
                 return false;
             }
@@ -461,7 +455,7 @@ namespace ModernStatsSystem
 
                 // If enabled, do some actual math.
                 if (EnableStatScaling)
-                { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
+                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
                 return false;
             }
         }
@@ -478,7 +472,7 @@ namespace ModernStatsSystem
 
                 // If the Skill doesn't target randomly or the Effect List is empty, then return.
                 if (datNormalSkill.tbl[nskill].targetrandom < 1 || effectlist.Length == 0)
-                { return true; }
+                    { return true; }
 
                 // Loop through the Effect List and clear it.
                 int i = 0;
@@ -486,7 +480,8 @@ namespace ModernStatsSystem
                 {
                     // If this somehow happened, we've got a problem, so just return.
                     if (effectlist[i].Length < 2)
-                    { return true; }
+                        { return true; }
+
                     // Clear both indices.
                     // -1 means no target and the following zero sets the hitcount to, well, zero.
                     effectlist[i][0] = -1;
@@ -521,11 +516,11 @@ namespace ModernStatsSystem
                         {
                             // If this happens, we've got a problem, so return.
                             if (a.timelist.Length <= i)
-                            { return true; }
+                                { return true; }
 
                             // If that demon's HP is zero or whatever this format flag is says that demon's dead, continue the loop.
                             if (a.timelist[i].hp != 0 || (nbCalc.nbGetDevilFormatFlag(i) >> 8 & 1) != 0)
-                            { i++; continue; }
+                                { i++; continue; }
                         }
 
                         // I have no idea what this is doing. This shows up in the original function. Please don't ask.
@@ -558,11 +553,11 @@ namespace ModernStatsSystem
                             (a.data.form[effectID].formindex < 4 && a.form.formindex >= 4) ||
                             (a.data.form[effectID].formindex >= 4 && a.form.formindex < 4)) &&
                             a.timelist[effectID].hp > 0)
-                        { break; }
+                            { break; }
 
                         // Otherwise, set it to a blank target.
                         else
-                        { effectID = -1; }
+                            { effectID = -1; }
 
                         // Increment.
                         j++;
