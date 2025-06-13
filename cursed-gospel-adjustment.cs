@@ -10,18 +10,18 @@ namespace ModernStatsSystem
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datExecSkill))]
         private class PatchCursedGospelEffect
         {
-            private static bool Postfix(ref int nskill)
+            private static void Postfix(ref int nskill)
             {
                 // If this Skill is from the Cursed Gospel item mod.
                 // If it isn't, return and run the original function.
                 if (nskill != 95)
-                    { return true; }
+                    { return; }
 
                 // Grab Demi-Fiend and check his Level.
                 // If it's 1 or lower, return and run the original function.
                 datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[0];
                 if (work.level <= 1)
-                    { return true; }
+                    { return; }
                 
                 // Lower Level by 1.
                 work.level--;
@@ -52,7 +52,6 @@ namespace ModernStatsSystem
                     else
                         { statlist.Remove(statID); }
                 }
-                return false;
             }
         }
     }
