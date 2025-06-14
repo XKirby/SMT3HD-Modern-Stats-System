@@ -115,6 +115,13 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
             {
+                // Result init.
+                __result = 0;
+
+                // If this skill doesn't deal damage, skip this function altogether.
+                if (datSkill.tbl[nskill].type < 12)
+                    { return true; }
+
                 // Set up the attacker/defender objects from the indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
@@ -254,12 +261,8 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                     { param = datCalc.datGetParam(work, 1); }
 
-                // If enabled, scale.
-                if (EnableStatScaling)
-                    { param /= POINTS_PER_LEVEL; }
-
-                // Final number considers your Magic buffs.
-                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * (rng.Next(0, 8) + param * 4 + work.level / 10) * waza);
+                // Final result considers your Magic buffs.
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)rng.Next(0, 8) + (float)param * 4f / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) + (float)work.level) / 10f * (float)waza);
                 return false;
             }
         }
@@ -417,7 +420,7 @@ namespace ModernStatsSystem
 
                 // If enabled, lowers Mag scaling and adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)((float)work.level / 2f * POINTS_PER_LEVEL + datCalc.datGetParam(work, 1) * 2 + datCalc.datGetParam(work, 2) + datCalc.datGetParam(work, 4))); }
+                    { __result = (int)((float)work.level / 2f * (float)POINTS_PER_LEVEL + (float)datCalc.datGetParam(work, 1) * 2 + (float)datCalc.datGetParam(work, 2) + (float)datCalc.datGetParam(work, 4)); }
 
                 // If enable, scale it differently.
                 if (EnableStatScaling)
@@ -453,7 +456,7 @@ namespace ModernStatsSystem
 
                 // If enabled, do some actual math.
                 if (EnableStatScaling)
-                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + work.level) * 2; }
+                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + (float)work.level) * 2; }
                 return false;
             }
         }
@@ -573,6 +576,177 @@ namespace ModernStatsSystem
                     { __result = 5; return false; }
 
                 __result = 4;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetHitType))]
+        private class PatchGetHitType
+        {
+            private static bool Prefix(out int __result, nbActionProcessData_t ad, int nskill, int sformindex, int dformindex)
+            {
+                // Grab units from form indices.
+                datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+
+                // Result init.
+                __result = 0;
+
+                // Flag Nonsense. If true, return original function.
+                if ((byte)datSkill.tbl[nskill].skillattr == 0xff || (datSkill.tbl[nskill].skillattr & 0xfc) == 0xc)
+                    { return true; }
+
+                // "Aisyo" translates to "favorite book" with Google Translate.
+                // I dug deeper through another website and found out it means something more like "charm" or "character".
+                // Honestly I don't know what this is.
+                uint aisyo = nbCalc.nbGetAisyo(nskill, dformindex, datSkill.tbl[nskill].skillattr);
+
+                // If this skill is just the basic attack
+                if (nskill == 0)
+                {
+                    // I'm assuming this is some sort of passive or something.
+                    // Google Translate says that "hatsudo" means "each time". Is that the same phrase?
+                    if (nbCalc.nbHatudoCheckSkill(attacker, 300) != 0)
+                        { ad.autoskill = 300; __result = 1; return false; }
+
+                    // Doing it again, but with the next skill.
+                    if (nbCalc.nbHatudoCheckSkill(attacker, 301) != 0)
+                        { ad.autoskill = 301; __result = 1; return false; }
+                }
+
+                // Seriously, Nocturne, why are you like this???
+                // For the record, unsigned integers can't go below 0.
+                if (aisyo < 0)
+                    { __result = 2; return false; }
+
+                // Set the party object from the attacker.
+                nbParty_t party = nbMainProcess.nbGetPartyFromFormindex(sformindex);
+
+                // Flag stuff.
+                if (((party.flag + 1) & 1) != 0)
+                    { __result = 1; return false; }
+
+                // Some random float value. Remake this comment when you figure it out.
+                float val = 0.0f;
+
+                // More flag stuff.
+                // Sets the above value to something.
+                if ((defender.badstatus & 0xFFF) - 1 < 2)
+                    { val = 100f; }
+
+                // Even more flag stuff.
+                // Sets the above value to a much lower number.
+                else if (defender.badstatus == 0x10 || defender.badstatus == 4)
+                    { val = 8f; }
+
+                // If neither of the above happen, just set it to 1.
+                else
+                    { val = 1f; }
+
+                // A random boolean to check on things later.
+                bool chk = false;
+
+                // Infinite Loop Check.
+                // Because what the fuck.
+                bool wtf = false;
+
+                // Yes, I am labeling this section "WhatTheFuck".
+                // Go ahead and read it.
+                // You'll understand.
+            WhatTheFuck:
+
+                // Check yet more flag nonsense.
+                if ((((ad.data.form[dformindex].stat + 1) >> 5) & 1) == 0 || wtf)
+                {
+                    // If the currently used Skill's ID isn't zero.
+                    if (nskill != 0)
+                        { chk = false; }
+
+                    // Otherwise, do some other stuff.
+                    else
+                    {
+
+                        // Some random Skill check.
+                        if (datCalc.datCheckSyojiSkill(attacker, 299) == 0)
+                            { chk = false; }
+                        
+                        // If the above check fails, do some wonky math.
+                        else
+                        {
+                            // The variables are actually single characters.
+                            // They're all short integers.
+                            // This tells me nothing as to how they function.
+                            // Additionally, ghidra doesn't tell me which one to actually use.
+                            // I'm taking a blind guess here.
+                            if (datSpecialSkill.tbl[nskill].a < 0xc)
+                                { __result = 0; return false; }
+
+                            // I can't believe this is making me double-check so hard what goes where.
+                            val *= datSpecialSkill.tbl[nskill].n / 100f;
+                        }
+                    }
+
+                    // Set check to true, finally.
+                    chk = true;
+                }
+
+                // Okay, if the above fuckfest doesn't get called, do the following.
+                else
+                {
+                    // If the Difficulty Bit is over zero, go up and do the previous section.
+                    // Seriously. What the fuck Nocturne.
+                    if (dds3ConfigMain.cfgGetBit(9) > 0)
+                    {
+                        // At least it does some math if the Difficulty Bit is above 1.
+                        if (dds3ConfigMain.cfgGetBit(9) > 1)
+                            { val = 100f; wtf = true; }
+
+                        // Jump back up.
+                        goto WhatTheFuck;
+                    }
+
+                    // Value adjustment.
+                    val *= 0.7f;
+
+                    // If you're using a normal attack, return.
+                    if (nskill == 0)
+                        { wtf = true; goto WhatTheFuck; }
+
+                    chk = false;
+                }
+                
+                // Set Attacker's Crit Chance values.
+                float atkCritLevel = (float)attacker.level / 5f + 3f;
+                float atkCritStat = (float)datCalc.datGetParam(attacker, 4);
+                float atkCritChance = 0f;
+                if (atkCritLevel != 0f)
+                    { atkCritChance = atkCritStat / atkCritLevel; }
+
+                // Set Defender's Crit Chance values.
+                float defCritLevel = (EnableStatScaling ? (float)datCalc.datGetParam(attacker, 4) : (float)datCalc.datGetParam(attacker, 5) / (float)POINTS_PER_LEVEL);
+                float defCritStat = (EnableStatScaling ? (float)datCalc.datGetParam(defender, 4) : (float)datCalc.datGetParam(defender, 5) / (float)POINTS_PER_LEVEL);
+                float defCritChance = 0f;
+                if (defCritLevel != 0f)
+                    { defCritChance = defCritStat / defCritLevel; }
+
+                // Set total Crit Value.
+                float critValue = ((atkCritChance * 100f) - (defCritChance * 100)) * 0.0625f + (100f - nbCalc.GetFailpoint(nskill));
+                if (critValue < 50f)
+                    { critValue = 50f; }
+
+                // Adjust the Crit Value.
+                critValue = val * (critValue / (100 - nbCalc.GetFailpoint(nskill))) * datNormalSkill.tbl[nskill].criticalpoint;
+
+                // Generate a random interger and compare to the Crit Value.
+                System.Random rng = new();
+                if (rng.Next(100) >= critValue)
+                    { __result = 1; return false; }
+
+                // Finally reference the above check value.
+                // And all it's used for is to set the autoskill value to 299.
+                if (chk)
+                    { ad.autoskill = 299; }
+
                 return false;
             }
         }

@@ -35,6 +35,7 @@ namespace ModernStatsSystem
         {
             public static void Postfix(ref fclDataShop_t pData)
             {
+                // Add the Cursed Gospel to the final shop of the game.
                 if (pData.Place == 6 && dds3GlobalWork.DDS3_GBWK.item[60] == 0)
                 {
                     pData.BuyItemList[pData.BuyItemCnt++] = 60;
@@ -47,6 +48,8 @@ namespace ModernStatsSystem
         {
             public static void Postfix(ref int id, ref string __result)
             {
+                // If the item ID is correct, rename the item.
+                // It's unused normally, so this is fine.
                 if (id == 60)
                     { __result = "Cursed Gospel"; }
             }
@@ -57,6 +60,7 @@ namespace ModernStatsSystem
         {
             public static void Postfix(ref int id, ref string __result)
             {
+                // If the item ID is correct, change the help message.
                 if (id == 60)
                     { __result = "Demi-fiend earns enough EXP \nto level up but loses one level. \nReusable."; }
             }
@@ -104,6 +108,8 @@ namespace ModernStatsSystem
                         work.param[statID]--;
                         changes--;
                     }
+
+                    // Remove anything that can't be reduced from being potentially chosen again.
                     else
                         { statlist.Remove(statID); }
                 }
