@@ -10,17 +10,32 @@ namespace ModernStatsSystem
 {
     internal partial class ModernStatsSystem : MelonMod
     {
+        public class DamageMitigation
+        {
+            // Damage Mitigation Formula.
+            // Requires a work unit and one of the parameter IDs.
+            public static float Get(datUnitWork_t work, int param)
+                { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
+        }
+
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetNormalAtkPow))]
         private class PatchGetNormalAtkPow
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
+                // Set this variable to the attacker's Str.
+                int param = datCalc.datGetParam(work, 0);
+
+                // If their "badstatus" is 0x200, their Str is set to 1.
+                if ((work.badstatus & 0xFFF) == 0x200)
+                    { param = 1; }
+
                 // Result uses the initial formula here.
-                __result = (datCalc.datGetParam(work, 0) + work.level) * 2;
+                __result = (param + work.level) * 2;
 
                 // If Enabled, use a new formula.
                 if (EnableStatScaling)
-                    { __result = (datCalc.datGetParam(work, 0) * 2 / POINTS_PER_LEVEL) + work.level * 2; }
+                    { __result = (param * 2 / POINTS_PER_LEVEL) + work.level * 2; }
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -72,13 +87,18 @@ namespace ModernStatsSystem
                     { unkval = 64; }
 
                 // Use that number and the attacker's level to figure out some damage reduction.
-                int reduction = unkval / (attacker.level + 10);
+                int reduction = (int)((float)unkval / (float)(attacker.level + 10));
+
+                // If enabled, reduction uses the defender's level instead.
+                // Because that honestly makes way more sense.
+                if (EnableStatScaling)
+                    { reduction = (int)((float)unkval / (float)(defender.level + 10)); }
 
                 // The final value is cut down to 60%.
                 finalvalue = (int)((float)finalvalue * 0.6f);
 
                 // Reduce the final value by the reduction.
-                finalvalue = (int)(finalvalue - reduction);
+                finalvalue -= reduction;
                 __result = finalvalue;
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
@@ -97,15 +117,42 @@ namespace ModernStatsSystem
                 {
                     __result = finalvalue;
                     if (dds3ConfigMain.cfgGetBit(9) == 2)
-                    { __result = (int)(finalvalue * 1.34); }
+                        { __result = (int)(finalvalue * 1.34); }
                 }
 
                 // This multiplies the final result by the attacker's attack buffs and the defender's defense buffs.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
-                // If enabled, introduce some further damage mitigation that never got used and do some extra math to it.
+                // If enabled, introduce some further damage mitigation
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * 255f / (255f + (float)datCalc.datGetDefPow(defender) * ((float)defender.level / 100))); }
+                    { __result = (int)((float)__result * DamageMitigation.Get(defender, 3)); }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetMaxHpWazaPoint))]
+        private class PatchGetHPPow
+        {
+            private static bool Prefix(out int __result, int nskill, int sformindex, int dformindex, int waza)
+            {
+                // Result init.
+                __result = 0;
+
+                // If we're not scaling things differently, skip this function entirely.
+                if (!EnableStatScaling)
+                    { return true; }
+
+                // Set up the attacker and defender objects from the form indices.
+                datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+                
+                // Grab the skill's HP Cost. It's gonna be an HP cost in this formula, so no need to check above.
+                int hpCost = datNormalSkill.tbl[nskill].cost;
+
+                // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
+                // If you're at Maximum HP when casting, you deal full damage.
+                // If you're at very low HP when casting, you deal half as much damage.
+                __result = (int)(((0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * waza * 0.0114f * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 return false;
             }
         }
@@ -126,12 +173,18 @@ namespace ModernStatsSystem
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
 
+                // Hit Count Maximum Check
+                int maxhits = datNormalSkill.tbl[nskill].targetcntmax - datNormalSkill.tbl[nskill].targetcntmin + 1;
+
                 // There's a Level Limit for Magic Skills normally.
                 int LevelLimit = attacker.level;
 
                 // Magic Skills additionally have a Base Power and Magic Damage Limit.
                 int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
                 int skillBase = datNormalSkill.tbl[nskill].magicbase;
+
+                // This formula is the base game's Skill peak formula.
+                float skillPeak = ((float)skillLimit - (float)skillBase) / (float)waza * (255f / 24f);
 
                 // Set up the initial Damage value.
                 int damageCalc = (int)((float)waza * (float)attacker.level * 2f / 21 + (float)skillBase);
@@ -160,7 +213,7 @@ namespace ModernStatsSystem
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
                 if (EnableStatScaling)
-                    { damageCalc = (int)((float)damageCalc + ((float)skillBase * (float)waza / 25) * 2 + (float)damageCalc / 100f * ((float)param / 2f - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
+                    { damageCalc = (int)(((float)waza + (float)skillPeak) * ((float)attacker.level / 2f + (float)param)/25.5f); }
                 else
                     { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
 
@@ -236,9 +289,9 @@ namespace ModernStatsSystem
                 // Multiply the final value by the attacker's Magic buffs and the defender's Magic buffs.
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
-                // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by the hitcount average.
+                // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result / Math.Ceiling(((float)datNormalSkill.tbl[nskill].targetcntmax - (float)datNormalSkill.tbl[nskill].targetcntmax) + 2) * 255f / (255f + ((float)defender.param[2] / (float)POINTS_PER_LEVEL * 2f + (float)defender.level) * 2f * ((float)defender.level / 100f))); }
+                    { __result = (int)((float)__result / maxhits * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
