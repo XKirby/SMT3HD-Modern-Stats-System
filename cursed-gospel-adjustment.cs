@@ -71,7 +71,7 @@ namespace ModernStatsSystem
         {
             private static void Postfix(ref int nskill)
             {
-                // If this Skill is from the Cursed Gospel item mod.
+                // If this Skill is from the Cursed Gospel item.
                 // If it isn't, return and run the original function.
                 if (nskill != 95)
                     { return; }

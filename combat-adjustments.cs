@@ -92,6 +92,60 @@ namespace ModernStatsSystem
                 { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
         }
 
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbCheckStoneDead))]
+        private class PatchStoneTargetKill
+        {
+            private static bool Prefix(out int __result, int nskill, int dformindex)
+            {
+                // Result init
+                __result = 0;
+
+                // Grab the defender from its form index.
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+
+                // If you're not pretrified, just return to the original function.
+                if ((defender.badstatus & 0xfff) != 0x400)
+                    { return false; }
+
+                // Check the Skill's type and make sure it can kill petrified targets.
+                // It only checks Physical and Force skills for right now.
+                bool found = false;
+                foreach (int i in new int[] { 0, 4 })
+                {
+                    if (datSkill.tbl[nskill].type == i)
+                        { found = true; break; }
+                }
+                
+                // If it can't return to the original function call.
+                if (found == false)
+                    { return false; }
+
+                // Grab the user's Luc. It's actually used in the original formula.
+                int luckValue = datCalc.datGetParam(defender, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+
+                // Assign a basic flat value for a formula later.
+                float flatValue = 20f;
+
+                // Double it because flag nonsense said so.
+                if ((defender.flag & 4) != 0)
+                    { flatValue = 40f; }
+
+                // This formula is FUCKED, don't ask me about it.
+                float finalvalue = ((float)luckValue / (((float)defender.level + 20f) / 5f)) * (flatValue + 100f);
+
+                // Instead, here's a better one.
+                if (EnableStatScaling)
+                    { finalvalue = 75.0f - (float)luckValue / 2f; }
+
+                // RNGesus Take the Wheel
+                System.Random rng = new();
+
+                // Return 1 if you hit the defender and killed him, otherwise return 0.
+                __result = finalvalue > rng.Next(100) ? 1 : 0;
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetNormalAtkPow))]
         private class PatchGetNormalAtkPow
         {
