@@ -36,6 +36,435 @@ namespace ModernStatsSystem
         private static string[] StockBarValues = { "barhp", "barmp" };
         private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
         private static string[] PartyBarValues = { "barhp", "barmp" };
+        
+        // Hard-coded Intelligence Value list for every demon in the game
+        private static sbyte[] DemonIntTable = {
+            2,  // Dummy
+            // Deity
+            84, // Vishnu
+            58, // Mitra
+            58, // Amaterasu
+            62, // Odin
+            35, // Atavaka
+            44, // Horus
+            // Megami
+            50, // Lakshmi
+            58, // Scathach
+            38, // Sarasvati
+            43, // Sati
+            27, // Ame-no-Uzume
+            // Fury
+            61, // Shiva
+            56, // Beidou Xingjun
+            33, // Qitian Dasheng
+            27, // Dionysus
+            // Lady
+            41, // Kali
+            60, // Skadi
+            52, // Parvati
+            45, // Kushinada
+            33, // Kikuri-Hime
+            // Kishin
+            31, // Bishamonten
+            37, // Thor
+            27, // Jikokuten
+            30, // Take-Mikazuchi
+            35, // Okuninushi
+            28, // Koumokuten
+            23, // Zouchouten
+            19, // Take-Minakata
+            // Holy
+            30, // Chimera
+            22, // Baihu
+            25, // Senri
+            28, // Zhuque
+            15, // Shiisaa
+            22, // (Avatar) Xiezhai (List Order not completely sorted by Race.)
+            22, // Unicorn
+            // Element
+            21, // Flaemis
+            22, // Aquans
+            15, // Aeros
+            11, // Erthys
+            // Mitama
+            18, // Saki Mitama
+            24, // Kishi Mitama
+            32, // Nigi Mitama
+            27, // Ara Mitama
+            // Yoma
+            49, // Efreet
+            34, // Pulukishi
+            16, // Ongkhot
+            41, // Jinn
+            25, // Karasu Tengu
+            29, // Dis
+            15, // Isora
+            11, // Asparas
+            23, // Koppa Tengu
+            // Fairy
+            45, // Titania
+            35, // Oberon
+            24, // Troll
+            22, // Setanta
+            22, // Kelpie
+            19, // Jack-o'-Lantern
+            10, // High Pixie
+            11, // Jack Frost
+            10, // Pixie
+            // Divine
+            52, // Throne
+            38, // Dominion
+            35, // Virtue
+            19, // Power
+            21, // Principality
+            13, // Archangel
+            12, // Angel
+            // Fallen
+            32, // Flauros
+            48, // Decarabia
+            24, // Ose
+            26, // Berith
+            21, // Eligor
+            15, // Forneus
+            // Snake
+            38, // Yurlungur
+            29, // Quetzalcoatl
+            24, // Naga Raja
+            29, // Mizuchi
+            20, // Naga
+            16, // Nozuchi
+            // Beast
+            36, // Cerberus
+            25, // Orthrus
+            35, // Suparna
+            16, // Badb Catha
+            17, // Inugami
+            26, // Nekomata
+            // Jirae
+            31, // Gogmagog
+            24, // Titan
+            17, // Sarutahiko
+            13, // Sudama
+            9,  // Hua Po
+            6,  // Kodama
+            // Brute
+            43, // Shiki-Ouji
+            13, // Oni
+            34, // Yomotsu-Ikusa
+            11, // Momunofu
+            8,  // Shikigami
+            // Femme
+            43, // Rangda
+            26, // Dakini
+            23, // Yaksini
+            29, // Yomotsu-Shikome
+            14, // Taraka
+            12, // Datsue-Ba
+            // Vile
+            47, // Mada
+            37, // Girimekhala
+            44, // Taotie
+            35, // Pazuzu
+            32, // Baphomet
+            // Tyrant
+            69, // Mot (Nice.)
+            55, // Aciel
+            48, // Surt
+            53, // Abaddon
+            45, // Loki
+            // Night
+            61, // Lilith
+            58, // Nyx
+            46, // Queen Mab
+            37, // Succubus
+            31, // Incubus
+            11, // Fomorian
+            12, // Lilim
+            // Wilder
+            51, // Hresvelgr
+            34, // Mothman
+            23, // Raiju
+            23, // Nue
+            11, // Bicorn
+            9,  // Zhen
+            // Haunt
+            46, // Vetala
+            28, // Legion
+            17, // Yaka
+            6,  // Choronzon
+            5,  // Preta
+            // Foul
+            48, // Shadow
+            14, // Black Ooze
+            9,  // Blob
+            9,  // Slime
+            10, // Mou-Ryo
+            7,  // Will o' Wisp
+            // Seraph
+            68, // Michael
+            64, // Gabriel
+            59, // Raphael
+            54, // Uriel
+            // Wargod
+            45, // Ganesha
+            31, // Valkyrie
+            17, // (Vile) Arahabaki
+            // Genma
+            39, // Kurama Tengu
+            29, // Hanuman
+            39, // Cu Chulainn
+            // Dragon
+            28, // Qing Long
+            25, // Xuanwu
+            // Avatar
+            55, // Barong
+            25, // Makami
+            45, // (Avian) Garuda
+            41, // Yatagarasu
+            // Raptor
+            48, // Gurulu
+            // Entity
+            47, // Albion
+            // Manikins
+            5,
+            5,
+            5,
+            5,
+            5,
+            48, // (Vile) Samael
+            // More Manikins
+            5,
+            5,
+            5,
+            5,
+            5,
+            // Summonable Minibosses
+            25, // Pisaca
+            42, // Kaiwan
+            34, // Kin-Ki
+            46, // Sui-Ki
+            40, // Fuu-Ki
+            62, // Ongyo-Ki
+            41, // Clotho
+            49, // Lachesis
+            52, // Atropos
+            41, // Loa
+            21, // Chatterskull
+            31, // Phantom
+            // Unused Data
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            // Summonable Bosses
+            47, // Raidou/Dante
+            73, // Metatron
+            72, // Beelzebub (Fly)
+            54, // Pale Rider
+            40, // White Rider
+            47, // Red Rider
+            53, // Black Rider
+            23, // Matador
+            33, // Hell Biker
+            37, // Daisoujou
+            56, // Mother Harlet
+            70, // Trumpeter
+            48, // Futomimi
+            37, // Sakahagi
+            53, // Black Frost
+            62, // Beelzebub (Man)
+            // More Unused Data
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            // Some more Unused Data
+            // According to the Amicitia Wiki, these demons have japanese name entries.
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            // Even MORE Unused Data
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            // Actual Bosses
+            23, // Forneus
+            4,  // Specter
+            80, // Ahriman
+            55, // Noah
+            28, // Incubus
+            18, // Koppa Tengu
+            30, // Kaiwan (Probably unused)
+            16, // Ose
+            60, // Kagutsuchi
+            38, // Mizuchi
+            20, // Kin-Ki
+            68, // Sui-Ki
+            55, // Fuu-Ki
+            43, // Ongyo-Ki
+            47, // Clotho
+            48, // Lachesis
+            66, // Atropos
+            30, // Specter (There's a bunch of entries for Specter. I'm guessing they're all different.)
+            55, // Girimekhala
+            25, // Specter
+            81, // Aciel
+            32, // Skadi
+            50, // Albion
+            22, // Urthona
+            22, // Urizen
+            22, // Luvah
+            22, // Tharmus
+            15, // Futomimi
+            38, // Gabriel
+            50, // Raphael
+            48, // Uriel
+            52, // Samael
+            65, // Baal Avatar
+            28, // Ose Hallel
+            26, // Flauros Hallel
+            55, // Ahriman (Phase 2?)
+            55, // Noah (Phase 2?
+            70, // Kagatsuchi (Phase 2?)
+            28, // Specter
+            2,  // Specter
+            2,  // Specter
+            80, // Mizuchi (Uhh, when does this one show up?)
+            40, // Reserve (Not sure if an actual boss or just some leftover data)
+            48, // Sakahagi
+            34, // Orthrus
+            70, // Yaksini
+            66, // Thor
+            70, // Black Frost
+            5,  // Karasu Tengu 1
+            5,  // Karasu Tengu 2
+            5,  // Karasu Tengu 3
+            17, // Eligor 1
+            17, // Eligor 2
+            17, // Eligor 3
+            20, // Kelpie 1
+            35, // Kelpie 2
+            20, // Berith
+            24, // Succubus
+            2,  // High Pixie (Probably unused)
+            30, // Kaiwan (Probably unused)
+            18, // Nekomata
+            26, // Troll
+            8,  // Will o' Wisp
+            6,  // Preta
+            47, // Bishamonten
+            81, // Mara
+            80, // Bishamonten (80 in all stats)
+            80, // Jikokuten
+            80, // Koumokuten
+            80, // Zouchouten
+            50, // Clotho
+            54, // Lachesis
+            66, // Atropos
+            42, // Mitra
+            80, // Masakado
+            80, // Station Staff (Max stats for the station guy lol)
+            80, // Loki (More than likely unused.)
+            67, // Mada
+            100,// Mot (He's gonna hit REALLY hard.)
+            90, // Surt
+            27, // Jack-o'-Lantern
+            57, // Thor
+            80, // Shadow (Unused probably)
+            40, // Raidou 1
+            48, // Raidou 2
+            48, // Raidou 3
+            72, // Metatron
+            55, // Beelzebub (Fly)
+            100,// Lucifer (I'm doing this so Mot isn't technically ahead of the final boss in terms of magic damage.)
+            55, // Pale Rider
+            33, // White Rider
+            44, // Red Rider
+            55, // Black Rider
+            18, // Matador
+            26, // Hell Biker
+            49, // Daisoujou
+            50, // Mother Harlet
+            64, // Trumpeter
+            80, // Futomimi (I'm assuming unused.)
+            80, // Sakahagi (I'm assuming unused.)
+            80, // Seven-Eye
+            80, // Beelzebub (Man)
+            50, // Loa
+            38, // Virtue
+            17, // Power
+            20, // Legion
+            // Last bit of Unused Data
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        };
 
         // Menu manipulation variables
         private static bool SettingAsignParam;
@@ -60,8 +489,9 @@ namespace ModernStatsSystem
             for (int i = 1; i < datDevilFormat.tbl.Length; i++)
             {
                 // If enabled, give the demons Int.
+                // This effectively just copies over their Mag to it.
                 if (EnableIntStat)
-                    { datDevilFormat.tbl[i].param[1] = datDevilFormat.tbl[i].param[2]; }
+                    { datDevilFormat.tbl[i].param[1] = (sbyte)(DemonIntTable[i] / POINTS_PER_LEVEL); }
                 
                 // If enabled, scale each demon's stats by how many points per level is set.
                 // Additionally, recalculate HP/MP for anything that isn't a boss or forced encounter.
@@ -69,6 +499,8 @@ namespace ModernStatsSystem
                 {
                     for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
                         { datDevilFormat.tbl[i].param[j] *= POINTS_PER_LEVEL; }
+                    if (EnableIntStat)
+                        { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
                     if (i < 254)
                     {
                         datDevilFormat.tbl[i].maxhp = (ushort)((datDevilFormat.tbl[i].param[3] / POINTS_PER_LEVEL + datDevilFormat.tbl[i].level) * 6);
