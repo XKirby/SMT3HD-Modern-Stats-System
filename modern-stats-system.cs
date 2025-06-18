@@ -579,8 +579,8 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                // If Mode is 1, fully heal the target.
-                if (Mode == 1)
+                // If Mode is 0, fully heal the target.
+                if (Mode == 0)
                 {
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
@@ -608,7 +608,7 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                        { rstcalc.rstSetMaxHpMp(0, ref pStock); }
+                        { cmpMisc.cmpSetMaxHPMP(pStock); }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
@@ -638,7 +638,7 @@ namespace ModernStatsSystem
                         { pStock.param[id] = 1; }
 
                     // Recalculate HP/MP then heal them.
-                    rstcalc.rstSetMaxHpMp(0, ref pStock);
+                    cmpMisc.cmpSetMaxHPMP(pStock);
                 }
                 return false;
             }
@@ -1485,7 +1485,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                cmpMisc.cmpSetMaxHPMP(pStock);
                 return false;
             }
         }
