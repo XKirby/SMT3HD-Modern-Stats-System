@@ -608,7 +608,7 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                        { cmpMisc.cmpSetMaxHPMP(pStock); }
+                        { rstcalc.rstSetMaxHpMp(1, ref pStock); }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
@@ -637,8 +637,8 @@ namespace ModernStatsSystem
                     if (datCalc.datGetPlayerParam(id) < 1)
                         { pStock.param[id] = 1; }
 
-                    // Recalculate HP/MP then heal them.
-                    cmpMisc.cmpSetMaxHPMP(pStock);
+                    // Recalculate HP/MP.
+                    rstcalc.rstSetMaxHpMp(1, ref pStock);
                 }
                 return false;
             }
@@ -1485,7 +1485,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                cmpMisc.cmpSetMaxHPMP(pStock);
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
                 return false;
             }
         }

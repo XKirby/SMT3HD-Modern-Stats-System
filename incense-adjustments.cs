@@ -33,7 +33,7 @@ namespace ModernStatsSystem
                     if (rstCalcCore.cmbGetParamBase(ref pStock, statID) < MAXSTATS)
                     {
                         pStock.param[statID]++;
-                        cmpMisc.cmpSetMaxHPMP(pStock);
+                        rstcalc.rstSetMaxHpMp(1, ref pStock);
                         pStock.hp = pStock.maxhp;
                         return false;
                     }

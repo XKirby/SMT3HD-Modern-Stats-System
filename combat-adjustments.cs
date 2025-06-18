@@ -601,7 +601,7 @@ namespace ModernStatsSystem
 
                 // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 4 + (float)datCalc.datGetParam(work, 2) * 2) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
+                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 4 + (float)datCalc.datGetParam(work, 2) * 4) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
 
                 // Grabs Luc.
                 int luc = datCalc.datGetParam(work, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
