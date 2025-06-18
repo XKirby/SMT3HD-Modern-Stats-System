@@ -147,7 +147,7 @@ namespace ModernStatsSystem
                 // RNGesus Take the Wheel
                 System.Random rng = new();
 
-                // Return 1 if you hit the defender and killed him, otherwise return 0.
+                // Return 1 if you hit the defender and killed them, otherwise return 0.
                 __result = finalvalue > rng.Next(100) ? 1 : 0;
                 return false;
             }
@@ -604,15 +604,11 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs Level, Mag, and Agi and does some math.
-                __result = work.level + datCalc.datGetParam(work, 2) * 2;
+                __result = work.level + datCalc.datGetParam(work, 2) * 2 / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
 
                 // If enabled, lowers Mag scaling and adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level / 2f * (float)POINTS_PER_LEVEL + (float)datCalc.datGetParam(work, 1) * 2 + (float)datCalc.datGetParam(work, 2) + (float)datCalc.datGetParam(work, 4)); }
-
-                // If enable, scale it differently.
-                if (EnableStatScaling)
-                    { __result += (int)((float)__result / (float)POINTS_PER_LEVEL); }
+                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 2 + (float)datCalc.datGetParam(work, 2) + (float)datCalc.datGetParam(work, 4)) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
 
                 // Grabs Luc.
                 int luc = datCalc.datGetParam(work, 5);
@@ -695,42 +691,13 @@ namespace ModernStatsSystem
                 float basepower = datNormalSkill.tbl[nskill].hitlevel * 0.01f;
                 float multi = basepower;
 
-                // If Difficulty is specifically Merciful.
-                if (dds3ConfigMain.cfgGetBit(9) == 0)
-                {
-                    // Set basepower to 1.
-                    basepower = 1f;
+                // Set the basepower to 1.
+                basepower = 1f;
 
-                    // Commented out because it's breaking shit.
-                    if ((attacker.flag >> 5 & 1) == 0)
-                    {
-                        if ((defender.flag >> 5 & 1) == 0)
-                            { basepower = 0.25f; }
-                        else
-                            { basepower = 0.4f; }
-                    }
-
-                    // If the first one is not zero, do this instead.
-                    else
-                        { basepower = 2.5f; }
-
-                    // Multiply the result with the basepower value above.
-                    multi *= basepower;
-                }
-
-                // If it's not set to Merciful.
-                else
-                {
-                    // Cut the hit chance down a bit.
-                    basepower = 0.7f;
-
-                    // If Difficulty is Normal and this attacker flag is not zero, undo the above.
-                    if (dds3ConfigMain.cfgGetBit(9) == 1 && (attacker.flag & 0x20) != 0)
-                        { basepower = 1f; }
-
-                    // Finalize the multiplier.
-                    multi *= basepower;
-                }
+                // If Difficulty is specifically Hard, lower it to 0.7.
+                if (dds3ConfigMain.cfgGetBit(9) == 2)
+                    { basepower = 0.7f; }
+                multi *= basepower;
 
                 // I'm assuming these line up with Agi and Vit respectively.
                 // I could be wrong, they might both be Agi.
