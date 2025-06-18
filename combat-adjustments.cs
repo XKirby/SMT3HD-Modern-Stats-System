@@ -571,17 +571,10 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
-                __result = work.level * (EnableStatScaling ? POINTS_PER_LEVEL : 1) + datCalc.datGetParam(work, 4) * 2;
+                __result = work.level + datCalc.datGetParam(work, 4) * 2 / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
 
                 // Grabs the user's Luc.
-                int luc = datCalc.datGetParam(work, 5);
-
-                // If enabled, scale them differently.
-                if (EnableStatScaling)
-                {
-                    __result = (int)((float)__result / (float)POINTS_PER_LEVEL);
-                    luc = (int)((float)luc / (float)POINTS_PER_LEVEL);
-                }
+                int luc = datCalc.datGetParam(work, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
 
                 // If it's under 2 or some weird "badstatus" flag nonsense is true, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
@@ -606,16 +599,16 @@ namespace ModernStatsSystem
                 // Grabs Level, Mag, and Agi and does some math.
                 __result = work.level + datCalc.datGetParam(work, 2) * 2 / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
 
-                // If enabled, lowers Mag scaling and adds Int scaling.
+                // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 2 + (float)datCalc.datGetParam(work, 2) + (float)datCalc.datGetParam(work, 4)) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
+                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) + (float)datCalc.datGetParam(work, 2)) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
 
                 // Grabs Luc.
-                int luc = datCalc.datGetParam(work, 5);
+                int luc = datCalc.datGetParam(work, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
 
                 // If under 2 or flag nonsense, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
-                { luc = 1; }
+                    { luc = 1; }
 
                 // Adjust Luc by 6, then if Luc + 5 is > -1 (which it *should* be due to the above), Adjust Luc by 5 instead.
                 // Really I have no idea why this is here. It shows up in the actual formula.

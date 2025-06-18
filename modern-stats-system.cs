@@ -765,7 +765,7 @@ namespace ModernStatsSystem
                 // If enabled, scale differently.
                 if (EnableStatScaling)
                 {
-                    result = (int)((float)datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + work.level) * 3;
+                    result = (int)(((float)datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + (float)work.level) * 3f);
                     if (rstinit.GBWK != null && !EvoCheck)
                         { result += (int)((float)rstinit.GBWK.ParamOfs[2] / (float)POINTS_PER_LEVEL * 3f); }
                 }
@@ -837,25 +837,6 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstSetMaxHpMp))]
-        private class PatchSetMaxHPMP
-        {
-            private static bool Prefix(sbyte Mode, ref datUnitWork_t pStock)
-            {
-                // Grab and set the demon's Max HP/MP.
-                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
-                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
-
-                // If Mode is 1, heal the demon fully.
-                if (Mode == 1)
-                {
-                    pStock.hp = pStock.maxhp;
-                    pStock.mp = pStock.maxmp;
-                }
-                return false;
-            }
-        }
-
         [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbAddLevelUpParamEx))]
         private class PatchAddLevelUpParamEx
         {
@@ -903,7 +884,7 @@ namespace ModernStatsSystem
                 while (true);
 
                 // If you got to here, the function broke somehow, so just make sure it assigns nothing.
-                return -1;
+                return 6;
             }
 
             private static bool Prefix(out sbyte __result, ref datUnitWork_t pStock, sbyte Mode)
@@ -1343,7 +1324,7 @@ namespace ModernStatsSystem
                     pStock.param[3] + rstinit.GBWK.ParamOfs[3] >= MAXSTATS &&
                     pStock.param[4] + rstinit.GBWK.ParamOfs[4] >= MAXSTATS &&
                     pStock.param[5] + rstinit.GBWK.ParamOfs[5] >= MAXSTATS)
-                    { YesResponse(); return false; }
+                        { YesResponse(); return false; }
 
                 // Same thing as above, but without Int.
                 else if (pStock.param[0] + rstinit.GBWK.ParamOfs[0] >= MAXSTATS &&
@@ -1351,7 +1332,7 @@ namespace ModernStatsSystem
                     pStock.param[3] + rstinit.GBWK.ParamOfs[3] >= MAXSTATS &&
                     pStock.param[4] + rstinit.GBWK.ParamOfs[4] >= MAXSTATS &&
                     pStock.param[5] + rstinit.GBWK.ParamOfs[5] >= MAXSTATS)
-                    { YesResponse(); return false; }
+                        { YesResponse(); return false; }
 
                 // If the status object is null, immediately skip the entire process.
                 if (cmpStatus.statusObj == null)
