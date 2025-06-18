@@ -570,6 +570,24 @@ namespace ModernStatsSystem
             LoggerInstance.Msg("Modern Stats System Initialized.");
         }
 
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstSetMaxHpMp))]
+        private class PatchSetMaxHpMp
+        {
+            private static void Postfix(sbyte Mode, ref datUnitWork_t pStock)
+            {
+                // Set the target's Max HP and MP
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+
+                // If Mode is 1, fully heal the target.
+                if (Mode == 1)
+                {
+                    pStock.hp = pStock.maxhp;
+                    pStock.mp = pStock.maxmp;
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstChkParamLimitAll))]
         private class PatchChkParamLimitAll
         {
