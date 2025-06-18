@@ -397,8 +397,8 @@ namespace ModernStatsSystem
             30, // Kaiwan (Probably unused)
             18, // Nekomata
             26, // Troll
-            8,  // Will o' Wisp
-            6,  // Preta
+            5,  // Will o' Wisp
+            5,  // Preta
             47, // Bishamonten
             81, // Mara
             80, // Bishamonten (80 in all stats)
@@ -501,6 +501,8 @@ namespace ModernStatsSystem
                         { datDevilFormat.tbl[i].param[j] *= POINTS_PER_LEVEL; }
                     if (EnableIntStat)
                         { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
+
+                    /* // The HP/MP recalculation here is gonna remain commented out until I do something that necessitates it.
                     if (i < 254)
                     {
                         datDevilFormat.tbl[i].maxhp = (ushort)((datDevilFormat.tbl[i].param[3] / POINTS_PER_LEVEL + datDevilFormat.tbl[i].level) * 6);
@@ -508,6 +510,7 @@ namespace ModernStatsSystem
                         datDevilFormat.tbl[i].maxmp = (ushort)((datDevilFormat.tbl[i].param[2] / POINTS_PER_LEVEL + datDevilFormat.tbl[i].level) * 3);
                         datDevilFormat.tbl[i].mp = datDevilFormat.tbl[i].maxmp;
                     }
+                    */
                 }
             }
 
@@ -615,7 +618,7 @@ namespace ModernStatsSystem
                         { pStock.param[id] = 1; }
 
                     // Recalculate HP/MP then heal them.
-                    rstcalc.rstSetMaxHpMp(1, ref pStock);
+                    rstcalc.rstSetMaxHpMp(0, ref pStock);
                 }
                 return false;
             }
@@ -730,9 +733,9 @@ namespace ModernStatsSystem
                 // If enabled, scale differently.
                 if (EnableStatScaling)
                 {
-                    result = (int)(((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL) + (float)work.level * 6f);
+                    result = (int)(((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6f);
                     if (rstinit.GBWK != null)
-                        { result += (int)((float)rstinit.GBWK.ParamOfs[3] / (float)POINTS_PER_LEVEL) * 6; }
+                        { result += (int)((float)rstinit.GBWK.ParamOfs[3] / (float)POINTS_PER_LEVEL * 6f); }
                 }
 
                 // Return the result.
@@ -762,9 +765,9 @@ namespace ModernStatsSystem
                 // If enabled, scale differently.
                 if (EnableStatScaling)
                 {
-                    result = datCalc.datGetBaseParam(work, 2) * 3 / POINTS_PER_LEVEL + work.level * 3;
+                    result = (int)((float)datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + work.level) * 3;
                     if (rstinit.GBWK != null)
-                        { result += rstinit.GBWK.ParamOfs[2] * 3 / POINTS_PER_LEVEL; }
+                        { result += (int)((float)rstinit.GBWK.ParamOfs[2] / (float)POINTS_PER_LEVEL * 3f); }
                 }
 
                 // Return the result.
@@ -1281,6 +1284,9 @@ namespace ModernStatsSystem
                 // I shit you not, this number is EXTREMELY important.
                 // Wihtout this, you can't leave the menu properly. I honestly have no idea why.
                 rstinit.GBWK.SeqInfo.Current = 0x18;
+                
+                // Clear the fact that you were setting stats.
+                SettingAsignParam = false;
 
                 // Return that you said yes.
                 return 1;
@@ -1292,7 +1298,7 @@ namespace ModernStatsSystem
             }
             private static bool Prefix(ref datUnitWork_t pStock)
             {
-                // If you're in a Message.
+                // If you're in the confirmation Message.
                 if (fclMisc.fclChkMessage() == 2)
                 {
                     // If you're at position zero and you hit the OK button.
@@ -1323,16 +1329,12 @@ namespace ModernStatsSystem
 
                 // If you're not assigning your Stats, reset them once and start assigning them.
                 // If you had the Evolution menu open previously, disable the check.
+                EvoCheck = false;
                 if (SettingAsignParam == false)
                 {
                     SettingAsignParam = true;
-                    EvoCheck = false;
                     PatchResetAsignParam.ResetParam();
                 }
-
-                // If your LevelUp Count is 0 or less, stop assigning.
-                if (rstinit.GBWK.LevelUpCnt <= 0)
-                    { SettingAsignParam = false; }
 
                 // If your stats are capped, immediately skip the entire process.
                 if (EnableIntStat && pStock.param[0] + rstinit.GBWK.ParamOfs[0] >= MAXSTATS &&

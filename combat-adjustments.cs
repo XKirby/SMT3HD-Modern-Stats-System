@@ -59,7 +59,7 @@ namespace ModernStatsSystem
             {
                 // Increment the target's hit count and change their odds to be hit based on if they exceed a minimum hit limit.
                 targetData[index][1]++;
-                if (targetData[index][1] > minhits)
+                if (targetData[index][1] >= minhits)
                     { targetData[index][2] = odds; }
             }
 
@@ -301,7 +301,7 @@ namespace ModernStatsSystem
                 __result = 0;
 
                 // If this skill doesn't deal damage, skip this function altogether.
-                if (datSkill.tbl[nskill].type < 12)
+                if (datSkill.tbl[nskill].type > 12)
                     { return true; }
 
                 // Set up the attacker/defender objects from the indices.
@@ -665,6 +665,10 @@ namespace ModernStatsSystem
                 if (datSkill.tbl[nskill].skillattr != 0)
                     { return true; }
 
+                // If EnableStatScaling is false, return and do the original function
+                if (!EnableStatScaling)
+                    { return true; }
+
                 // Grab the Process Data.
                 nbMainProcessData_t a = nbMainProcess.nbGetMainProcessData();
 
@@ -740,22 +744,24 @@ namespace ModernStatsSystem
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
 
                 // Grab both users' Agi and math out the difference.
-                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / ((float)attacker.level / 5f + 3f) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
-                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / ((float)defender.level / 5f + 3f) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / ((float)defender.level / 5f + 3f) / (float)POINTS_PER_LEVEL;
+                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / ((float)attacker.level / 5f + 3f) / (float)POINTS_PER_LEVEL;
 
                 // Calculate the overall hit chance.
-                float hitChanceCalc = multi * atkBuffs * defBuffs * (((defAgiCalc * 100f) - (atkAgiCalc * 100f)) * 0.0625f + (100 - nbCalc.GetFailpoint(nskill)));
-                if (hitChanceCalc <= 1.0f)
-                    { hitChanceCalc = 1.0f; }
+                float hitChanceCalc = multi * atkBuffs * defBuffs * ((defAgiCalc - atkAgiCalc) * 6.25f + (100 - nbCalc.GetFailpoint(nskill)));
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
                 if ((attacker.badstatus & 0xFFF) == 0x100)
                     { hitChanceCalc *= 0.25f; }
 
+                // Make sure it's a minimum of 5% to hit.
+                if (hitChanceCalc <= 5.0f)
+                    { hitChanceCalc = 5.0f; }
+
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
-                if (rng.Next(100) < hitChanceCalc)
+                if (rng.Next(100) > hitChanceCalc)
                     { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's zero, return a different result.
@@ -778,6 +784,10 @@ namespace ModernStatsSystem
 
                 // Result init.
                 __result = 0;
+
+                // If false, return original function.
+                if (!EnableStatScaling)
+                    { return true; }
 
                 // Flag Nonsense. If true, return original function.
                 if ((byte)datSkill.tbl[nskill].skillattr == 0xff || (datSkill.tbl[nskill].skillattr & 0xfc) == 0xc)
@@ -802,8 +812,8 @@ namespace ModernStatsSystem
                 }
 
                 // Seriously, Nocturne, why are you like this???
-                // For the record, unsigned integers can't go below 0.
-                if (aisyo < 0)
+                // For the record, unsigned integers can't go below 0, so it actively converts it to an int so it can.
+                if ((int)aisyo < 0)
                     { __result = 2; return false; }
 
                 // Set the party object from the attacker.
@@ -812,6 +822,13 @@ namespace ModernStatsSystem
                 // Flag stuff.
                 if (((party.flag + 1) & 1) != 0)
                     { __result = 1; return false; }
+
+                // A random boolean to check on things later.
+                bool chk = false;
+
+                // Infinite Loop Check.
+                // Because what the fuck.
+                bool wtf = false;
 
                 // Some random float value. Remake this comment when you figure it out.
                 float val = 0.0f;
@@ -830,13 +847,6 @@ namespace ModernStatsSystem
                 else
                     { val = 1f; }
 
-                // A random boolean to check on things later.
-                bool chk = false;
-
-                // Infinite Loop Check.
-                // Because what the fuck.
-                bool wtf = false;
-
                 // Yes, I am labeling this section "WhatTheFuck".
                 // Go ahead and read it.
                 // You'll understand.
@@ -854,6 +864,7 @@ namespace ModernStatsSystem
                     {
 
                         // Some random Skill check.
+                        // TURNS OUT THIS IS MIGHT SO IT ADJUSTS CRIT CHANCE. THANKS GAME.
                         if (datCalc.datCheckSyojiSkill(attacker, 299) == 0)
                             { chk = false; }
                         
@@ -870,11 +881,11 @@ namespace ModernStatsSystem
 
                             // I can't believe this is making me double-check so hard what goes where.
                             val *= datSpecialSkill.tbl[nskill].n / 100f;
+                            
+                            // Set check to true, finally.
+                            chk = true;
                         }
                     }
-
-                    // Set check to true, finally.
-                    chk = true;
                 }
 
                 // Okay, if the above fuckfest doesn't get called, do the following.
@@ -884,7 +895,7 @@ namespace ModernStatsSystem
                     // Seriously. What the fuck Nocturne.
                     if (dds3ConfigMain.cfgGetBit(9) > 0)
                     {
-                        // At least it does some math if the Difficulty Bit is above 1.
+                        // If it's above 1, set this value to true.
                         if (dds3ConfigMain.cfgGetBit(9) > 1)
                             { val = 100f; wtf = true; }
 
@@ -895,42 +906,51 @@ namespace ModernStatsSystem
                     // Value adjustment.
                     val *= 0.7f;
 
-                    // If you're using a normal attack, return.
+                    // If you're using a normal attack, jump back up.
                     if (nskill == 0)
                         { wtf = true; goto WhatTheFuck; }
 
+                    // Set check to false.
                     chk = false;
                 }
                 
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
-                float atkCritStat = (float)datCalc.datGetParam(attacker, 4);
+                float atkCritStat = (float)datCalc.datGetParam(attacker, 5) / (float)POINTS_PER_LEVEL;
                 float atkCritChance = 0f;
-                if (atkCritLevel != 0f)
-                    { atkCritChance = atkCritStat / atkCritLevel; }
 
                 // Set Defender's Crit Chance values.
-                float defCritLevel = (EnableStatScaling ? (float)datCalc.datGetParam(attacker, 4) : (float)datCalc.datGetParam(attacker, 5) / (float)POINTS_PER_LEVEL);
-                float defCritStat = (EnableStatScaling ? (float)datCalc.datGetParam(defender, 4) : (float)datCalc.datGetParam(defender, 5) / (float)POINTS_PER_LEVEL);
+                float defCritLevel = (float)defender.level / 5f + 3f;
+                float defCritStat = (float)datCalc.datGetParam(defender, 5) / (float)POINTS_PER_LEVEL;
                 float defCritChance = 0f;
+
+                // Divide the Crit Chances by the opposite levels.
                 if (defCritLevel != 0f)
-                    { defCritChance = defCritStat / defCritLevel; }
+                    { atkCritChance = atkCritStat / defCritLevel; }
+                if (atkCritLevel != 0f)
+                    { defCritChance = defCritStat / atkCritLevel; }
 
                 // Set total Crit Value.
-                float critValue = ((atkCritChance * 100f) - (defCritChance * 100)) * 0.0625f + (100f - nbCalc.GetFailpoint(nskill));
+                float critValue = (atkCritChance - defCritChance) * 6.25f + (100f - nbCalc.GetFailpoint(nskill));
+
+                // Adjust the Crit Value.
+                critValue = val * (critValue / 100f) * datNormalSkill.tbl[nskill].criticalpoint;
+
+                // CAP the total Crit Value.
+                // 50% Crit Chance is fucking high enough.
                 if (critValue < 50f)
                     { critValue = 50f; }
 
-                // Adjust the Crit Value.
-                critValue = val * (critValue / (100 - nbCalc.GetFailpoint(nskill))) * datNormalSkill.tbl[nskill].criticalpoint;
-
                 // Generate a random interger and compare to the Crit Value.
+                // If it's higher, it's a crit.
                 System.Random rng = new();
-                if (rng.Next(100) < critValue)
+                if (rng.Next(100) > critValue)
                     { __result = 1; return false; }
 
                 // Finally reference the above check value.
                 // And all it's used for is to set the autoskill value to 299.
+                // As noted above, this is Might, so it modified crit chance.
+                // God damnit.
                 if (chk)
                     { ad.autoskill = 299; }
 
@@ -1097,7 +1117,7 @@ namespace ModernStatsSystem
                         int rollForHit = rng.Next(100);
                         if (rollForHit >= TargetHitCountManager.targetData[target][2])
                         {
-                            // If we do, remove the target and continue the loop.
+                            // If we don't, remove the target and continue the loop.
                             TargetHitCountManager.RemoveTarget(target);
                             continue;
                         }
