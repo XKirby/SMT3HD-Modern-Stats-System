@@ -479,10 +479,12 @@ namespace ModernStatsSystem
             // Alter Demi-Fiend's Base Stats then recalculate HP/MP.
             if (EnableStatScaling)
             {
-                datUnitWork_t work = datHuman.datHumanUnitWork;
-                for (int i = 0; i < work.param.Length; i++)
-                    { work.param[i] *= POINTS_PER_LEVEL; }
-                rstcalc.rstSetMaxHpMp(1, ref work);
+                for (int i = 0; i < datHuman.datHumanUnitWork.param.Length; i++)
+                    { datHuman.datHumanUnitWork.param[i] *= POINTS_PER_LEVEL; }
+                datHuman.datHumanUnitWork.maxhp = (ushort)(((float)datHuman.datHumanUnitWork.param[3] / (float)POINTS_PER_LEVEL + (float)datHuman.datHumanUnitWork.level) * 6f);
+                datHuman.datHumanUnitWork.hp = datHuman.datHumanUnitWork.maxhp;
+                datHuman.datHumanUnitWork.maxmp = (ushort)(((float)datHuman.datHumanUnitWork.param[2] / (float)POINTS_PER_LEVEL + (float)datHuman.datHumanUnitWork.level) * 3f);
+                datHuman.datHumanUnitWork.mp = datHuman.datHumanUnitWork.maxmp;
             }
 
             // Search through all of the demons.
