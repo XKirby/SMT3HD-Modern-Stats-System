@@ -115,9 +115,9 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // Check the Skill's type and make sure it can kill petrified targets.
-                // It only checks Physical and Force skills for right now.
+                // It only checks Physical, Force, and Shot Skills (Insaniax).
                 bool found = false;
-                foreach (int i in new int[] { 0, 4 })
+                foreach (int i in new int[] { 0, 4, 12 })
                 {
                     if (datSkill.tbl[nskill].type == i)
                         { found = true; break; }
@@ -691,17 +691,17 @@ namespace ModernStatsSystem
                         { __result = 5; return false; }
                 }
 
-                // Grab the Difficulty bit's value and do some math.
+                // Grab the Skill's accuracy and do some math.
                 float basepower = datNormalSkill.tbl[nskill].hitlevel * 0.01f;
-                float multi = basepower * 0.7f;
+                float multi = basepower;
 
-                // If Difficulty is Merciful or Normal.
-                if(dds3ConfigMain.cfgGetBit(9) <= 1 && datNormalSkill.tbl[nskill].badlevel == 1 && (attacker.flag & 0x20) != 0)
-                    { multi = basepower; }
                 // If Difficulty is specifically Merciful.
                 if (dds3ConfigMain.cfgGetBit(9) == 0)
                 {
-                    // Flags for days here.
+                    // Set basepower to 1.
+                    basepower = 1f;
+
+                    // Commented out because it's breaking shit.
                     if ((attacker.flag >> 5 & 1) == 0)
                     {
                         if ((defender.flag >> 5 & 1) == 0)
@@ -714,28 +714,22 @@ namespace ModernStatsSystem
                     else
                         { basepower = 2.5f; }
 
-                    // Multiply the "basepower".
-                    basepower *= multi;
+                    // Multiply the result with the basepower value above.
+                    multi *= basepower;
                 }
 
                 // If it's not set to Merciful.
                 else
                 {
-                    // At-base just multiply the current "basepower" variable.
-                    basepower *= multi;
-
-                    // Set this to be a backup.
-                    multi = basepower;
-
                     // Cut the hit chance down a bit.
-                    basepower *= 0.7f;
+                    basepower = 0.7f;
 
-                    // If Difficulty is Normal, undo the above.
-                    if(dds3ConfigMain.cfgGetBit(9) == 1 && (attacker.flag & 0x20) != 0)
-                        { basepower = multi; }
+                    // If Difficulty is Normal and this attacker flag is not zero, undo the above.
+                    if (dds3ConfigMain.cfgGetBit(9) == 1 && (attacker.flag & 0x20) != 0)
+                        { basepower = 1f; }
 
                     // Finalize the multiplier.
-                    multi = basepower;
+                    multi *= basepower;
                 }
 
                 // I'm assuming these line up with Agi and Vit respectively.
@@ -744,8 +738,8 @@ namespace ModernStatsSystem
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
 
                 // Grab both users' Agi and math out the difference.
-                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / ((float)defender.level / 5f + 3f) / (float)POINTS_PER_LEVEL;
-                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / ((float)attacker.level / 5f + 3f) / (float)POINTS_PER_LEVEL;
+                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / (float)POINTS_PER_LEVEL / ((float)defender.level / 5f + 3f);
+                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / (float)POINTS_PER_LEVEL / ((float)attacker.level / 5f + 3f);
 
                 // Calculate the overall hit chance.
                 float hitChanceCalc = multi * atkBuffs * defBuffs * ((defAgiCalc - atkAgiCalc) * 6.25f + (100 - nbCalc.GetFailpoint(nskill)));
@@ -755,13 +749,14 @@ namespace ModernStatsSystem
                     { hitChanceCalc *= 0.25f; }
 
                 // Make sure it's a minimum of 5% to hit.
-                if (hitChanceCalc <= 5.0f)
-                    { hitChanceCalc = 5.0f; }
+                if (hitChanceCalc >= 95.0f)
+                    { hitChanceCalc = 95.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
-                if (rng.Next(100) > hitChanceCalc)
+                int hitCheck = (int)(rng.NextDouble() * 100f);
+                if (hitCheck < hitChanceCalc)
                     { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's zero, return a different result.
@@ -895,9 +890,12 @@ namespace ModernStatsSystem
                     // Seriously. What the fuck Nocturne.
                     if (dds3ConfigMain.cfgGetBit(9) > 0)
                     {
-                        // If it's above 1, set this value to true.
+                        // If it's above 1, change the value.
                         if (dds3ConfigMain.cfgGetBit(9) > 1)
-                            { val = 100f; wtf = true; }
+                            { val = 100f; }
+
+                        // Make sure this is true so it doesn't loop forever.
+                        wtf = true;
 
                         // Jump back up.
                         goto WhatTheFuck;
@@ -1034,7 +1032,10 @@ namespace ModernStatsSystem
                 int extrahits = 0;
 
                 // Physical Attacks (Agi Scaling)
-                if (datSkill.tbl[nskill].type == 0)
+                // 12 is Shot in Insaniax.
+                // Otherwise Talk skills will be affected.
+                // Which they shouldn't since they don't target randomly.
+                if (datSkill.tbl[nskill].type == 0 || datSkill.tbl[nskill].type == 12)
                     { extrahits = Math.Max(datCalc.datGetParam(user, 4) / (5 * POINTS_PER_LEVEL), 0); }
 
                 // Magic Attacks (Luc Scaling)

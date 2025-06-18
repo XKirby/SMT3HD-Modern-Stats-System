@@ -734,7 +734,7 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     result = (int)(((float)datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6f);
-                    if (rstinit.GBWK != null)
+                    if (rstinit.GBWK != null && !EvoCheck)
                         { result += (int)((float)rstinit.GBWK.ParamOfs[3] / (float)POINTS_PER_LEVEL * 6f); }
                 }
 
@@ -766,7 +766,7 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     result = (int)((float)datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + work.level) * 3;
-                    if (rstinit.GBWK != null)
+                    if (rstinit.GBWK != null && !EvoCheck)
                         { result += (int)((float)rstinit.GBWK.ParamOfs[2] / (float)POINTS_PER_LEVEL * 3f); }
                 }
 
