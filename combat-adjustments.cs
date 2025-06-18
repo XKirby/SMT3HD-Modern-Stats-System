@@ -12,20 +12,25 @@ namespace ModernStatsSystem
     {
         public class TargetHitCountManager
         {
-            public static Il2CppReferenceArray<Il2CppStructArray<sbyte>> targetData { get; set; }
+            public static Il2CppReferenceArray<Il2CppStructArray<sbyte>> targetData = new(3);
 
             // Class Constructor
-            public static void SetEffectList(Il2CppReferenceArray<Il2CppStructArray<sbyte>> effectlist = null)
+            public static void SetEffectList(Il2CppReferenceArray<Il2CppStructArray<sbyte>> effectlist)
             {
+                // Creates a new set of arrays.
+                targetData = new(0x20);
+
                 // If you supplied an effect list.
                 if (effectlist != null)
                 {
-                    // Copies the effect list.
-                    targetData = effectlist;
-
                     // Add a new index for total chance to be hit.
                     for (int i = 0; i < targetData.Length; i++)
-                        { targetData[i][2] = 100; }
+                    {
+                        targetData[i] = new(3);
+                        targetData[i][0] = effectlist[i][0];
+                        targetData[i][1] = effectlist[i][1];
+                        targetData[i][2] = 100;
+                    }
                 }
             }
 
@@ -44,7 +49,7 @@ namespace ModernStatsSystem
                 List<sbyte> possibleTargets = new();
                 for (int i = 0; i < targetData.Length; i++)
                 {
-                    if (targetData[i][2] > 0)
+                    if (targetData[i][2] > 0 && targetData[i][0] > -1)
                         { possibleTargets = possibleTargets.Append((sbyte)i).ToList(); }
                 }
                 return possibleTargets;
@@ -77,6 +82,8 @@ namespace ModernStatsSystem
                 // Loops through all of the targets and, if they have no HP remaining, remove their chance to be hit.
                 for (int i = 0; i < targetData.Length; i++)
                 {
+                    if (targetData[i][0] < 0)
+                        { continue; }
                     datUnitWork_t work = nbMainProcess.nbGetUnitWorkFromFormindex(targetData[i][0]);
                     if (work.hp <= 0)
                         { RemoveTarget(i); }
@@ -681,7 +688,7 @@ namespace ModernStatsSystem
                 }
 
                 // Grab the Difficulty bit's value and do some math.
-                float basepower = datNormalSkill.tbl[nskill].hpn * 0.01f;
+                float basepower = datNormalSkill.tbl[nskill].hitlevel * 0.01f;
                 float multi = basepower * 0.7f;
 
                 // If Difficulty is Merciful or Normal.
@@ -742,14 +749,13 @@ namespace ModernStatsSystem
                     { hitChanceCalc = 1.0f; }
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
-                multi = hitChanceCalc * 0.25f;
-                if ((attacker.badstatus & 0xFFF) != 0x100)
-                    { multi = hitChanceCalc; }
+                if ((attacker.badstatus & 0xFFF) == 0x100)
+                    { hitChanceCalc *= 0.25f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
-                if (rng.Next(100) < multi)
+                if (rng.Next(100) < hitChanceCalc)
                     { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's zero, return a different result.
@@ -920,7 +926,7 @@ namespace ModernStatsSystem
 
                 // Generate a random interger and compare to the Crit Value.
                 System.Random rng = new();
-                if (rng.Next(100) >= critValue)
+                if (rng.Next(100) < critValue)
                     { __result = 1; return false; }
 
                 // Finally reference the above check value.
@@ -955,13 +961,14 @@ namespace ModernStatsSystem
                     if (effectlist[i].Length < 2)
                         { return true; }
 
-                    // Clear both indices.
-                    // -1 means no target and the following zero sets the hitcount to, well, zero.
+                    // Reset both values.
+                    // The first value becomes an existing character in the battlefield later. For now, it's set to nothing.
+                    // The second value becomes 0. It's how many hits they receive.
                     effectlist[i][0] = -1;
                     effectlist[i][1] = 0;
                     i++;
                 }
-                while (i < effectlist.Length);
+                while (i < a.timelist.Length);
 
                 // Loop some other stuff.
                 i = 0;
@@ -1017,6 +1024,10 @@ namespace ModernStatsSystem
                 // Subtract by half the Skill's Rank, rounded up
                 extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 2d);
 
+                // If it somehow goes under, set it to zero.
+                if (extrahits < 0)
+                    { extrahits = 0; }
+
                 // Calculate odds of being hit by this particular skill based on its maximum hit count.
                 // Additionally, cap the odds at min 25% and max 70%.
                 sbyte hitOdds = (sbyte)Math.Max(Math.Min(datNormalSkill.tbl[nskill].targetcntmax * 10 + extrahits * 5, 70), 25);
@@ -1025,32 +1036,32 @@ namespace ModernStatsSystem
                 byte maxhits = (byte)((datNormalSkill.tbl[nskill].targetcntmax + datNormalSkill.tbl[nskill].targetcntmin + extrahits) / 2);
 
                 // Sets the minimum hit count before reductions start applying.
-                byte minhits = (byte)Math.Max(maxhits / 3, datNormalSkill.tbl[nskill].targetcntmin);
+                byte minhits = (byte)Math.Max(datNormalSkill.tbl[nskill].targetcntmin, maxhits / 3);
 
                 // Randomly set the hitcount.
-                int hitcount = rng.Next(datNormalSkill.tbl[nskill].targetcntmin, datNormalSkill.tbl[nskill].targetcntmax + extrahits);
+                int hitcount = rng.Next(datNormalSkill.tbl[nskill].targetcntmax + extrahits) + 1;
 
-                // Loop through the Effect List and make sure the form indices are set.
-                for (i = 0; i < effectlist.Length; i++)
-                    { effectlist[i][0] = (sbyte)a.data.form[i].formindex; }
-
-                // Loop through the Hit Chances.
-                for (i = 0; i < TargetHitCountManager.targetData.Length; i++)
+                // Loop through the currently available units in the Timelist and insert them into the Effectlist.
+                int foundcount = 0;
+                for (i = 0; i < a.timelist.Length; i++)
                 {
-                    // If you're not on your target's team and their HP is over zero, set chance to be hit to 100.
+                    // If the unit is not in the attacker's party and also isn't dead, add them to the Effectlist.
                     if ((
                         (a.data.form[i].formindex < 4 && a.form.formindex >= 4) ||
                         (a.data.form[i].formindex >= 4 && a.form.formindex < 4)) &&
-                        a.timelist[i].hp > 0)
-                        { TargetHitCountManager.targetData[i][2] = 100; }
-
-                    // Otherwise, set it to zero.
-                    else
-                        { TargetHitCountManager.targetData[i][2] = 0; }
+                        a.timelist[i].hp >= 1)
+                            { effectlist[foundcount++][0] = (sbyte)a.data.form[i].formindex; }
                 }
 
-                // Get The Target List
+                // Set The Target List
                 TargetHitCountManager.SetEffectList(effectlist);
+
+                // Clear out all of the invalid targets from the Target List.
+                for (i = 0; i < TargetHitCountManager.targetData.Length; i++)
+                {
+                    if (TargetHitCountManager.targetData[i][0] < 0)
+                        { TargetHitCountManager.RemoveTarget(i); }
+                }
 
                 // Loop through the Hit Count and hit the targets.
                 i = 0;
@@ -1068,6 +1079,10 @@ namespace ModernStatsSystem
 
                     // Grab the Target List for reference.
                     List<sbyte> possibleTargets = TargetHitCountManager.CreateTargetList();
+
+                    // If this list is entirely empty, just break the loop.
+                    if (possibleTargets.Count == 0)
+                        { break; }
 
                     // Grab a random target ID
                     sbyte target = possibleTargets[rng.Next(possibleTargets.Count)];
@@ -1088,20 +1103,19 @@ namespace ModernStatsSystem
                         }
                     }
 
-                    // Hit the target.
+                    // Add a hit to the target for hit count checking.
                     // Additionally, this adjusts their chance to be hit to a new value if they exceed the minimum hit count.
                     TargetHitCountManager.HitTarget(target, minhits, hitOdds);
+                    
+                    // Add a hit to the target in the Effectlist.
+                    effectlist[target][1]++;
 
                     // Increment.
                     i++;
                 }
 
-                // Loop through the effect list and set each target's hit total.
-                for (i = 0; i < effectlist.Length; i++)
-                    { effectlist[i][1] = TargetHitCountManager.targetData[i][1]; }
-
                 // Clear the Target List.
-                TargetHitCountManager.targetData = null;
+                TargetHitCountManager.SetEffectList(null);
 
                 // At this point we're good, so replace the original list.
                 koukalist = effectlist;
