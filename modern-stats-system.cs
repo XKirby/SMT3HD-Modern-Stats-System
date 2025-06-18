@@ -8,7 +8,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.1.1.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.2.0.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -579,8 +579,8 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                // If Mode is 0, fully heal the target.
-                if (Mode == 0)
+                // If Mode is 0 and their EvoFlag is not zero, fully heal them.
+                if (Mode == 0 && rstinit.GBWK.EvoFlag != 0)
                 {
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
@@ -608,7 +608,7 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                        { rstcalc.rstSetMaxHpMp(1, ref pStock); }
+                        { rstcalc.rstSetMaxHpMp(0, ref pStock); }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
@@ -638,7 +638,7 @@ namespace ModernStatsSystem
                         { pStock.param[id] = 1; }
 
                     // Recalculate HP/MP.
-                    rstcalc.rstSetMaxHpMp(1, ref pStock);
+                    rstcalc.rstSetMaxHpMp(0, ref pStock);
                 }
                 return false;
             }
@@ -1023,7 +1023,7 @@ namespace ModernStatsSystem
 
                             // Set the position and scale to new values. These are very precise.
                             g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(118 - j * 25, 31, -4);
-                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
+                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
                             
                             // Deactivate the object if it wasn't active.
                             g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;
@@ -1104,7 +1104,7 @@ namespace ModernStatsSystem
 
                                 // Set new position and scale. Again, very precise.
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
-                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
                                 
                                 // Set active state back.
                                 g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
@@ -1160,7 +1160,7 @@ namespace ModernStatsSystem
 
                                 // Change the image's position and scale. You get the point by now. This happens a lot.
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
-                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
+                                g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
                                 
                                 // Set active to previous value.
                                 g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
@@ -1401,7 +1401,7 @@ namespace ModernStatsSystem
                     cursorIndex = cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 0);
 
                     // If the cursor index is under the maximum, decrement it and play a sound.
-                    if (EnableIntStat && cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
+                    if (cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
                         { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, -1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
 
                     // Otherwise just play a sound.
@@ -1420,7 +1420,7 @@ namespace ModernStatsSystem
                     cursorIndex = cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 0);
 
                     // If under the cap, increment and play a sound.
-                    if (EnableIntStat && cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
+                    if (cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
                         { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
 
                     // Otherwise just play a sound.
@@ -1485,7 +1485,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                rstcalc.rstSetMaxHpMp(0, ref pStock);
                 return false;
             }
         }
@@ -2015,7 +2015,7 @@ namespace ModernStatsSystem
 
                             // Set new pos and scale/
                             g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(60 - j * 25, 0, -4);
-                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
+                            g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
                             
                             // Reset active state.
                             g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;

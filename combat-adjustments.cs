@@ -610,11 +610,9 @@ namespace ModernStatsSystem
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
                     { luc = 1; }
 
-                // Adjust Luc by 6, then if Luc + 5 is > -1 (which it *should* be due to the above), Adjust Luc by 5 instead.
-                // Really I have no idea why this is here. It shows up in the actual formula.
-                int luckValue = luc + 6;
-                if (luc + 5 > -1)
-                    { luckValue = luc + 5; }
+                // Adjust Luc by 5.
+                // This was really stupid originally.
+                int luckValue = luc + 5;
 
                 // Bitshift the above result by 1 and add 15.
                 __result += luckValue >> 1 + 0xf;
@@ -650,7 +648,7 @@ namespace ModernStatsSystem
                 if (datSkill.tbl.Length <= nskill)
                     { return true; }
 
-                // If the Skill's Attribute is not zero (Physical Damage), return and do the original function instead.
+                // If the Skill's Attribute is not zero, return and do the original function instead.
                 if (datSkill.tbl[nskill].skillattr != 0)
                     { return true; }
 
@@ -712,6 +710,14 @@ namespace ModernStatsSystem
                 if (hitChanceCalc >= 95.0f)
                     { hitChanceCalc = 95.0f; }
 
+                // If you have any of these statuses, you can't dodge.
+                if ((defender.badstatus & 0xFFF) == 1 ||
+                    (defender.badstatus & 0xFFF) == 2 ||
+                    (defender.badstatus & 0xFFF) == 4 ||
+                    (defender.badstatus & 0xFFF) == 8 ||
+                    (defender.badstatus & 0xFFF) == 0x10)
+                        { hitChanceCalc = 100.0f; }
+
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
@@ -746,6 +752,10 @@ namespace ModernStatsSystem
 
                 // Flag Nonsense. If true, return original function.
                 if ((byte)datSkill.tbl[nskill].skillattr == 0xff || (datSkill.tbl[nskill].skillattr & 0xfc) == 0xc)
+                    { return true; }
+
+                // If the skill is Magic, return original function.
+                if (datNormalSkill.tbl[nskill].koukatype == 1)
                     { return true; }
 
                 // "Aisyo" translates to "favorite book" with Google Translate.
@@ -785,22 +795,13 @@ namespace ModernStatsSystem
                 // Because what the fuck.
                 bool wtf = false;
 
-                // Some random float value. Remake this comment when you figure it out.
-                float val = 0.0f;
+                // Base Crit Chance value.
+                float val = 1.0f;
 
                 // More flag stuff.
                 // Sets the above value to something.
-                if ((defender.badstatus & 0xFFF) - 1 < 2)
-                    { val = 100f; }
-
-                // Even more flag stuff.
-                // Sets the above value to a much lower number.
-                else if (defender.badstatus == 0x10 || defender.badstatus == 4)
-                    { val = 8f; }
-
-                // If neither of the above happen, just set it to 1.
-                else
-                    { val = 1f; }
+                if ((defender.badstatus & 0xFFF) - 1 < 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
+                    { val = 0f; }
 
                 // Yes, I am labeling this section "WhatTheFuck".
                 // Go ahead and read it.
@@ -852,7 +853,7 @@ namespace ModernStatsSystem
                     {
                         // If it's above 1, change the value.
                         if (dds3ConfigMain.cfgGetBit(9) > 1)
-                            { val = 100f; }
+                            { val = 1f; }
 
                         // Make sure this is true so it doesn't loop forever.
                         wtf = true;
@@ -894,15 +895,10 @@ namespace ModernStatsSystem
                 // Adjust the Crit Value.
                 critValue = val * (critValue / 100f) * datNormalSkill.tbl[nskill].criticalpoint;
 
-                // CAP the total Crit Value.
-                // 50% Crit Chance is fucking high enough.
-                if (critValue < 50f)
-                    { critValue = 50f; }
-
                 // Generate a random interger and compare to the Crit Value.
                 // If it's higher, it's a crit.
                 System.Random rng = new();
-                if (rng.Next(100) > critValue)
+                if (rng.Next(100) >= critValue)
                     { __result = 1; return false; }
 
                 // Finally reference the above check value.
@@ -995,11 +991,11 @@ namespace ModernStatsSystem
                 // 12 is Shot in Insaniax.
                 // Otherwise Talk skills will be affected.
                 // Which they shouldn't since they don't target randomly.
-                if (datSkill.tbl[nskill].type == 0 || datSkill.tbl[nskill].type == 12)
+                if (datNormalSkill.tbl[nskill].koukatype == 0)
                     { extrahits = Math.Max(datCalc.datGetParam(user, 4) / (5 * POINTS_PER_LEVEL), 0); }
 
                 // Magic Attacks (Luc Scaling)
-                else if (datSkill.tbl[nskill].type < 12)
+                else if (datNormalSkill.tbl[nskill].koukatype == 1)
                     { extrahits = Math.Max(datCalc.datGetParam(user, 5) / (5 * POINTS_PER_LEVEL), 0); }
 
                 // Subtract by half the Skill's Rank, rounded up
