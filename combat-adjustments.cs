@@ -549,7 +549,7 @@ namespace ModernStatsSystem
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
                 // Additionally, divide the previous result by 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result / (float)maxhits * 0.7f * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result / (maxhits > 1 ? (float)maxhits / 2f : 1) * 0.7f * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
