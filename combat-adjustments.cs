@@ -431,7 +431,7 @@ namespace ModernStatsSystem
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
 
                 // Hit Count Maximum Check
-                int maxhits = datNormalSkill.tbl[nskill].targetcntmax - datNormalSkill.tbl[nskill].targetcntmin + 1;
+                int maxhits = datNormalSkill.tbl[nskill].targetcntmax - (datNormalSkill.tbl[nskill].targetcntmin - 1);
 
                 // There's a Level Limit for Magic Skills normally.
                 int LevelLimit = attacker.level;
@@ -519,9 +519,6 @@ namespace ModernStatsSystem
                     }
                 }
 
-                // Multiply the damage output by 70%
-                damageCalc2 = (int)((float)damageCalc2 * 0.7f);
-
                 // Don't ask me about the flag, I don't know what it does but it's important.
                 if ((attacker.flag >> 5 & 1) != 0)
                 {
@@ -550,8 +547,9 @@ namespace ModernStatsSystem
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
+                // Additionally, divide the previous result by 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result / ((float)maxhits / 2f) * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result / (float)maxhits * 0.7f * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
@@ -1124,8 +1122,8 @@ namespace ModernStatsSystem
                 else if (datNormalSkill.tbl[nskill].koukatype == 1)
                     { extrahits = Math.Max(datCalc.datGetParam(user, 5) / (5 * POINTS_PER_LEVEL), 0); }
 
-                // Subtract by half the Skill's Rank, rounded up
-                extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 2d);
+                // Subtract by a quarter of the Skill's Rank, rounded up
+                extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 4d);
 
                 // If it somehow goes under, set it to zero.
                 if (extrahits < 0)
