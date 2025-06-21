@@ -871,7 +871,7 @@ namespace ModernStatsSystem
                 // More flag stuff.
                 // Sets the above value to something.
                 if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
-                    { val = 0f; }
+                    { val = 100f; }
 
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
