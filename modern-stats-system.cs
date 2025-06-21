@@ -2256,13 +2256,13 @@ namespace ModernStatsSystem
                             // Set the Segment's Sprite.
                             g.GetComponent<Image>().sprite = barSprite;
 
-                            // Set the previous object's internal sprite to the same sprite.
-                            g = GameObject.Find(path + "/sstatusbar_blue/sstatus_blueg");
-                            g.GetComponent<Image>().sprite = barSprite;
-
                             // Set Pos and Scale of this particular Segment.
                             g.transform.localPosition = new(0f, 0f, 0f);
                             g.transform.localScale = new(0.35f, 0.35f, 1f);
+
+                            // Set the previous object's internal sprite to the same sprite.
+                            g = GameObject.Find(path + "/sstatusbar_blue/sstatusbar_blueg");
+                            g.GetComponent<Image>().sprite = barSprite;
                         }
                     }
                 }
