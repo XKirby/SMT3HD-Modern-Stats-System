@@ -24,14 +24,12 @@ namespace ModernStatsSystem
 
         // Stat Bar manipulation variables
         private const string BundlePath = "smt3hd_Data/StreamingAssets/PC/";
-        private const float BAR_SCALE_X = (float)(40.0f / MAXSTATS) + (float)(16.0f / MAXSTATS);
-        private const float BAR_SEGMENT_X = 18*(float)(40.0f / MAXSTATS) - (float)(14.0f / MAXSTATS / 2);
-        private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), MAXSTATS);
+        private const float BAR_SCALE_X = (float)(40f / MAXSTATS * 0.9f);
+        private const float BAR_SEGMENT_X = 20f * (float)(40f / MAXSTATS) * 0.9f;
+        private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), 4);
         private static AssetBundle barData = null;
-        private static Texture2D[] barAsset = { null, null, null, null, null, null };
-        private static Sprite[] barSprite = { null, null, null, null, null, null };
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
-        private const string barSpriteName = "sstatusbar_base_empty";
+        private const string barSpriteName = "sstatusbar_base";
         private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
         private static string[] StockBarValues = { "barhp", "barmp" };
         private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
@@ -638,7 +636,7 @@ namespace ModernStatsSystem
                         { pStock.param[id] = 1; }
 
                     // Recalculate HP/MP.
-                    rstcalc.rstSetMaxHpMp(0, ref pStock);
+                    cmpMisc.cmpSetMaxHPMP(pStock);
                 }
                 return false;
             }
@@ -886,7 +884,7 @@ namespace ModernStatsSystem
                     if (ctr > 0 && !EnableIntStat)
                         { ctr++; }
 
-                    // If you this somehow broke, break the loop.
+                    // If this somehow happened, break the loop.
                     if (rstinit.GBWK.ParamOfs.Length <= ctr)
                         { break; }
 
@@ -894,7 +892,7 @@ namespace ModernStatsSystem
                     rstinit.GBWK.ParamOfs[ctr]++;
 
                     // If the Stat is somehow zero, return 0x7f.
-                    // This probably means it's capped but I really don't know what this is doing.
+                    // This is probably an error code of some sort.
                     if (pStock.param[ctr] + rstinit.GBWK.ParamOfs[ctr] <= 0)
                         { return 0x7f; }
 
@@ -926,40 +924,58 @@ namespace ModernStatsSystem
                 // This is specifically so that you don't get stuck in another menu later.
                 EvoCheck = false;
 
-                // Iterate a loop through LevelUp Stats and clear them.
+                // This is a list of Stats it needs to check.
+                bool[] paramChecks = { false, false, false, false, false, false };
+
+                // Grab the current Stock demon.
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                // Iterate a loop through LevelUp Stats, clear them, then check for if the stat's capped already and set a boolean.
                 int i = 0;
                 for (i = 0; i < rstinit.GBWK.ParamOfs.Length; i++)
                 {
                     if (i == 1 && !EnableIntStat)
                         { continue; }
                     rstinit.GBWK.ParamOfs[i] = 0;
+                    if (pStock.param[i] + rstinit.GBWK.ParamOfs[i] >= MAXSTATS)
+                        { paramChecks[i] = true; }
                 }
-                
-                // Grab the current Stock demon.
-                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
                 // Iterate and set the demon's new LevelUp Stats.
                 i = 0;
                 do
                 {
+                    // If your stats are completely capped out.
+                    if (EnableIntStat &&
+                        paramChecks[0] == true &&
+                        paramChecks[1] == true &&
+                        paramChecks[2] == true &&
+                        paramChecks[3] == true &&
+                        paramChecks[4] == true &&
+                        paramChecks[5] == true)
+                            { break; }
+                    if (!EnableIntStat &&
+                        paramChecks[0] == true &&
+                        paramChecks[2] == true &&
+                        paramChecks[3] == true &&
+                        paramChecks[4] == true &&
+                        paramChecks[5] == true)
+                            { break; }
+
                     // If you end up going over the Stat points per level, break.
                     if (rstinit.GBWK.AsignParam * POINTS_PER_LEVEL <= i)
                         { break; }
 
                     // Add a random stat to the demon.
-                    var paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 0);
+                    int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 0);
 
                     // If the Stat's ID is over 5 or somehow hit -1, return.
-                    if (paramID > 5 || paramID == -1)
+                    if (paramID == 6 || paramID == -1 || paramChecks[paramID] == true)
                         { continue; }
 
-                    // If you're exceeding your Maximum with the bonus, clamp it.
+                    // Set a boolean to true if the stat becomed capped out.
                     if (pStock.param[paramID] + rstinit.GBWK.ParamOfs[paramID] >= MAXSTATS)
-                        { pStock.param[paramID] = MAXSTATS; }
-
-                    // Otherwise, add to your Base Stats.
-                    else
-                        { pStock.param[paramID] += rstinit.GBWK.ParamOfs[paramID]; }
+                        { paramChecks[paramID] = true; }
 
                     // Increment.
                     i++;
@@ -1273,7 +1289,7 @@ namespace ModernStatsSystem
                     { rstinit.GBWK.ParamOfs[i] = 0; }
 
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
-                rstinit.SetPointAnime(rstinit.GBWK.AsignParam);
+                rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
             }
         }
 
@@ -1394,6 +1410,9 @@ namespace ModernStatsSystem
                 cmpUpdate.cmpSetupObject(cmpStatus._statusUIScr.gameObject, true);
                 cmpUpdate.cmpMenuCursor(cursorIndex, cmpStatus._statusUIScr.stsCursor, cmpStatus._statusUIScr.ObjStsBar);
 
+                // Make something glow.
+                rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
+
                 // Check if you pressed up. If you're holding it, delay the input a bit and then repeat it slowly.
                 if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.U) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.U) == true)
                 {
@@ -1408,9 +1427,6 @@ namespace ModernStatsSystem
                     // This part never happens since the menu loops.
                     else
                         { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
-
-                    // Again, not sure what this is doing.
-                    rstinit.SetPointAnime(cursorIndex);
                 }
 
                 // Check if you pressed down. Works the same as the pressing up calls, just incrementing instead.
@@ -1427,9 +1443,6 @@ namespace ModernStatsSystem
                     // Again, never happens.
                     else
                         { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
-
-                    // Does a thing.
-                    rstinit.SetPointAnime(cursorIndex);
                 }
 
                 // If you press the cancel Button.
@@ -2140,14 +2153,14 @@ namespace ModernStatsSystem
                 if (stat > 0 && !EnableIntStat)
                     { stat--; }
 
-                // If the number of Animator objects within the Stat Bar of a particular Stat isn't equal to the maximum stat limit.
-                if (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length != MAXSTATS)
+                // If the number of Animator objects within the Stat Bar of a particular Stat isn't equal to 4.
+                if (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length != 4)
                 {
                     // This gets set within the while loops.
                     GameObject g;
 
                     // While the count is under, create new objects.
-                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length < MAXSTATS)
+                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length < 4)
                     {
                         // Copy the first one.
                         g = GameObject.Instantiate(stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject);
@@ -2162,23 +2175,11 @@ namespace ModernStatsSystem
                     }
 
                     // While the count is over, destroy the extra objects.
-                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length > MAXSTATS)
-                        { GameObject.Destroy(stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length - 1].gameObject); }
-                    
-                    // Iterate through the Animator list.
-                    for (int len = MAXSTATS - 1; len >= 0; len--)
+                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length > 4)
                     {
-                        // Grab pos and scale.
-                        Vector3 barScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale;
-                        Vector3 barPos = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition;
-                        
-                        // Adjust.
-                        barScale.x = BAR_SCALE_X;
-                        barPos.x = 250 + (len) * BAR_SEGMENT_X + (18 - BAR_SEGMENT_X) + 2 / BAR_SCALE_X;
-                        
-                        // Set new.
-                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale = barScale;
-                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition = barPos;
+                        g = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length - 1].gameObject;
+                        g.transform.parent = null;
+                        GameObject.Destroy(g);
                     }
 
                     // If the background bar is null, load it from the Asset Bundle.
@@ -2190,20 +2191,79 @@ namespace ModernStatsSystem
                     if (barData != null)
                     {
                         // Load its Texture2D.
-                        barAsset[stat] = barData.LoadAsset(barSpriteName).Cast<Texture2D>();
+                        Texture2D barAsset = barData.LoadAsset("sstatusbar_base_empty").Cast<Texture2D>();
 
                         // Keep it.
-                        Texture2D.DontDestroyOnLoad(barAsset[stat]);
+                        Texture2D.DontDestroyOnLoad(barAsset);
 
                         // Create a Sprite from the Texture2D and make sure to apply the Texture.
-                        barSprite[stat] = Sprite.Create(barAsset[stat], new Rect(0, 0, barAsset[stat].width, barAsset[stat].height), Vector2.zero);
-                        barSprite[stat].texture.Apply();
+                        Sprite barSprite = Sprite.Create(barAsset, new Rect(0, 0, barAsset.width, barAsset.height), Vector2.zero);
+                        barSprite.texture.Apply();
 
                         // Keep it.
-                        Sprite.DontDestroyOnLoad(barSprite[stat]);
+                        Sprite.DontDestroyOnLoad(barSprite);
 
                         // Set the Stat Bar's sprite.
-                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Image>().sprite = barSprite[stat];
+                        stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Image>().sprite = barSprite;
+
+                        // Set the Bar Segment Sprites
+                        for (int i = 0; i < 4; i++)
+                        {
+                            // Find the necessary game object.
+                            string path = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.name + "/" + stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[i].gameObject.name;
+                            g = GameObject.Find(path + "/sstatusbar_red");
+
+                            // Load the Red Segment Texture.
+                            barAsset = barData.LoadAsset("statussegment_red").Cast<Texture2D>();
+
+                            // Keep it.
+                            Texture2D.DontDestroyOnLoad(barAsset);
+
+                            // Create a Sprite from the Texture2D and make sure to apply the Texture.
+                            barSprite = Sprite.Create(barAsset, new Rect(0, 0, barAsset.width, barAsset.height), Vector2.zero);
+                            barSprite.texture.Apply();
+
+                            // Keep it.
+                            Sprite.DontDestroyOnLoad(barSprite);
+
+                            // Set the Segment's Sprite.
+                            g.GetComponent<Image>().sprite = barSprite;
+
+                            // Set Pos and Scale of this particular Segment.
+                            g.transform.localPosition = new(0f, 0f, 0f);
+                            g.transform.localScale = new(0.35f, 0.35f, 1f);
+
+                            // Set the previous object's internal sprite to the same sprite.
+                            g = GameObject.Find(path + "/sstatusbar_red/sstatus_redg");
+                            g.GetComponent<Image>().sprite = barSprite;
+
+                            // Find the necessary game object.
+                            g = GameObject.Find(path + "/sstatusbar_blue");
+
+                            // Load the Blue Segment Texture.
+                            barAsset = barData.LoadAsset("statussegment_blue").Cast<Texture2D>();
+
+                            // Keep it.
+                            Texture2D.DontDestroyOnLoad(barAsset);
+
+                            // Create a Sprite from the Texture2D and make sure to apply the Texture.
+                            barSprite = Sprite.Create(barAsset, new Rect(0, 0, barAsset.width, barAsset.height), Vector2.zero);
+                            barSprite.texture.Apply();
+
+                            // Keep it.
+                            Sprite.DontDestroyOnLoad(barSprite);
+
+                            // Set the Segment's Sprite.
+                            g.GetComponent<Image>().sprite = barSprite;
+
+                            // Set the previous object's internal sprite to the same sprite.
+                            g = GameObject.Find(path + "/sstatusbar_blue/sstatus_blueg");
+                            g.GetComponent<Image>().sprite = barSprite;
+
+                            // Set Pos and Scale of this particular Segment.
+                            g.transform.localPosition = new(0f, 0f, 0f);
+                            g.transform.localScale = new(0.35f, 0.35f, 1f);
+                        }
                     }
                 }
 
@@ -2225,36 +2285,32 @@ namespace ModernStatsSystem
                 if (rstinit.GBWK != null && !EvoCheck)
                     { levelupValue = rstinit.GBWK.ParamOfs[ParamOfs]; }
 
-                // Iterate through all of the Stat Points of a particular stat.
-                for (int ctr = 0; ctr < paramValue + levelupValue + mitamaValue; ctr++)
+                // Set up the values into a list.
+                int[] values = new int[] { paramValue - heartValue, levelupValue, mitamaValue, heartValue };
+
+                // Iterate through the Animator list to set the correct scale and position.
+                float posOffset = 0;
+                for (int len = 0; len < 4; len++)
                 {
+                    // Grab pos and scale.
+                    Vector3 barScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale;
+                    Vector3 barPos = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition;
 
-                    // If it's over the maximum, break.
-                    if (MAXSTATS <= ctr)
-                        { break; }
+                    // Adjust.
+                    barScale.x = BAR_SCALE_X * values[len];
+                    barPos.x = 274 + BAR_SEGMENT_X * posOffset;
+                    barPos.y = -16f;
 
-                    // Set color ID to 3 (Blue) for Magatama Values.
-                    int segmentColor = 3;
+                    // Iterate from the value list.
+                    posOffset += values[len];
 
-                    // Keep Color ID at 3 for Mitama Values.
-                    if (paramValue + levelupValue + mitamaValue - heartValue > ctr)
-                        { segmentColor = 3; }
+                    // Set new.
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale = barScale;
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition = barPos;
 
-                    // Set Color ID to 2 (Red, Glow) for LevelUp Values.
-                    if (paramValue + levelupValue - heartValue > ctr)
-                        { segmentColor = 2; }
-
-                    // Set Color ID to 1 (Red) for Base Values. 
-                    if (paramValue - heartValue > ctr)
-                        { segmentColor = 1; }
-
-                    // Set the Animator's color.
-                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[ctr].SetInteger("sstatusbar_color", segmentColor);
+                    // Set the Animator Color
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].SetInteger("sstatusbar_color", (len >= 2 ? 3 : len + 1));
                 }
-
-                // Set the Color to 0 (Off) for any remaining Stat Points.
-                for(int ctr = paramValue + levelupValue + mitamaValue; ctr < MAXSTATS; ctr++)
-                    { stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[ctr].SetInteger("sstatusbar_color", 0); }
 
                 // If Stat Position is greater than or equal to Blink que length, cap it.
                 if (Pos >= cmpDrawStatus.gStatusBlinkQue.Length && cmpDrawStatus.gStatusBlinkQue.Length > 0)

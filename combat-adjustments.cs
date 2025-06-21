@@ -110,7 +110,7 @@ namespace ModernStatsSystem
                 // Grab the defender from its form index.
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
-                // If you're not pretrified, just return to the original function.
+                // If you're not petrified, just return.
                 if ((defender.badstatus & 0xfff) != 0x400)
                     { return false; }
 
@@ -119,11 +119,11 @@ namespace ModernStatsSystem
                 bool found = false;
                 foreach (int i in new int[] { 0, 4, 12 })
                 {
-                    if (datSkill.tbl[nskill].type == i)
+                    if (datSkill.tbl[nskill].skillattr == i)
                         { found = true; break; }
                 }
                 
-                // If it can't return to the original function call.
+                // If it can't, return.
                 if (found == false)
                     { return false; }
 
@@ -751,7 +751,7 @@ namespace ModernStatsSystem
                     { return true; }
 
                 // Flag Nonsense. If true, return original function.
-                if ((byte)datSkill.tbl[nskill].skillattr == 0xff || (datSkill.tbl[nskill].skillattr & 0xfc) == 0xc)
+                if ((byte)datSkill.tbl[nskill].skillattr == 0xff)
                     { return true; }
 
                 // If the skill is Magic, return original function.
@@ -800,7 +800,7 @@ namespace ModernStatsSystem
 
                 // More flag stuff.
                 // Sets the above value to something.
-                if ((defender.badstatus & 0xFFF) - 1 < 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
+                if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
                     { val = 0f; }
 
                 // Yes, I am labeling this section "WhatTheFuck".

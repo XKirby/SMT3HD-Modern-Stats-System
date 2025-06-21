@@ -8,12 +8,12 @@ Includes the following:
 - Certain formulas have been changed to accomodate the increased limits and Intelligence.
 - All demon stats multiplied by how many Points you gain per level to accomodate for the new values.
 - Various menu adjustments, including the Stat bars being mostly retooled completely.
-- A separate Unity Asset Bundle to use for the Statpoint bar backgrounds.
+- A separate Unity Asset Bundle to use for the Statpoint Bars.
 
 ### How to Install
 - Install SMT3HD from your Steam Account.
 - Install MelonLoader v0.7 onto SMT3HD.
-- Put the included Asset Bundle for the background bar in smt3hd's smt3hd_Data\StreamingAssets\PC folder.
+- Put the included Asset Bundle for the Statpoint Bars in smt3hd's smt3hd_Data\StreamingAssets\PC folder.
 - Put "modern-stats-system.dll" in MelonLoader's Mods folder.
 
 NOTE: Don't play on existing savefiles.
