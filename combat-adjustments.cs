@@ -89,6 +89,18 @@ namespace ModernStatsSystem
                         { RemoveTarget(i); }
                 }
             }
+
+            public static void ClearNoHitTargets()
+            {
+                // Loops through all of the targets and, if they have no HP remaining, remove their chance to be hit.
+                for (int i = 0; i < targetData.Length; i++)
+                {
+                    if (targetData[i][0] < 0)
+                        { continue; }
+                    if (targetData[i][1] == 0)
+                        { targetData[i][0] = -1; }
+                }
+            }
         }
 
         public class DamageMitigation
@@ -179,6 +191,119 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetExpMakaItem))]
+        private class PatchAddExp
+        {
+            private static bool Prefix(datUnitWork_t w)
+            {
+                // If Disabled, return original function.
+                if (!EnableStatScaling)
+                    { return true; }
+
+                // Get the Main Process Data.
+                nbMainProcessData_t data = nbMainProcess.nbGetMainProcessData();
+
+                // Get Demon's Devil Format
+                datDevilFormat_t devil = datDevilFormat.Get(w.id, true);
+
+                // Get the Player's Current level.
+                int level = datCalc.datGetPlayerLevel();
+
+                // Get the difference in level count.
+                int leveldiff = level - devil.level;
+
+                // Get the Demon's Experience
+                int exp = devil.dropexp;
+
+                // Get the Demon's Macca
+                int macca = devil.dropmakka;
+
+                // If the enemy has an Item.
+                int droppedItem = 0;
+
+                // Unseeded random number generator
+                System.Random rng = new();
+
+                // If the Level Difference is over zero.
+                if (leveldiff != 0)
+                {
+                    // If the Level Difference is negative, gain more Experience.
+                    if (leveldiff < 0)
+                        { exp = (int)((float)exp * (1f + ((float)leveldiff * 0.125f))); }
+                    
+                    // Otherwise, gain less Experience.
+                    else
+                        { exp = (int)((float)exp / (1f + ((float)leveldiff * 0.125f))); }
+                }
+
+                // If the Difficulty is Merciful, massively increase gains.
+                if (dds3ConfigMain.cfgGetBit(9) == 0)
+                {
+                    macca *= 5;
+                    exp *= 3;
+                }
+
+                // If in the Boss Rush, massively reduce your gains.
+                if (datCalc.datBossRashChk(data.encno) != 0)
+                {
+                    macca /= 10;
+                    exp /= 10;
+                }
+
+                data.maka += (uint)macca;
+                data.exp += (uint)exp;
+
+                // If in the Boss Rush, stop the function here.
+                if (datCalc.datBossRashChk(data.encno) != 0)
+                    { return false; }
+
+                // If this weird variable is 0 or an EventBit Check is true and the enemy has a special item.
+                if (devil.specialbit == 0 || (EventBit.evtBitCheck(devil.specialbit) && devil.specialitem != 0))
+                {
+                    if (devil.specialpoint <= rng.Next(100))
+                        { droppedItem = devil.specialitem; }
+                }
+
+                // If the Special Item was dropped or the above check failed.
+                else
+                {
+                    // Loop through the Demon's Items, unless one was found earlier.
+                    for (int i = 0; i < devil.dropitem.Length && droppedItem == 0; i++)
+                    {
+                        // If the item doesn't exist here, continue.
+                        if (devil.dropitem[i] == 0)
+                        { continue; }
+
+                        // If you meet the Drop Chance, grab this particular item and break.
+                        if (devil.droppoint[i] <= rng.Next(100))
+                            { droppedItem = devil.dropitem[i]; break; }
+                    }
+                }
+
+                // Not sure what's going on here.
+                int item = 4;
+                if (devil.hougyokupoint <= rng.Next(100) || droppedItem != 0)
+                    { item = droppedItem; }
+                droppedItem = 3;
+                if (devil.masekipoint <= rng.Next(100) || item != 0)
+                    { droppedItem = item; }
+
+                if (item == 0)
+                    { return false; }
+
+                // Loop through the Data's Item list
+                for (int i = 0; i < data.item.Length; i++)
+                {
+                    if (data.item[i] == 0)
+                        { data.item[i] = (byte)item; }
+                    if (item == data.item[i])
+                        { data.itemcnt[i] += 1; break; }
+                }
+
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetButuriAttack))]
         private class PatchGetPhysicalPow
         {
@@ -229,11 +354,8 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                     { reduction = (int)((float)unkval / (float)(defender.level + 10)); }
 
-                // The final value is cut down to 60%.
-                finalvalue = (int)((float)finalvalue * 0.6f);
-
-                // Reduce the final value by the reduction.
-                finalvalue -= reduction;
+                // The final value is cut down to 60% and reduced by the above reduction formula.
+                finalvalue = (int)((float)finalvalue * 0.6f) - reduction;
                 __result = finalvalue;
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
@@ -397,6 +519,9 @@ namespace ModernStatsSystem
                     }
                 }
 
+                // Multiply the damage output by 70%
+                damageCalc2 = (int)((float)damageCalc2 * 0.7f);
+
                 // Don't ask me about the flag, I don't know what it does but it's important.
                 if ((attacker.flag >> 5 & 1) != 0)
                 {
@@ -426,7 +551,7 @@ namespace ModernStatsSystem
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result / maxhits * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result / ((float)maxhits / 2f) * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
@@ -923,8 +1048,9 @@ namespace ModernStatsSystem
                 Il2CppReferenceArray<Il2CppStructArray<sbyte>> effectlist = koukalist;
 
                 // If the Skill doesn't target randomly or the Effect List is empty, then return.
+                // Additionally return if the Skill doesn't deal damage.
                 // Also return if EnableStatScaling is false.
-                if (datNormalSkill.tbl[nskill].targetrandom < 1 || effectlist.Length == 0 || !EnableStatScaling)
+                if (datNormalSkill.tbl[nskill].targetrandom < 1 || datSkill.tbl[nskill].skillattr > 12 || effectlist.Length == 0 || !EnableStatScaling)
                     { return true; }
 
                 // Loop through the Effect List and clear it.
@@ -1083,12 +1209,31 @@ namespace ModernStatsSystem
                     // Add a hit to the target for hit count checking.
                     // Additionally, this adjusts their chance to be hit to a new value if they exceed the minimum hit count.
                     TargetHitCountManager.HitTarget(target, minhits, hitOdds);
-                    
-                    // Add a hit to the target in the Effectlist.
-                    effectlist[target][1]++;
 
                     // Increment.
                     i++;
+                }
+
+                // Clear out the Targets that have no hits by removing their ID.
+                TargetHitCountManager.ClearNoHitTargets();
+
+                // Clear out the Effect List
+                for (i = 0; i < effectlist.Length; i++)
+                {
+                    effectlist[i][0] = -1;
+                    effectlist[i][1] = 0;
+                }
+
+                // Check for existing targets and populate the Effect List.
+                foundcount = 0;
+                for (i = 0; i < TargetHitCountManager.targetData.Length; i++)
+                {
+                    if (TargetHitCountManager.targetData[i][0] > -1 && TargetHitCountManager.targetData[i][1] > 0)
+                    {
+                        effectlist[foundcount][0] = TargetHitCountManager.targetData[i][0];
+                        effectlist[foundcount][1] = TargetHitCountManager.targetData[i][1];
+                        foundcount++;
+                    }
                 }
 
                 // Clear the Target List.
