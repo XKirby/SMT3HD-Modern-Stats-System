@@ -2234,7 +2234,7 @@ namespace ModernStatsSystem
                             g.transform.localScale = new(0.35f, 0.35f, 1f);
 
                             // Set the previous object's internal sprite to the same sprite.
-                            g = GameObject.Find(path + "/sstatusbar_red/sstatus_redg");
+                            g = GameObject.Find(path + "/sstatusbar_red/sstatusbar_redg");
                             g.GetComponent<Image>().sprite = barSprite;
 
                             // Find the necessary game object.
