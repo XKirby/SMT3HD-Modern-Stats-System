@@ -798,11 +798,6 @@ namespace ModernStatsSystem
                 // Base Crit Chance value.
                 float val = 1.0f;
 
-                // More flag stuff.
-                // Sets the above value to something.
-                if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
-                    { val = 0f; }
-
                 // Yes, I am labeling this section "WhatTheFuck".
                 // Go ahead and read it.
                 // You'll understand.
@@ -836,7 +831,7 @@ namespace ModernStatsSystem
                                 { __result = 0; return false; }
 
                             // I can't believe this is making me double-check so hard what goes where.
-                            val *= datSpecialSkill.tbl[nskill].n / 100f;
+                            val = datSpecialSkill.tbl[nskill].n / 100f;
                             
                             // Set check to true, finally.
                             chk = true;
@@ -863,7 +858,7 @@ namespace ModernStatsSystem
                     }
 
                     // Value adjustment.
-                    val *= 0.7f;
+                    val = 0.7f;
 
                     // If you're using a normal attack, jump back up.
                     if (nskill == 0)
@@ -873,6 +868,11 @@ namespace ModernStatsSystem
                     chk = false;
                 }
                 
+                // More flag stuff.
+                // Sets the above value to something.
+                if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
+                    { val = 0f; }
+
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
                 float atkCritStat = (float)datCalc.datGetParam(attacker, 5) / (float)POINTS_PER_LEVEL;
@@ -898,7 +898,7 @@ namespace ModernStatsSystem
                 // Generate a random interger and compare to the Crit Value.
                 // If it's higher, it's a crit.
                 System.Random rng = new();
-                if (rng.Next(100) >= critValue)
+                if (rng.Next(100) < critValue)
                     { __result = 1; return false; }
 
                 // Finally reference the above check value.
