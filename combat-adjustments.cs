@@ -229,11 +229,11 @@ namespace ModernStatsSystem
                 {
                     // If the Level Difference is negative, gain more Experience.
                     if (leveldiff < 0)
-                        { exp = (int)((float)exp * (1f + ((float)leveldiff * 0.125f))); }
+                        { exp = (int)((float)exp * (1f + Math.Min(1.5f, 1f + ((float)Math.Abs(leveldiff) - 2) * 0.0278f))); }
                     
                     // Otherwise, gain less Experience.
                     else
-                        { exp = (int)((float)exp / (1f + ((float)leveldiff * 0.125f))); }
+                        { exp = (int)((float)exp / (1f + Math.Min(1.5f, 1f + ((float)Math.Abs(leveldiff) - 2) * 0.0278f))); }
                 }
 
                 // If the Difficulty is Merciful, massively increase gains.
