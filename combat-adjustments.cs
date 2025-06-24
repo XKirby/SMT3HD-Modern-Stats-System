@@ -160,7 +160,7 @@ namespace ModernStatsSystem
                 System.Random rng = new();
 
                 // Return 1 if you hit the defender and killed them, otherwise return 0.
-                __result = finalvalue > rng.Next(100) ? 1 : 0;
+                __result = finalvalue <= rng.Next(100) ? 1 : 0;
                 return false;
             }
         }
@@ -177,12 +177,8 @@ namespace ModernStatsSystem
                 if ((work.badstatus & 0xFFF) == 0x200)
                     { param = 1; }
 
-                // Result uses the initial formula here.
-                __result = (param + work.level) * 2;
-
-                // If Enabled, use a new formula.
-                if (EnableStatScaling)
-                    { __result = (param * 2 / POINTS_PER_LEVEL) + work.level * 2; }
+                // Resulting Formula
+                __result = (int)(((float)param / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) + (float)work.level) * 2f);
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -224,7 +220,7 @@ namespace ModernStatsSystem
                 // Unseeded random number generator
                 System.Random rng = new();
 
-                // If the Level Difference is over zero.
+                // If the Level Difference is not zero.
                 if (leveldiff != 0)
                 {
                     // If the Level Difference is negative, gain more Experience.
@@ -315,61 +311,46 @@ namespace ModernStatsSystem
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
-                // Get the Str of the attacker.
-                int paramValue = datCalc.datGetParam(attacker, 0);
-
-                // This value changes the damage output a bit.
-                int unkval = 48;
+                // This value changes the damage output slightly.
+                int scale = 48;
 
                 // This eventually becomes the final damage value.
                 int finalvalue = 0;
-
-                // Unseeded random number generator
-                System.Random rng = new();
-
-                // If enabled, divide the stats by points per level's amount.
-                if (EnableStatScaling)
-                    { paramValue /= POINTS_PER_LEVEL; }
 
                 // Do some initial math for basic attacks.
                 finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2) * 1.33f) * 0.8f);
 
                 // If you're not doing a basic attack, then use the Physical Skill formula.
+                // Additionally change the scale value.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
                 {
                     finalvalue = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza * 2 / 23.2f * 0.8f);
-                    unkval = 50;
+                    scale = 50;
                 }
 
-                // If enabled, that damage output will scale a bit differently.
-                if (EnableStatScaling)
-                    { unkval = 64; }
-
                 // Use that number and the attacker's level to figure out some damage reduction.
-                int reduction = (int)((float)unkval / (float)(attacker.level + 10));
+                int reduction = (int)((float)scale / (float)(attacker.level + 10));
 
-                // If enabled, reduction uses the defender's level instead.
-                // Because that honestly makes way more sense.
+                // If enabled, use a new formula based on the defender's level instead.
+                // I'm using a different formula because the above formula reduces the reduction with each level and I need to increase it instead.
                 if (EnableStatScaling)
-                    { reduction = (int)((float)unkval / (float)(defender.level + 10)); }
+                    { reduction = (int)((float)(scale + (float)defender.level * 2f) / 10f); }
 
                 // The final value is cut down to 60% and reduced by the above reduction formula.
                 finalvalue = (int)((float)finalvalue * 0.6f) - reduction;
-                __result = finalvalue;
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
+                // Otherwise, damage is normal.
                 if (dds3ConfigMain.cfgGetBit(9) == 3)
                 {
                     __result = (int)(finalvalue * 1.34f);
                     if (!EventBit.evtBitCheck(0x8a0))
-                    {
-                        __result = finalvalue;
-                    }
+                        { __result = finalvalue; }
                 }
 
                 // If difficulty is 2, it's also multipled by 134%.
-                // Otherwise it's just normal.
+                // Otherwise, it's just normal.
                 else
                 {
                     __result = finalvalue;
@@ -381,8 +362,9 @@ namespace ModernStatsSystem
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, introduce some further damage mitigation
+                // Additionally, scale the previous result down to 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * DamageMitigation.Get(defender, 3)); }
+                    { __result = (int)((float)__result * 0.7f * DamageMitigation.Get(defender, 3)); }
                 return false;
             }
         }
@@ -549,7 +531,7 @@ namespace ModernStatsSystem
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
                 // Additionally, divide the previous result by 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result / (maxhits > 1 ? (float)maxhits / 2f : 1) * 0.7f * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result * 0.7f / (maxhits > 1 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
