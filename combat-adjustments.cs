@@ -339,6 +339,7 @@ namespace ModernStatsSystem
 
                 // The final value is cut down to 60% and reduced by the above reduction formula.
                 finalvalue = (int)((float)finalvalue * 0.6f) - reduction;
+                __result = (int)((float)finalvalue * 0.7f);
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
                 // Otherwise, damage is normal.
@@ -364,7 +365,7 @@ namespace ModernStatsSystem
                 // If enabled, introduce some further damage mitigation
                 // Additionally, scale the previous result down to 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * 0.7f * DamageMitigation.Get(defender, 3)); }
+                    { __result = (int)((float)__result * DamageMitigation.Get(defender, 3)); }
                 return false;
             }
         }
