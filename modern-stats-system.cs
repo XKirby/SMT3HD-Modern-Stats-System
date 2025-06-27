@@ -892,6 +892,19 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbChkDevilEvo))]
+        private class PatchCheckDemonEvo
+        {
+            private static void Postfix(datUnitWork_t pStock)
+            {
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                {
+                    pStock.param[i] += pStock.levelupparam[i];
+                    pStock.levelupparam[i] = 0;
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbCalcEvoEvent))]
         private class PatchCalcEvoEvent
         {
@@ -1044,14 +1057,6 @@ namespace ModernStatsSystem
                     // If it's null, continue.
                     if (party == null)
                         { continue; }
-
-                    // If i is over 0 and somehow this demon is in Demi-Fiend's slot, also continue.
-                    // I probably shouldn't have this check, so I commented it out for reference.
-                    // It existed in the normal function.
-                    /*
-                    if (i > 0 && party.statindex == 0)
-                        { continue; }
-                    */
 
                     // Grab the demon from the party's statindex.
                     datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[party.statindex];
@@ -1283,6 +1288,16 @@ namespace ModernStatsSystem
                 // Clear the fact that you were setting stats.
                 SettingAsignParam = false;
 
+                // Grab the player unit.
+                datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
+                
+                // Distribute the Player's level up points to proper points.
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                {
+                    pStock.param[i] += pStock.levelupparam[i];
+                    pStock.levelupparam[i] = 0;
+                }
+
                 // Return that you said yes.
                 return 1;
             }
@@ -1324,10 +1339,7 @@ namespace ModernStatsSystem
 
                 // If you're not assigning your Stats, reset them once and start assigning them.
                 if (SettingAsignParam == false)
-                {
-                    SettingAsignParam = true;
-                    PatchResetAsignParam.ResetParam();
-                }
+                    { SettingAsignParam = true; }
 
                 // If your stats are capped, immediately skip the entire process.
                 if (EnableIntStat && pStock.param[0] + pStock.levelupparam[0] >= MAXSTATS &&
@@ -1505,6 +1517,8 @@ namespace ModernStatsSystem
 
                 // Grab the parent object of the entire Magatama Status menu.
                 GameObject g = GameObject.Find("magUI(Clone)/magstatus");
+                GameObject g2;
+                GameObject g3;
 
                 // If null, return.
                 if (g == null)
@@ -1521,7 +1535,7 @@ namespace ModernStatsSystem
                     GameObject orig = GameObject.Find("magUI(Clone)/magstatus/magstatus_base01");
 
                     // Copy it.
-                    GameObject g2 = GameObject.Instantiate(orig);
+                    g2 = GameObject.Instantiate(orig);
 
                     // MAKE SURE it stays put.
                     GameObject.DontDestroyOnLoad(g2);
@@ -1543,7 +1557,7 @@ namespace ModernStatsSystem
                     for (i = 0; i < 6; i++)
                     {
                         // Grab the base bar
-                        GameObject g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_base0" + (i + 1));
+                        g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_base0" + (i + 1));
 
                         // If it doesn't exist, continue;
                         if (g3 == null)
@@ -1574,7 +1588,7 @@ namespace ModernStatsSystem
                     GameObject orig = GameObject.Find("magUI(Clone)/magstatus/magstatus_item01");
 
                     // Copy it.
-                    GameObject g2 = GameObject.Instantiate(orig);
+                    g2 = GameObject.Instantiate(orig);
 
                     // MAKE SURE it stays put.
                     GameObject.DontDestroyOnLoad(g2.gameObject);
@@ -1596,7 +1610,7 @@ namespace ModernStatsSystem
                     for (i = 0; i < 6; i++)
                     {
                         // Grab item.
-                        GameObject g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i + 1));
+                        g3 = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i + 1));
 
                         // If null, continue.
                         if (g3 == null)
@@ -1631,14 +1645,10 @@ namespace ModernStatsSystem
                 uint[] colorptr = { color, color, color, color };
 
                 // Grab Magatama object.
-                g = GameObject.Find("magUI(Clone)/magatama/magatamaset" + (HeartsID < 9 ? "0" + HeartsID + 1 : HeartsID + 1) + "/magatamaset");
+                g3 = GameObject.Find("magatamaset" + (HeartsID < 10 ? "0" + HeartsID : HeartsID) + "/magatamaset");
 
                 // If it's null, cut the function early.
-                if (g == null)
-                    { return false; }
-
-                // If it's inactive, cut the function early.
-                if (!g.activeSelf)
+                if (g3 == null)
                     { return false; }
 
                 // Iterate until i is 6.
@@ -1663,7 +1673,7 @@ namespace ModernStatsSystem
                     cmpUpdate.cmpSetupObject(g, true);
 
                     // Grab the text object from the previous object.
-                    GameObject g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/TextTM");
+                    g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/TextTM");
 
                     // If null, increment and continue.
                     if (g2 == null)
@@ -1725,11 +1735,15 @@ namespace ModernStatsSystem
                 }
                 while (i < 6);
 
-                // Draw the Magatama Help panel
-                cmpDrawDH.cmpDrawHeartsHelpPanel(pHeartsInfo.Timer);
+                // If the Magatama object is visible.
+                if (g3.activeSelf)
+                {
+                    // Draw the Magatama Help panel
+                    cmpDrawDH.cmpDrawHeartsHelpPanel(pHeartsInfo.Timer);
 
-                // Draw the Magatama's name.
-                cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, HeartsID);
+                    // Draw the Magatama's name.
+                    cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, HeartsID);
+                }
 
                 // Grab the Magamama Menu object.
                 g = cmpInitDH.DHeartsObj;
@@ -2138,23 +2152,6 @@ namespace ModernStatsSystem
                 {
                     // This gets set within the while loops.
                     GameObject g;
-
-                    /* Commented out due to being unnecessary.
-                    // While the count is under, create new objects.
-                    while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length < 4)
-                    {
-                        // Copy the first one.
-                        g = GameObject.Instantiate(stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject);
-                        
-                        // Set Parent.
-                        g.transform.parent = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.transform;
-
-                        // Set Pos and Scale.
-                        g.transform.position = g.transform.parent.position;
-                        g.transform.localPosition = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject.transform.localPosition;
-                        g.transform.localScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentInChildren<Animator>().gameObject.transform.localScale;
-                    }
-                    */
 
                     // While the count is over, destroy the extra objects.
                     while (stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>().Length > 4)
