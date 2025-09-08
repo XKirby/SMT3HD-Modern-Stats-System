@@ -42,12 +42,12 @@ namespace ModernStatsSystem
                 // Grab unit's stats
                 int exp = (int)pelem.exp;
                 int lvl = (int)pelem.level;
-                int str = (int)pelem.param[0];
-                int intStat = (EnableIntStat ? (int)pelem.param[1] : 0);
-                int mag = (int)pelem.param[2];
-                int vit = (int)pelem.param[3];
-                int agi = (int)pelem.param[4];
-                int luc = (int)pelem.param[5];
+                int str = (int)pelem.param[0] + (int)pelem.mitamaparam[0];
+                int intStat = (EnableIntStat ? (int)pelem.param[1] + (int)pelem.mitamaparam[1] : 0);
+                int mag = (int)pelem.param[2] + (int)pelem.mitamaparam[2];
+                int vit = (int)pelem.param[3] + (int)pelem.mitamaparam[3];
+                int agi = (int)pelem.param[4] + (int)pelem.mitamaparam[4];
+                int luc = (int)pelem.param[5] + (int)pelem.mitamaparam[5];
 
                 // Return the following result
                 return (int)(Math.Pow((double)(str + mag + vit + agi + luc + intStat), 2) / 20d * 100d * (EnableStatScaling ? 1d / (EnableIntStat ? (double)POINTS_PER_LEVEL * 1.2d : (double)POINTS_PER_LEVEL) : 1d));
@@ -96,7 +96,7 @@ namespace ModernStatsSystem
             // Returns a Compendium Demon's stat, making sure to cap it appropriately.
             private static bool Prefix(out int __result, fclencyceelem_t pelem, int type)
             {
-                __result = pelem.param[type] < MAXSTATS ? pelem.param[type] : MAXSTATS;
+                __result = pelem.param[type] + pelem.mitamaparam[type] < MAXSTATS ? pelem.param[type] + pelem.mitamaparam[type] : MAXSTATS;
                 return false;
             }
         }

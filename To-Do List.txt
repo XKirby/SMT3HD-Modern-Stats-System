@@ -1,0 +1,2 @@
+- Fix the Healing Shrine menu not going up to 4 digit HP/MP.
+- Fix something with Sacrificial Fusion causing an error with the stat distribution.

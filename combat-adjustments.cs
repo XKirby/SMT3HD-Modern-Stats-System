@@ -338,7 +338,9 @@ namespace ModernStatsSystem
                     { reduction = (int)((float)(scale + (float)defender.level * 2f) / 10f); }
 
                 // The final value is cut down to 60% and reduced by the above reduction formula.
-                finalvalue = (int)((float)finalvalue * 0.6f) - reduction;
+                finalvalue = (int)((float)finalvalue * 0.6f - (float)reduction);
+
+                // Additionally, scale the previous result down to 70%.
                 __result = (int)((float)finalvalue * 0.7f);
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
@@ -363,7 +365,6 @@ namespace ModernStatsSystem
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, introduce some further damage mitigation
-                // Additionally, scale the previous result down to 70%.
                 if (EnableStatScaling)
                     { __result = (int)((float)__result * DamageMitigation.Get(defender, 3)); }
                 return false;
@@ -406,7 +407,7 @@ namespace ModernStatsSystem
                 __result = 0;
 
                 // If this skill doesn't deal damage, skip this function altogether.
-                if (datSkill.tbl[nskill].type > 12)
+                if (datSkill.tbl[nskill].skillattr > 12)
                     { return true; }
 
                 // Set up the attacker/defender objects from the indices.
@@ -754,8 +755,8 @@ namespace ModernStatsSystem
                 if (datSkill.tbl.Length <= nskill)
                     { return true; }
 
-                // If the Skill's Attribute is not zero, return and do the original function instead.
-                if (datSkill.tbl[nskill].skillattr != 0)
+                // If the Skill's Effect Type is not zero (Physical Damage), return and do the original function instead.
+                if (datNormalSkill.tbl[nskill].koukatype != 0)
                     { return true; }
 
                 // If EnableStatScaling is false, return and do the original function

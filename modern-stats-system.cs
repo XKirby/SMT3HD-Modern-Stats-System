@@ -2,11 +2,13 @@
 using Il2Cpp;
 using Il2Cppcamp_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2Cppkernel_H;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
 using Il2CppTMPro;
 using MelonLoader;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,7 +22,8 @@ namespace ModernStatsSystem
         // Stat manipulation variables
         private const int MAXSTATS = 100;
         private const int MAXHPMP = 9999;
-        private const int POINTS_PER_LEVEL = 2;
+        private const int POINTS_PER_LEVEL = 3;
+        private const int STATS_SCALING = 2;
         private const bool EnableIntStat = true;
         private const bool EnableStatScaling = true;
 
@@ -31,12 +34,13 @@ namespace ModernStatsSystem
         private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), 4);
         private static AssetBundle barData = null;
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
+        private static int[] LevelUpPoints = { 0, 0, 0, 0, 0, 0 };
         private const string barSpriteName = "sstatusbar_base";
         private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
         private static string[] StockBarValues = { "barhp", "barmp" };
         private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
         private static string[] PartyBarValues = { "barhp", "barmp" };
-        
+
         // Hard-coded Intelligence Value list for every demon in the game
         private static sbyte[] DemonIntTable = {
             2,  // Dummy
@@ -473,16 +477,16 @@ namespace ModernStatsSystem
         {
             // Grant Demi-Fiend the Intelligence Stat.
             if (EnableIntStat)
-                { datHuman.datHumanUnitWork.param[1] = datHuman.datHumanUnitWork.param[2]; }
+            { datHuman.datHumanUnitWork.param[1] = datHuman.datHumanUnitWork.param[2]; }
 
             // Alter Demi-Fiend's Base Stats then recalculate HP/MP.
             if (EnableStatScaling)
             {
                 for (int i = 0; i < datHuman.datHumanUnitWork.param.Length; i++)
-                    { datHuman.datHumanUnitWork.param[i] *= POINTS_PER_LEVEL; }
-                datHuman.datHumanUnitWork.maxhp = (ushort)(((float)datHuman.datHumanUnitWork.param[3] / (float)POINTS_PER_LEVEL + (float)datHuman.datHumanUnitWork.level) * 6f);
+                { datHuman.datHumanUnitWork.param[i] *= STATS_SCALING; }
+                datHuman.datHumanUnitWork.maxhp = (ushort)(((float)datHuman.datHumanUnitWork.param[3] / (float)STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 6f);
                 datHuman.datHumanUnitWork.hp = datHuman.datHumanUnitWork.maxhp;
-                datHuman.datHumanUnitWork.maxmp = (ushort)(((float)datHuman.datHumanUnitWork.param[2] / (float)POINTS_PER_LEVEL + (float)datHuman.datHumanUnitWork.level) * 3f);
+                datHuman.datHumanUnitWork.maxmp = (ushort)(((float)datHuman.datHumanUnitWork.param[2] / (float)STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 3f);
                 datHuman.datHumanUnitWork.mp = datHuman.datHumanUnitWork.maxmp;
             }
 
@@ -490,18 +494,16 @@ namespace ModernStatsSystem
             for (int i = 1; i < datDevilFormat.tbl.Length; i++)
             {
                 // If enabled, give the demons Int.
-                // This effectively just copies over their Mag to it.
                 if (EnableIntStat)
-                    { datDevilFormat.tbl[i].param[1] = (sbyte)(DemonIntTable[i] / POINTS_PER_LEVEL); }
-                
-                // If enabled, scale each demon's stats by how many points per level is set.
-                // Additionally, recalculate HP/MP for anything that isn't a boss or forced encounter.
+                { datDevilFormat.tbl[i].param[1] = (sbyte)(DemonIntTable[i] / STATS_SCALING); }
+
+                // If enabled, scale each demon's stats by a fixed stat scaling value.
                 if (EnableStatScaling)
                 {
                     for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
-                        { datDevilFormat.tbl[i].param[j] *= POINTS_PER_LEVEL; }
+                    { datDevilFormat.tbl[i].param[j] *= STATS_SCALING; }
                     if (EnableIntStat)
-                        { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
+                    { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
 
                     /* // The HP/MP recalculation here is gonna remain commented out until I do something that necessitates it.
                     if (i < 254)
@@ -527,13 +529,13 @@ namespace ModernStatsSystem
                     tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[1] = tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[2];
                 }
 
-                // If enabled, scale the Magatamas by how many points per level is set.
+                // If enabled, scale the Magatamas by a fixed stat scaling value.
                 if (EnableStatScaling)
                 {
                     for (int j = 0; j < tblHearts.fclHeartsTbl[i].GrowParamTbl.Length; j++)
                     {
-                        tblHearts.fclHeartsTbl[i].GrowParamTbl[j] *= POINTS_PER_LEVEL;
-                        tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] *= POINTS_PER_LEVEL;
+                        tblHearts.fclHeartsTbl[i].GrowParamTbl[j] *= STATS_SCALING;
+                        tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] *= STATS_SCALING;
                     }
                 }
             }
@@ -567,7 +569,7 @@ namespace ModernStatsSystem
             {
                 // Return value initialization
                 __result = 0;
-                
+
                 // If your stats are not capped completely, return.
                 if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS)
                 {
@@ -580,11 +582,54 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                        { rstcalc.rstSetMaxHpMp(0, ref pStock); }
+                    { rstcalc.rstSetMaxHpMp(0, ref pStock); }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
                 }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(scrParameterCommand), nameof(scrParameterCommand.prm_PLAYER_GET_PARAM))]
+        private class PatchCommandPlayerGetParam
+        {
+            // This gets called from the Stat Doors in the Labyrinth of Amala.
+            // Specifically, the Third Kalpa Player Stat Doors.
+            private static bool Prefix(ref int __result)
+            {
+                // Get Player's Param ID.
+                int value = ScrTraceCode.scrGetIntPara(0);
+
+                // Get the Parameter's actual raw value.
+                value = datCalc.datGetPlayerParam(value);
+
+                // Scale properly, then return.
+                value = EnableStatScaling ? (int)((float)value / (float)MAXSTATS * 40f) : value;
+                ScrTraceCode.scrSetIntReturnValue(value);
+                __result = 1;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(scrParameterCommand), nameof(scrParameterCommand.prm_NAKAMA_GET_PARAM))]
+        private class PatchCommandAllyGetParam
+        {
+            // This gets called from the Stat Doors in the Labyrinth of Amala.
+            // Specifically, the Fifth Kalpha Demon Stat Doors.
+            private static bool Prefix(ref int __result)
+            {
+                // Get Demon ID and Param ID.
+                int id = ScrTraceCode.scrGetIntPara(0);
+                int param = ScrTraceCode.scrGetIntPara(1);
+                
+                // Grab the Parameter's actual raw value.
+                param = datCalc.datGetNakamaParam(id, param);
+                
+                // Scale it properly, then return.
+                param = EnableStatScaling ? (int)((float)param / (float)MAXSTATS * 40f) : param;
+                ScrTraceCode.scrSetIntReturnValue(param);
+                __result = 1;
                 return false;
             }
         }
@@ -605,9 +650,9 @@ namespace ModernStatsSystem
                     // Note that "add" can be negative.
                     pStock.param[id] += (sbyte)add;
                     if (datCalc.datGetPlayerParam(id) >= MAXSTATS)
-                        { pStock.param[id] = MAXSTATS; }
-                    if (datCalc.datGetPlayerParam(id) < 1)
-                        { pStock.param[id] = 1; }
+                    { pStock.param[id] = MAXSTATS; }
+                    if (datCalc.datGetPlayerParam(id) < 0)
+                    { pStock.param[id] = 0; }
 
                     // Recalculate HP/MP.
                     cmpMisc.cmpSetMaxHPMP(pStock);
@@ -640,7 +685,7 @@ namespace ModernStatsSystem
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the base stat of the given parameter.
-                __result = datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype] + work.levelupparam[paratype];
+                __result = datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype];
                 return false;
             }
         }
@@ -651,11 +696,11 @@ namespace ModernStatsSystem
             public static int GetBaseMaxHP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max HP value.
-                int result = (datCalc.datGetBaseParam(work, 3) + work.levelupparam[3] + work.level) * 6;
+                int result = (datCalc.datGetBaseParam(work, 3) + work.level) * 6;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                    { result = (int)(((float)(datCalc.datGetBaseParam(work, 3) + (float)work.levelupparam[3]) / (float)POINTS_PER_LEVEL + (float)work.level) * 6f); }
+                { result = (int)((float)(datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6f); }
 
                 // Return the result.
                 return result;
@@ -675,11 +720,11 @@ namespace ModernStatsSystem
             public static int GetBaseMaxMP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max MP value.
-                int result = (datCalc.datGetBaseParam(work, 2) + work.levelupparam[2] + work.level) * 3;
+                int result = (datCalc.datGetBaseParam(work, 2) + work.level) * 3;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                    { result = (int)(((float)(datCalc.datGetBaseParam(work, 2) + (float)work.levelupparam[2]) / (float)POINTS_PER_LEVEL + (float)work.level) * 3f); }
+                { result = (int)((float)(datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + (float)work.level) * 3f); }
 
                 // Return the result.
                 return result;
@@ -759,7 +804,7 @@ namespace ModernStatsSystem
                 // Change the list's values to true if that Stat is capped.
                 for (int i = 0; i < paramChecks.Length; i++)
                 {
-                    if (pStock.param[i] + pStock.levelupparam[i] >= MAXSTATS)
+                    if (pStock.param[i] + LevelUpPoints[i] >= MAXSTATS)
                         { paramChecks[i] = true; }
                 }
 
@@ -774,14 +819,14 @@ namespace ModernStatsSystem
                         paramChecks[3] == true &&
                         paramChecks[4] == true &&
                         paramChecks[5] == true)
-                            { break; }
+                    { break; }
                     if (!EnableIntStat &&
                         paramChecks[0] == true &&
                         paramChecks[2] == true &&
                         paramChecks[3] == true &&
                         paramChecks[4] == true &&
                         paramChecks[5] == true)
-                            { break; }
+                    { break; }
 
                     // Grab a particular Stat ID.
                     int ctr = (int)(fclMisc.FCL_RAND() % paramChecks.Length);
@@ -796,15 +841,15 @@ namespace ModernStatsSystem
 
                     // If this somehow happened, return 0x7f.
                     // This is probably an error code.
-                    if (pStock.levelupparam.Length <= ctr)
+                    if (LevelUpPoints.Length <= ctr)
                         { return 0x7f; }
 
                     // If Mode is zero, increment the LevelUp Stat.
                     if (Mode == 0)
-                        { pStock.levelupparam[ctr]++; }
+                        { LevelUpPoints[ctr]++; }
 
                     // If the Stat is somehow zero, return 0x7f.
-                    if (pStock.param[ctr] + pStock.levelupparam[ctr] <= 0)
+                    if (pStock.param[ctr] + LevelUpPoints[ctr] <= 0)
                         { return 0x7f; }
 
                     // Return the Stat ID.
@@ -825,6 +870,21 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCalc))]
+        private class PatchCalcDevilLevelUp
+        {
+            private static void Postfix(ref dds3ProcessID_t PID)
+            {
+                // Grab the current Stock demon.
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+                for (int i = 0; i < LevelUpPoints.Length; i++)
+                {
+                    pStock.param[i] += (sbyte)LevelUpPoints[i];
+                    LevelUpPoints[i] = 0;
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstAutoAsignDevilParam))]
         private class PatchAutoAsignDevilParam
         {
@@ -838,12 +898,12 @@ namespace ModernStatsSystem
 
                 // Iterate a loop through LevelUp Stats, clear them, then check for if the stat's capped already and set a boolean.
                 int i = 0;
-                for (i = 0; i < pStock.levelupparam.Length; i++)
+                for (i = 0; i < LevelUpPoints.Length; i++)
                 {
                     if (i == 1 && !EnableIntStat)
                         { continue; }
-                    pStock.levelupparam[i] = 0;
-                    if (pStock.param[i] + pStock.levelupparam[i] >= MAXSTATS)
+                    LevelUpPoints[i] = 0;
+                    if (pStock.param[i] + LevelUpPoints[i] >= MAXSTATS)
                         { paramChecks[i] = true; }
                 }
 
@@ -880,7 +940,7 @@ namespace ModernStatsSystem
                         { continue; }
 
                     // Set a boolean to true if the stat becomed capped out.
-                    if (pStock.param[paramID] + pStock.levelupparam[paramID] >= MAXSTATS)
+                    if (pStock.param[paramID] + LevelUpPoints[paramID] >= MAXSTATS)
                         { paramChecks[paramID] = true; }
 
                     // Increment.
@@ -889,19 +949,6 @@ namespace ModernStatsSystem
                 while (true);
 
                 return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbChkDevilEvo))]
-        private class PatchCheckDemonEvo
-        {
-            private static void Postfix(datUnitWork_t pStock)
-            {
-                for (int i = 0; i < pStock.levelupparam.Length; i++)
-                {
-                    pStock.param[i] += pStock.levelupparam[i];
-                    pStock.levelupparam[i] = 0;
-                }
             }
         }
 
@@ -1268,8 +1315,8 @@ namespace ModernStatsSystem
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
                 // Clears out whatever points you did distribute.
-                for (int i = 0; i < pStock.levelupparam.Length; i++)
-                    { pStock.levelupparam[i] = 0; }
+                for (int i = 0; i < LevelUpPoints.Length; i++)
+                    { LevelUpPoints[i] = 0; }
 
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
                 rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
@@ -1292,10 +1339,10 @@ namespace ModernStatsSystem
                 datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
                 
                 // Distribute the Player's level up points to proper points.
-                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                for (int i = 0; i < LevelUpPoints.Length; i++)
                 {
-                    pStock.param[i] += pStock.levelupparam[i];
-                    pStock.levelupparam[i] = 0;
+                    pStock.param[i] += (sbyte)LevelUpPoints[i];
+                    LevelUpPoints[i] = 0;
                 }
 
                 // Return that you said yes.
@@ -1339,23 +1386,26 @@ namespace ModernStatsSystem
 
                 // If you're not assigning your Stats, reset them once and start assigning them.
                 if (SettingAsignParam == false)
-                    { SettingAsignParam = true; }
+                {
+                    rstupdate.rstResetAsignParam();
+                    SettingAsignParam = true;
+                }
 
                 // If your stats are capped, immediately skip the entire process.
-                if (EnableIntStat && pStock.param[0] + pStock.levelupparam[0] >= MAXSTATS &&
-                    pStock.param[1] + pStock.levelupparam[1] >= MAXSTATS &&
-                    pStock.param[2] + pStock.levelupparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.levelupparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.levelupparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.levelupparam[5] >= MAXSTATS)
+                if (EnableIntStat && pStock.param[0] + LevelUpPoints[0] >= MAXSTATS &&
+                    pStock.param[1] + LevelUpPoints[1] >= MAXSTATS &&
+                    pStock.param[2] + LevelUpPoints[2] >= MAXSTATS &&
+                    pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
+                    pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
+                    pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
                         { YesResponse(); return false; }
 
                 // Same thing as above, but without Int.
-                else if (pStock.param[0] + pStock.levelupparam[0] >= MAXSTATS &&
-                    pStock.param[2] + pStock.levelupparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.levelupparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.levelupparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.levelupparam[5] >= MAXSTATS)
+                else if (pStock.param[0] + LevelUpPoints[0] >= MAXSTATS &&
+                    pStock.param[2] + LevelUpPoints[2] >= MAXSTATS &&
+                    pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
+                    pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
+                    pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
                         { YesResponse(); return false; }
 
                 // If the status object is null, immediately skip the entire process.
@@ -1445,13 +1495,13 @@ namespace ModernStatsSystem
                 if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
                 {
                     // If your Stat plus the LevelUp stats exceed or go up to the maximum, then play a sound and skip the rest of the function.
-                    if (pStock.param[cursorParam] + pStock.levelupparam[cursorParam] >= MAXSTATS)
+                    if (pStock.param[cursorParam] + LevelUpPoints[cursorParam] >= MAXSTATS)
                         { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // If you still have points to assign, assing one.
                     if (rstinit.GBWK.AsignParam > 0)
                     {
-                        pStock.levelupparam[cursorParam]++;
+                        LevelUpPoints[cursorParam]++;
                         rstinit.GBWK.AsignParam--;
                         cmpMisc.cmpPlaySE(1 & 0xFFFF);
                     }
@@ -1473,13 +1523,13 @@ namespace ModernStatsSystem
                 if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) == true)
                 {
                     // If this stat has no points assigned to it, play a sound and skip.
-                    if (rstinit.GBWK.ParamOfs[cursorParam] < 1)
+                    if (LevelUpPoints[cursorParam] < 1)
                         { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // Otherwise, remove unassign a point to redistribute and play a sound.
                     else
                     {
-                        pStock.levelupparam[cursorParam]--;
+                        LevelUpPoints[cursorParam]--;
                         rstinit.GBWK.AsignParam++;
                         cmpMisc.cmpPlaySE(1 & 0xFFFF);
                     }
@@ -1644,12 +1694,8 @@ namespace ModernStatsSystem
                 // Set a list to that color.
                 uint[] colorptr = { color, color, color, color };
 
-                // Grab Magatama object.
-                g3 = GameObject.Find("magatamaset" + (HeartsID < 10 ? "0" + HeartsID : HeartsID) + "/magatamaset");
-
-                // If it's null, cut the function early.
-                if (g3 == null)
-                    { return false; }
+                // Check if you have this particular Magatama.
+                sbyte hasHeart = cmpInitDH.cmpChkHaveHearts(HeartsID);
 
                 // Iterate until i is 6.
                 i = 0;
@@ -1670,7 +1716,7 @@ namespace ModernStatsSystem
                         { i++; continue; }
 
                     // Set up the previous object.
-                    cmpUpdate.cmpSetupObject(g, true);
+                    cmpUpdate.cmpSetupObject(g, hasHeart == 1 ? true : false);
 
                     // Grab the text object from the previous object.
                     g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/TextTM");
@@ -1697,7 +1743,7 @@ namespace ModernStatsSystem
                         { i++; continue; }
 
                     // Grab the Magatama Stat with ID i.
-                    int heartParam = rstCalcCore.cmbGetHeartsParam(HeartsID, (sbyte)i);
+                    int heartParam = hasHeart == 1 ? rstCalcCore.cmbGetHeartsParam(HeartsID, (sbyte)i) : 0;
 
                     // If it's 0, set the unknown value to 11.
                     if (heartParam == 0)
@@ -1716,7 +1762,7 @@ namespace ModernStatsSystem
                     fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, colorptr, 0xb, (ushort)unk, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
 
                     // Set up the numerical text object.
-                    cmpUpdate.cmpSetupObject(g2, true);
+                    cmpUpdate.cmpSetupObject(g2, hasHeart == 1 ? true : false);
 
                     // Grab the number object
                     g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/magtex/num_mag");
@@ -1726,33 +1772,28 @@ namespace ModernStatsSystem
                         { i++; continue; }
 
                     // Generate a color and set the Counter's value and color.
-                    Color rgb = cmpInit.GetToRGBA(heartParam > 0 ? 0xFFFFFFFF : heartParam < 0 ? 0xFF8080FF : 0x80808080);
+                    Color rgb = cmpInit.GetToRGBA(hasHeart != 0 ? heartParam > 0 ? 0xFFFFFFFF : heartParam < 0 ? 0xFF8080FF : 0x80808080 : 0x80808080);
                     g2.GetComponent<CounterCtr>().Set(heartParam, rgb);
 
                     // Set up the number object.
-                    cmpUpdate.cmpSetupObject(g2, true);
+                    cmpUpdate.cmpSetupObject(g2, hasHeart == 1 ? true : false);
                     i++;
                 }
                 while (i < 6);
 
-                // If the Magatama object is visible.
-                if (g3.activeSelf)
-                {
-                    // Draw the Magatama Help panel
-                    cmpDrawDH.cmpDrawHeartsHelpPanel(pHeartsInfo.Timer);
+                // Draw the Magatama Help panel
+                cmpDrawDH.cmpDrawHeartsHelpPanel(pHeartsInfo.Timer);
 
-                    // Draw the Magatama's name.
-                    cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, HeartsID);
-                }
+                // If the Magatama object is visible, draw its name.
+                if (hasHeart == 1)
+                    { cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, (sbyte)(HeartsID)); }
+                else
+                    { cmpDrawDH.cmpDrawHeartsName(0, 0, 0, pHeartsInfo.Timer, -1); }
 
                 // Grab the Magamama Menu object.
                 g = cmpInitDH.DHeartsObj;
 
-                // If it's null, don't set it up.
-                if (g == null)
-                    { return false; }
-
-                // Otherwise, set it up and draw a gradient of some sort.
+                // Set it up and draw a gradient of some sort.
                 cmpUpdate.cmpSetupObject(g, true);
                 cmpDrawDH.cmpDrawDisactiveGrad(pHeartsInfo.Timer);
                 return false;
@@ -2091,7 +2132,7 @@ namespace ModernStatsSystem
                     int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
 
                     // Set default LevelUp stat value equal to both your Level Up and Mitama Bonuses.
-                    int levelstat = pStock.levelupparam[stat] + pStock.mitamaparam[stat];
+                    int levelstat = LevelUpPoints[stat] + pStock.mitamaparam[stat];
 
                     // Set Stat value and color.
                     g2.GetComponent<CounterCtr>().Set(pStock.param[stat] + levelstat, Color.white, 0);
@@ -2260,7 +2301,7 @@ namespace ModernStatsSystem
                 int mitamaValue = pStock.mitamaparam[ParamOfs];
 
                 // LevelUp Value.
-                int levelupValue = pStock.levelupparam[ParamOfs];
+                int levelupValue = LevelUpPoints[ParamOfs];
 
                 // Set up the values into a list.
                 int[] values = new int[] { paramValue - heartValue, levelupValue, mitamaValue, heartValue };
