@@ -2,7 +2,6 @@
 using Il2Cpp;
 using Il2Cppcamp_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2Cppkernel_H;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
@@ -11,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.1", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -680,7 +679,7 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the base stat of the given parameter.
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype], 0, MAXSTATS);
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + LevelUpPoints[paratype] + work.levelupparam[paratype] + work.mitamaparam[paratype], 0, MAXSTATS);
                 return false;
             }
         }
@@ -785,21 +784,6 @@ namespace ModernStatsSystem
                 // Grab and return.
                 __result = GetMaxMP(work);
                 return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbChkDevilEvo))]
-        private class PatchCheckDemonEvo
-        {
-            private static void Postfix(datUnitWork_t pStock)
-            {
-                // Iterate through the Demon's LevelUp Stats
-                for (int i = 0; i < pStock.levelupparam.Length; i++)
-                {
-                    // Forcibly set them to their Base Stats then clear them.
-                    pStock.param[i] += pStock.levelupparam[i];
-                    pStock.levelupparam[i] = 0;
-                }
             }
         }
 
@@ -950,6 +934,24 @@ namespace ModernStatsSystem
                 // Recalculate Max HP/MP.
                 rstcalc.rstSetMaxHpMp(0, ref pStock);
                 return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCalcEvo))]
+        private class PatchCheckDemonEvo
+        {
+            private static void Postfix()
+            {
+                // Grab current Stock Demon.
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                // Iterate through the Demon's LevelUp Stats
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                {
+                    // Forcibly set them to their Base Stats then clear them.
+                    pStock.param[i] += pStock.levelupparam[i];
+                    pStock.levelupparam[i] = 0;
+                }
             }
         }
 
