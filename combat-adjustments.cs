@@ -704,11 +704,11 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs Level, Mag, and Agi and does some math.
-                __result = (int)((float)work.level + (float)datCalc.datGetParam(work, 2) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
+                __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 2) * 2f + (float)datCalc.datGetParam(work, 4) * 2f) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 4 + (float)datCalc.datGetParam(work, 2) * 4) / (EnableStatScaling ? STATS_SCALING : 1)); }
+                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 8f) / (EnableStatScaling ? STATS_SCALING : 1)); }
 
                 // Grabs Luc.
                 int luc = (int)((float)datCalc.datGetParam(work, 5) / (EnableStatScaling ? STATS_SCALING : 1f));

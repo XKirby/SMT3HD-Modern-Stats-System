@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.1", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.2", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -415,7 +415,7 @@ namespace ModernStatsSystem
             80, // Station Staff (Max stats for the station guy lol)
             80, // Loki (More than likely unused.)
             67, // Mada
-            100,// Mot (He's gonna hit REALLY hard.)
+            99,// Mot (He's gonna hit REALLY hard.)
             90, // Surt
             27, // Jack-o'-Lantern
             57, // Thor
@@ -425,7 +425,7 @@ namespace ModernStatsSystem
             48, // Raidou 3
             72, // Metatron
             55, // Beelzebub (Fly)
-            100,// Lucifer (I'm doing this so Mot isn't technically ahead of the final boss in terms of magic damage.)
+            99,// Lucifer (I'm doing this so Mot isn't technically ahead of the final boss in terms of magic damage.)
             55, // Pale Rider
             33, // White Rider
             44, // Red Rider
@@ -488,9 +488,16 @@ namespace ModernStatsSystem
                 datHuman.datHumanUnitWork.mp = datHuman.datHumanUnitWork.maxmp;
             }
 
+            // Force the first Preta encounter into a Shikigami encounter.
+            datEncount.tbl[1267].devil[0] = 97;
+
             // Search through all of the demons.
             for (int i = 1; i < datDevilFormat.tbl.Length; i++)
             {
+                // Change the first Will o' Wisps encounter's Strength to 1.
+                if (i == 318)
+                { datDevilFormat.tbl[i].param[0] = 1; }
+
                 // If enabled, give the demons Int.
                 if (EnableIntStat)
                 { datDevilFormat.tbl[i].param[1] = (sbyte)(DemonIntTable[i] / STATS_SCALING); }
