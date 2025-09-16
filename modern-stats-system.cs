@@ -564,6 +564,13 @@ namespace ModernStatsSystem
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
                 }
+
+                // Otherwise, make sure their HP/MP isn't overshot.
+                else
+                {
+                    pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
+                    pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
+                }
             }
         }
 
@@ -658,8 +665,8 @@ namespace ModernStatsSystem
                     // Adjust Max HP/MP and fully heal.
                     work.maxhp = (ushort)datCalc.datGetMaxHp(work);
                     work.maxhp = (ushort)datCalc.datGetMaxHp(work);
-                    work.hp = work.maxhp;
-                    work.mp = work.maxmp;
+                    work.hp = work.hp > work.maxhp ? work.maxhp : work.hp;
+                    work.mp = work.mp > work.maxmp ? work.maxmp : work.mp;
                 }
                 return false;
             }

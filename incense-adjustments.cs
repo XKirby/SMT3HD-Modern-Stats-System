@@ -48,7 +48,7 @@ namespace ModernStatsSystem
                     int statID = ItemID - 0x26;
 
                     // Increases the target's stat if it isn't above the maximum, then recalculates HP/MP and heals them.
-                    if (rstCalcCore.cmbGetParamBase(ref pStock, statID) < MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, statID) < MAXSTATS)
                     {
                         pStock.param[statID]++;
                         pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
