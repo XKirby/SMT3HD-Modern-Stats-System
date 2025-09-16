@@ -559,7 +559,7 @@ namespace ModernStatsSystem
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
                 // If Mode is 0, fully heal them.
-                if (Mode == 0)
+                if (Mode != 0)
                 {
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
