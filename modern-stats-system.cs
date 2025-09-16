@@ -1570,7 +1570,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                rstcalc.rstSetMaxHpMp(0, ref pStock);
             }
         }
 

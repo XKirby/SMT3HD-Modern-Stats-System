@@ -345,7 +345,7 @@ namespace ModernStatsSystem
 
                 // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
                 // Otherwise, damage is normal.
-                if (dds3ConfigMain.cfgGetBit(9) == 3)
+                if (dds3ConfigMain.cfgGetBit(9) == 3 && !EnableStatScaling)
                 {
                     __result = (int)(finalvalue * 1.34f);
                     if (!EventBit.evtBitCheck(0x8a0))
@@ -357,7 +357,7 @@ namespace ModernStatsSystem
                 else
                 {
                     __result = finalvalue;
-                    if (dds3ConfigMain.cfgGetBit(9) == 2)
+                    if (dds3ConfigMain.cfgGetBit(9) == 2 && !EnableStatScaling)
                         { __result = (int)(finalvalue * 1.34); }
                 }
 
@@ -511,7 +511,7 @@ namespace ModernStatsSystem
                     damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
 
                     // If difficulty is 3 and that Event Bit is true, then multiply the damage by 134%.
-                    if (dds3ConfigMain.cfgGetBit(9) == 3)
+                    if (dds3ConfigMain.cfgGetBit(9) == 3 && !EnableStatScaling)
                     {
                         damageCalc2 = (int)(damageCalc * 1.34f);
                         if (!EventBit.evtBitCheck(0x8a0))
@@ -522,7 +522,7 @@ namespace ModernStatsSystem
                     else
                     {
                         damageCalc2 = damageCalc;
-                        if (dds3ConfigMain.cfgGetBit(9) == 2)
+                        if (dds3ConfigMain.cfgGetBit(9) == 2 && !EnableStatScaling)
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
@@ -769,6 +769,10 @@ namespace ModernStatsSystem
 
                 // If the Skill's Effect Type is not zero (Physical Damage), return and do the original function instead.
                 if (datNormalSkill.tbl[nskill].koukatype != 0)
+                { return true; }
+
+                // If the Skill's "Program" is anything that isn't a normal Skill.
+                if (datNormalSkill.tbl[nskill].program != 0)
                 { return true; }
 
                 // If EnableStatScaling is false, return and do the original function

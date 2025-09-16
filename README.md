@@ -6,7 +6,7 @@ Includes the following:
 - You gain 3 Stat Points per level. Demons get 3 points auto-distributed per level.
 - Intelligence is reintroduced.
 - Certain formulas have been changed to accomodate the increased limits and Intelligence.
-- All demon stats multiplied by how many Points you gain per level to accomodate for the new values.
+- All demon stats multiplied by a Stat Scaling value of 2 to accomodate for the increased limits.
 - Various menu adjustments, including the Stat bars being mostly retooled completely.
 - A separate Unity Asset Bundle to use for the Statpoint Bars.
 
