@@ -587,7 +587,10 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                    { rstcalc.rstSetMaxHpMp(1, ref pStock); }
+                    {
+                        pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                        pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+                    }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
@@ -939,7 +942,8 @@ namespace ModernStatsSystem
                 while (true);
 
                 // Recalculate Max HP/MP.
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
                 return false;
             }
         }
@@ -1355,7 +1359,9 @@ namespace ModernStatsSystem
                     LevelUpPoints[i] = 0;
                 }
 
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                // Recalculate HP/MP
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
                 // Return that you said yes.
                 return 1;
@@ -1557,7 +1563,8 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
                 return false;
             }
         }
@@ -1579,7 +1586,8 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(1, ref pStock);
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
             }
         }
 
