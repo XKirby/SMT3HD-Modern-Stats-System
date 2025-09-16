@@ -558,8 +558,8 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                // If Mode is not 0 and their EvoFlag is zero, fully heal them.
-                if (Mode != 0 && rstinit.GBWK.EvoFlag == 0)
+                // If Mode is 0, fully heal them.
+                if (Mode == 0)
                 {
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
@@ -587,7 +587,7 @@ namespace ModernStatsSystem
                     // If you got to this point, your stats are completely maxed out.
                     // Additionally, if this is true, recalculate your HP/MP.
                     if (paramSet)
-                    { rstcalc.rstSetMaxHpMp(0, ref pStock); }
+                    { rstcalc.rstSetMaxHpMp(1, ref pStock); }
 
                     // Make sure to return 1 to tell the game your stats are capped.
                     __result = 1;
@@ -939,7 +939,7 @@ namespace ModernStatsSystem
                 while (true);
 
                 // Recalculate Max HP/MP.
-                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
                 return false;
             }
         }
@@ -1355,7 +1355,7 @@ namespace ModernStatsSystem
                     LevelUpPoints[i] = 0;
                 }
 
-                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
 
                 // Return that you said yes.
                 return 1;
@@ -1557,7 +1557,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
                 return false;
             }
         }
@@ -1579,7 +1579,7 @@ namespace ModernStatsSystem
                 }
 
                 // Recalculate HP/MP.
-                rstcalc.rstSetMaxHpMp(0, ref pStock);
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
             }
         }
 
