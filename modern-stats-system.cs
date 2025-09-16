@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.2", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.3", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -558,19 +558,9 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                // If Mode is 0, fully heal them.
-                if (Mode != 0)
-                {
-                    pStock.hp = pStock.maxhp;
-                    pStock.mp = pStock.maxmp;
-                }
-
-                // Otherwise, make sure their HP/MP isn't overshot.
-                else
-                {
-                    pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
-                    pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
-                }
+                // Make sure both HP/MP don't overshoot.
+                pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
+                pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
             }
         }
 
@@ -597,6 +587,10 @@ namespace ModernStatsSystem
                     {
                         pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                         pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+
+                        // Make sure both HP/MP don't overshoot.
+                        pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
+                        pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
                     }
 
                     // Make sure to return 1 to tell the game your stats are capped.
