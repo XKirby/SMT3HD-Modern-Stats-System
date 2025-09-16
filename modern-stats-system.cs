@@ -8,11 +8,10 @@ using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
 using Il2CppTMPro;
 using MelonLoader;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.2.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -20,17 +19,17 @@ namespace ModernStatsSystem
     internal partial class ModernStatsSystem : MelonMod
     {
         // Stat manipulation variables
-        private const int MAXSTATS = 100;
+        private const int MAXSTATS = 99;
         private const int MAXHPMP = 9999;
         private const int POINTS_PER_LEVEL = 3;
-        private const int STATS_SCALING = 2;
+        private const float STATS_SCALING = 2f;
         private const bool EnableIntStat = true;
         private const bool EnableStatScaling = true;
 
         // Stat Bar manipulation variables
         private const string BundlePath = "smt3hd_Data/StreamingAssets/PC/";
-        private const float BAR_SCALE_X = (float)(40f / MAXSTATS * 0.9f);
-        private const float BAR_SEGMENT_X = 20f * (float)(40f / MAXSTATS) * 0.9f;
+        private const float BAR_SCALE_X = (float)(40f / MAXSTATS) * 0.885f;
+        private const float BAR_SEGMENT_X = 14f;
         private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), 4);
         private static AssetBundle barData = null;
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
@@ -483,10 +482,10 @@ namespace ModernStatsSystem
             if (EnableStatScaling)
             {
                 for (int i = 0; i < datHuman.datHumanUnitWork.param.Length; i++)
-                { datHuman.datHumanUnitWork.param[i] *= STATS_SCALING; }
-                datHuman.datHumanUnitWork.maxhp = (ushort)(((float)datHuman.datHumanUnitWork.param[3] / (float)STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 6f);
+                { datHuman.datHumanUnitWork.param[i] = (sbyte)((float)datHuman.datHumanUnitWork.param[i] * STATS_SCALING); }
+                datHuman.datHumanUnitWork.maxhp = (ushort)(((float)datHuman.datHumanUnitWork.param[3] / STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 6f);
                 datHuman.datHumanUnitWork.hp = datHuman.datHumanUnitWork.maxhp;
-                datHuman.datHumanUnitWork.maxmp = (ushort)(((float)datHuman.datHumanUnitWork.param[2] / (float)STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 3f);
+                datHuman.datHumanUnitWork.maxmp = (ushort)(((float)datHuman.datHumanUnitWork.param[2] / STATS_SCALING + (float)datHuman.datHumanUnitWork.level) * 3f);
                 datHuman.datHumanUnitWork.mp = datHuman.datHumanUnitWork.maxmp;
             }
 
@@ -501,16 +500,16 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                 {
                     for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
-                    { datDevilFormat.tbl[i].param[j] *= STATS_SCALING; }
+                    { datDevilFormat.tbl[i].param[j] = (sbyte)((float)datDevilFormat.tbl[i].param[j] * STATS_SCALING); }
                     if (EnableIntStat)
                     { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
 
                     /* // The HP/MP recalculation here is gonna remain commented out until I do something that necessitates it.
                     if (i < 254)
                     {
-                        datDevilFormat.tbl[i].maxhp = (ushort)((datDevilFormat.tbl[i].param[3] / POINTS_PER_LEVEL + datDevilFormat.tbl[i].level) * 6);
+                        datDevilFormat.tbl[i].maxhp = (ushort)((datDevilFormat.tbl[i].param[3] / STATS_SCALING + datDevilFormat.tbl[i].level) * 6);
                         datDevilFormat.tbl[i].hp = datDevilFormat.tbl[i].maxhp;
-                        datDevilFormat.tbl[i].maxmp = (ushort)((datDevilFormat.tbl[i].param[2] / POINTS_PER_LEVEL + datDevilFormat.tbl[i].level) * 3);
+                        datDevilFormat.tbl[i].maxmp = (ushort)((datDevilFormat.tbl[i].param[2] / STATS_SCALING + datDevilFormat.tbl[i].level) * 3);
                         datDevilFormat.tbl[i].mp = datDevilFormat.tbl[i].maxmp;
                     }
                     */
@@ -534,8 +533,8 @@ namespace ModernStatsSystem
                 {
                     for (int j = 0; j < tblHearts.fclHeartsTbl[i].GrowParamTbl.Length; j++)
                     {
-                        tblHearts.fclHeartsTbl[i].GrowParamTbl[j] *= STATS_SCALING;
-                        tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] *= STATS_SCALING;
+                        tblHearts.fclHeartsTbl[i].GrowParamTbl[j] = (sbyte)((float)tblHearts.fclHeartsTbl[i].GrowParamTbl[j] * STATS_SCALING);
+                        tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] = (sbyte)((float)tblHearts.fclHeartsTbl[i].MasterGrowParamTbl[j] * STATS_SCALING);
                     }
                 }
             }
@@ -553,8 +552,8 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                // If Mode is 0 and their EvoFlag is not zero, fully heal them.
-                if (Mode == 0 && rstinit.GBWK.EvoFlag != 0)
+                // If Mode is not 0 and their EvoFlag is zero, fully heal them.
+                if (Mode != 0 && rstinit.GBWK.EvoFlag == 0)
                 {
                     pStock.hp = pStock.maxhp;
                     pStock.mp = pStock.maxmp;
@@ -596,7 +595,7 @@ namespace ModernStatsSystem
         {
             // This gets called from the Stat Doors in the Labyrinth of Amala.
             // Specifically, the Third Kalpa Player Stat Doors.
-            private static bool Prefix(ref int __result)
+            private static bool Prefix(out int __result)
             {
                 // Get Player's Param ID.
                 int value = ScrTraceCode.scrGetIntPara(0);
@@ -605,7 +604,7 @@ namespace ModernStatsSystem
                 value = datCalc.datGetPlayerParam(value);
 
                 // Scale properly, then return.
-                value = EnableStatScaling ? (int)((float)value / (float)MAXSTATS * 40f) : value;
+                value = EnableStatScaling ? (int)Math.Floor((float)value / (Math.Ceiling((float)MAXSTATS / 40f) / STATS_SCALING)) : value;
                 ScrTraceCode.scrSetIntReturnValue(value);
                 __result = 1;
                 return false;
@@ -617,17 +616,17 @@ namespace ModernStatsSystem
         {
             // This gets called from the Stat Doors in the Labyrinth of Amala.
             // Specifically, the Fifth Kalpha Demon Stat Doors.
-            private static bool Prefix(ref int __result)
+            private static bool Prefix(out int __result)
             {
                 // Get Demon ID and Param ID.
                 int id = ScrTraceCode.scrGetIntPara(0);
                 int param = ScrTraceCode.scrGetIntPara(1);
-                
+
                 // Grab the Parameter's actual raw value.
                 param = datCalc.datGetNakamaParam(id, param);
-                
+
                 // Scale it properly, then return.
-                param = EnableStatScaling ? (int)((float)param / (float)MAXSTATS * 40f) : param;
+                param = EnableStatScaling ? (int)Math.Floor((float)param / (Math.Ceiling((float)MAXSTATS / 40f) / STATS_SCALING)) : param;
                 ScrTraceCode.scrSetIntReturnValue(param);
                 __result = 1;
                 return false;
@@ -643,19 +642,15 @@ namespace ModernStatsSystem
                 // Yes, this means if you *somehow* have Demi-Fiend more than once, it'll add the stat to each of them.
                 foreach (datUnitWork_t work in dds3GlobalWork.DDS3_GBWK.unitwork.Where(x => x.id == 0))
                 {
-                    // Setting a reference variable for rstcalc.rstSetMaxHpMp because otherwise it won't work.
-                    datUnitWork_t pStock = work;
-
                     // Adds to then clamps whatever stat you're adding to.
                     // Note that "add" can be negative.
-                    pStock.param[id] += (sbyte)add;
-                    if (datCalc.datGetPlayerParam(id) >= MAXSTATS)
-                    { pStock.param[id] = MAXSTATS; }
-                    if (datCalc.datGetPlayerParam(id) < 0)
-                    { pStock.param[id] = 0; }
+                    work.param[id] = (sbyte)Math.Clamp(work.param[id] + add, 0, MAXSTATS);
 
-                    // Recalculate HP/MP.
-                    cmpMisc.cmpSetMaxHPMP(pStock);
+                    // Adjust Max HP/MP and fully heal.
+                    work.maxhp = (ushort)datCalc.datGetMaxHp(work);
+                    work.maxhp = (ushort)datCalc.datGetMaxHp(work);
+                    work.hp = work.maxhp;
+                    work.mp = work.maxmp;
                 }
                 return false;
             }
@@ -674,7 +669,7 @@ namespace ModernStatsSystem
             {
                 // Pulls the parameter for the other function and clamps it between 0 and the new maximum.
                 int result = work.param[paratype];
-                result = Math.Clamp(result, 1, MAXSTATS);
+                result = Math.Clamp(result, 0, MAXSTATS);
                 return result;
             }
         }
@@ -682,10 +677,10 @@ namespace ModernStatsSystem
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetParam))]
         private class PatchGetParam
         {
-            private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
+            private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the base stat of the given parameter.
-                __result = datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype];
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype], 0, MAXSTATS);
                 return false;
             }
         }
@@ -696,17 +691,17 @@ namespace ModernStatsSystem
             public static int GetBaseMaxHP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max HP value.
-                int result = (datCalc.datGetBaseParam(work, 3) + work.level) * 6;
+                int result = (datCalc.datGetParam(work, 3) + work.level) * 6;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)((float)(datCalc.datGetBaseParam(work, 3) / (float)POINTS_PER_LEVEL + (float)work.level) * 6f); }
+                { result = (int)((float)(datCalc.datGetParam(work, 3) / (float)STATS_SCALING + (float)work.level) * 6f); }
 
                 // Return the result.
                 return result;
             }
 
-            private static bool Prefix(ref int __result, datUnitWork_t work)
+            private static bool Prefix(out int __result, datUnitWork_t work)
             {
                 // Return the above function's value.
                 __result = GetBaseMaxHP(work);
@@ -720,17 +715,17 @@ namespace ModernStatsSystem
             public static int GetBaseMaxMP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max MP value.
-                int result = (datCalc.datGetBaseParam(work, 2) + work.level) * 3;
+                int result = (datCalc.datGetParam(work, 2) + work.level) * 3;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)((float)(datCalc.datGetBaseParam(work, 2) / (float)POINTS_PER_LEVEL + (float)work.level) * 3f); }
+                { result = (int)((float)(datCalc.datGetParam(work, 2) / (float)STATS_SCALING + (float)work.level) * 3f); }
 
                 // Return the result.
                 return result;
             }
 
-            private static bool Prefix(ref int __result, datUnitWork_t work)
+            private static bool Prefix(out int __result, datUnitWork_t work)
             {
                 // Similar to the HP function, just return the above function's result.
                 __result = GetBaseMaxMP(work);
@@ -757,7 +752,7 @@ namespace ModernStatsSystem
                 return result;
             }
 
-            private static bool Prefix(ref uint __result, datUnitWork_t work)
+            private static bool Prefix(out uint __result, datUnitWork_t work)
             {
                 // Again, return the above function's result.
                 __result = GetMaxHP(work);
@@ -785,11 +780,26 @@ namespace ModernStatsSystem
                 // Return.
                 return result;
             }
-            private static bool Prefix(ref uint __result, datUnitWork_t work)
+            private static bool Prefix(out uint __result, datUnitWork_t work)
             {
                 // Grab and return.
                 __result = GetMaxMP(work);
                 return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbChkDevilEvo))]
+        private class PatchCheckDemonEvo
+        {
+            private static void Postfix(datUnitWork_t pStock)
+            {
+                // Iterate through the Demon's LevelUp Stats
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                {
+                    // Forcibly set them to their Base Stats then clear them.
+                    pStock.param[i] += pStock.levelupparam[i];
+                    pStock.levelupparam[i] = 0;
+                }
             }
         }
 
@@ -804,8 +814,8 @@ namespace ModernStatsSystem
                 // Change the list's values to true if that Stat is capped.
                 for (int i = 0; i < paramChecks.Length; i++)
                 {
-                    if (pStock.param[i] + LevelUpPoints[i] >= MAXSTATS)
-                        { paramChecks[i] = true; }
+                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    { paramChecks[i] = true; }
                 }
 
                 // Loop through the Stats.
@@ -829,28 +839,25 @@ namespace ModernStatsSystem
                     { break; }
 
                     // Grab a particular Stat ID.
-                    int ctr = (int)(fclMisc.FCL_RAND() % paramChecks.Length);
-
-                    // If over zero and Int is disabled, make sure to skip Int.
-                    if (ctr > 0 && !EnableIntStat)
-                        { ctr++; }
+                    // Note this will loop forever if the number's out of range.
+                    // Additionally, if it selects Int while Int is disabled, it'll loop again to try and unselect it.
+                    int ctr = -1;
+                    do
+                    { ctr = (int)(fclMisc.FCL_RAND() % paramChecks.Length); }
+                    while (ctr < 0 || ctr > 6 || ctr == 1 && !EnableIntStat);
 
                     // If it's capped, continue and do it again.
                     if (paramChecks[ctr] == true)
-                        { continue; }
+                    { continue; }
 
                     // If this somehow happened, return 0x7f.
                     // This is probably an error code.
-                    if (LevelUpPoints.Length <= ctr)
-                        { return 0x7f; }
+                    if (pStock.levelupparam.Length <= ctr)
+                    { return 0x7f; }
 
                     // If Mode is zero, increment the LevelUp Stat.
                     if (Mode == 0)
-                        { LevelUpPoints[ctr]++; }
-
-                    // If the Stat is somehow zero, return 0x7f.
-                    if (pStock.param[ctr] + LevelUpPoints[ctr] <= 0)
-                        { return 0x7f; }
+                    { pStock.levelupparam[ctr]++; }
 
                     // Return the Stat ID.
                     return (sbyte)ctr;
@@ -870,21 +877,6 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCalc))]
-        private class PatchCalcDevilLevelUp
-        {
-            private static void Postfix(ref dds3ProcessID_t PID)
-            {
-                // Grab the current Stock demon.
-                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
-                for (int i = 0; i < LevelUpPoints.Length; i++)
-                {
-                    pStock.param[i] += (sbyte)LevelUpPoints[i];
-                    LevelUpPoints[i] = 0;
-                }
-            }
-        }
-
         [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstAutoAsignDevilParam))]
         private class PatchAutoAsignDevilParam
         {
@@ -896,15 +888,14 @@ namespace ModernStatsSystem
                 // Grab the current Stock demon.
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
-                // Iterate a loop through LevelUp Stats, clear them, then check for if the stat's capped already and set a boolean.
+                // Iterate a loop through Stats and checks for if the stat's capped already and set a boolean.
                 int i = 0;
-                for (i = 0; i < LevelUpPoints.Length; i++)
+                for (i = 0; i < pStock.param.Length; i++)
                 {
                     if (i == 1 && !EnableIntStat)
-                        { continue; }
-                    LevelUpPoints[i] = 0;
-                    if (pStock.param[i] + LevelUpPoints[i] >= MAXSTATS)
-                        { paramChecks[i] = true; }
+                    { continue; }
+                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    { paramChecks[i] = true; }
                 }
 
                 // Iterate and set the demon's new LevelUp Stats.
@@ -919,35 +910,45 @@ namespace ModernStatsSystem
                         paramChecks[3] == true &&
                         paramChecks[4] == true &&
                         paramChecks[5] == true)
-                            { break; }
+                    { break; }
                     if (!EnableIntStat &&
                         paramChecks[0] == true &&
                         paramChecks[2] == true &&
                         paramChecks[3] == true &&
                         paramChecks[4] == true &&
                         paramChecks[5] == true)
-                            { break; }
+                    { break; }
 
                     // If you end up going over the Stat points per level, break.
-                    if (rstinit.GBWK.AsignParam * POINTS_PER_LEVEL <= i)
-                        { break; }
+                    if (rstinit.GBWK.AsignParam * (EnableStatScaling ? POINTS_PER_LEVEL : 1) <= i)
+                    { break; }
 
                     // Add a random stat to the demon.
-                    int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 0);
+                    int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
 
-                    // If the Stat's ID is over 5 or somehow hit -1, return.
-                    if (paramID == 6 || paramID == -1 || paramChecks[paramID] == true)
-                        { continue; }
+                    // If the Stat's ID is over 5 or somehow hit -1, continue.
+                    if (paramID == 6 || paramID == -1)
+                    { continue; }
+
+                    // If the Stat's ID is already full, continue and remove the point distributed.
+                    if (paramChecks[paramID] == true)
+                    { continue; }
+
+                    // Add to the demon's stats.
+                    pStock.levelupparam[paramID] += 1;
 
                     // Set a boolean to true if the stat becomed capped out.
-                    if (pStock.param[paramID] + LevelUpPoints[paramID] >= MAXSTATS)
-                        { paramChecks[paramID] = true; }
+                    // Also forcibly set the stat to its new cap.
+                    if (pStock.param[paramID] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    { paramChecks[paramID] = true; }
 
                     // Increment.
                     i++;
                 }
                 while (true);
 
+                // Recalculate Max HP/MP.
+                rstcalc.rstSetMaxHpMp(0, ref pStock);
                 return false;
             }
         }
@@ -960,7 +961,7 @@ namespace ModernStatsSystem
                 // If the event's Buffer Flag(?) and length of the event are both zero, return.
                 // Additionally, return if the event's length is under 2 at any point.
                 if ((EvtBufFlag == 0 && pEvent.Length == 0) || pEvent.Length < 2)
-                    { return false; }
+                { return false; }
 
                 // Grab an Event index.
                 fclSkillParam_t EventParam = pEvent[1];
@@ -968,7 +969,7 @@ namespace ModernStatsSystem
                 // If its Type isn't 5, use the first index instead.
                 // Not sure what this is doing.
                 if (EventParam.Type != 5)
-                    { EventParam = pEvent[0]; }
+                { EventParam = pEvent[0]; }
 
                 // Probably the demon ID your demon evolves into.
                 int DemonID = 0;
@@ -978,7 +979,7 @@ namespace ModernStatsSystem
                 for (int i = 0; i < dds3GlobalWork.DDS3_GBWK.unitwork.Length; i++)
                 {
                     if ((dds3GlobalWork.DDS3_GBWK.unitwork[i].flag & 5) == 1)
-                        { demoncount++; }
+                    { demoncount++; }
                 }
 
                 // Grab the Demon's ID from the event.
@@ -986,7 +987,7 @@ namespace ModernStatsSystem
 
                 // If the demon count is too high, reset the Demon ID to 0.
                 if (demoncount >= rstCalcCore.cmbChkStockDarkDevilNums(dds3GlobalWork.DDS3_GBWK.unitwork, 0x10))
-                    { DemonID = 0; }
+                { DemonID = 0; }
 
                 // If the Evo Demon exists.
                 if (pEvoDevil != null)
@@ -1006,23 +1007,23 @@ namespace ModernStatsSystem
                         {
                             // Grab the stat without granting a point to it.
                             int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pEvoDevil, 1);
-                            
+
                             // If the Stat returns properly.
                             if (paramID > -1 && paramID < 6)
                             {
                                 // If under the cap, increase the stat.
                                 if (datCalc.datGetParam(pEvoDevil, paramID) < MAXSTATS)
-                                    { pEvoDevil.param[paramID]++; }
+                                { pEvoDevil.param[paramID]++; }
                             }
-                            
+
                             // Otherwise, break loop.
                             else
-                                { break; }
+                            { break; }
 
                             // Increment.
                             i++;
                         }
-                        while (i < (pStock.level - pEvoDevil.level) * (EnableStatScaling ? POINTS_PER_LEVEL : 1));
+                        while (i < (pStock.level - pEvoDevil.level) * (EnableStatScaling ? STATS_SCALING : 1));
                     }
                 }
 
@@ -1043,10 +1044,10 @@ namespace ModernStatsSystem
                 {
                     // Grabs whatever the base Game Object's name is, then checks if the current Stock Bar object is a child of it.
                     GameObject g2 = GameObject.Find(obj.name + "/" + StockBarValues[i]);
-                    
+
                     // If it isn't, continue.
                     if (g2 == null)
-                        { continue; }
+                    { continue; }
 
                     // If it exists and its Counter's Image count is less than 4.
                     if (g2.GetComponent<CounterCtr>().image.Length < 4)
@@ -1064,7 +1065,7 @@ namespace ModernStatsSystem
 
                         // Append the object to the original object's Counter Image list.
                         g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
-                        
+
                         // Count through the Counter's Image list.
                         for (int j = 0; j < g2.GetComponent<CounterCtr>().image.Length; j++)
                         {
@@ -1075,7 +1076,7 @@ namespace ModernStatsSystem
                             // Set the position and scale to new values. These are very precise.
                             g2.GetComponent<CounterCtr>().image[j].transform.localPosition = new Vector3(118 - j * 25, 31, -4);
                             g2.GetComponent<CounterCtr>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtr>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtr>().image[j].transform.localScale.z);
-                            
+
                             // Deactivate the object if it wasn't active.
                             g2.GetComponent<CounterCtr>().image[j].gameObject.active = chk;
                         }
@@ -1103,7 +1104,7 @@ namespace ModernStatsSystem
 
                     // If it's null, continue.
                     if (party == null)
-                        { continue; }
+                    { continue; }
 
                     // Grab the demon from the party's statindex.
                     datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[party.statindex];
@@ -1116,17 +1117,17 @@ namespace ModernStatsSystem
                     {
                         // Grab the demon's Party Bar values.
                         GameObject g2 = GameObject.Find("bparty(Clone)/bparty_window0" + (i + 1) + "/" + PartyBarValues[k]);
-                        
+
                         // If it doesn't exist, continue;
                         if (g2 == null)
-                            { continue; }
+                        { continue; }
 
                         // If the Counter's image count is less than 4.
                         if (g2.GetComponent<CounterCtrBattle>().image.Length < 4)
                         {
                             // Copy the first image.
                             GameObject g = GameObject.Instantiate(g2.GetComponent<CounterCtrBattle>().image[0].gameObject);
-                            
+
                             // Set the parent to the Party Bar.
                             g.transform.parent = g2.transform;
 
@@ -1137,7 +1138,7 @@ namespace ModernStatsSystem
 
                             // Append the new image to the Party Bar's Counter Image List.
                             g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
-                            
+
                             // Iterate through the Images.
                             for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
                             {
@@ -1148,7 +1149,7 @@ namespace ModernStatsSystem
                                 // Set new position and scale. Again, very precise.
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
-                                
+
                                 // Set active state back.
                                 g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
                             }
@@ -1172,7 +1173,7 @@ namespace ModernStatsSystem
                         // Grab the Party Bar.
                         GameObject g2 = GameObject.Find("summon_command/bmenu_command/bmenu_command_s0" + (i + 1) + "/" + PartyBarValues[k]);
                         if (g2 == null)
-                            { continue; }
+                        { continue; }
 
                         // If the Counter's image count is less than 4.
                         if (g2.GetComponent<CounterCtrBattle>().image.Length < 4)
@@ -1193,7 +1194,7 @@ namespace ModernStatsSystem
                             // Nocturne's weird.
                             g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
                             g2.GetComponent<CounterCtrBattle>().image = g2.GetComponent<CounterCtrBattle>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
-                            
+
                             // Iterate through the images.
                             for (int j = 0; j < g2.GetComponent<CounterCtrBattle>().image.Length; j++)
                             {
@@ -1204,7 +1205,7 @@ namespace ModernStatsSystem
                                 // Change the image's position and scale. You get the point by now. This happens a lot.
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localPosition = new Vector3(119 - j * 25, 0, -4);
                                 g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale = new Vector3(g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.x * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.y * 0.85f, g2.GetComponent<CounterCtrBattle>().image[j].transform.localScale.z);
-                                
+
                                 // Set active to previous value.
                                 g2.GetComponent<CounterCtrBattle>().image[j].gameObject.active = chk;
                             }
@@ -1243,11 +1244,11 @@ namespace ModernStatsSystem
 
                         // If it doesn't exist, skip.
                         if (g2 == null)
-                            { continue; }
+                        { continue; }
 
                         // If it has no Counter, skip.
                         if (g2.GetComponent<CounterCtr>() == null)
-                            { continue; }
+                        { continue; }
 
                         // If it's Counter has less than 5 images.
                         if (g2.GetComponent<CounterCtr>().image.Length < 5)
@@ -1263,7 +1264,7 @@ namespace ModernStatsSystem
                                 GameObject.Destroy(g.GetComponent<CounterCtr>());
 
                                 // Rename the image. I don't think this matters, but I'm doing it anyway.
-                                g.name = images[i].Replace("1","") + (i + 1);
+                                g.name = images[i].Replace("1", "") + (i + 1);
 
                                 // Set the copy's parent to the original image's parent.
                                 g.transform.parent = g2.transform.parent;
@@ -1275,7 +1276,7 @@ namespace ModernStatsSystem
 
                                 // Append the copy to the Counter's image list.
                                 g2.GetComponent<CounterCtr>().image = g2.GetComponent<CounterCtr>().image.Append<Image>(g.GetComponent<Image>()).ToArray<Image>();
-                                
+
                                 // MAKE SURE it doesn't die.
                                 GameObject.DontDestroyOnLoad(g);
                             }
@@ -1316,7 +1317,7 @@ namespace ModernStatsSystem
 
                 // Clears out whatever points you did distribute.
                 for (int i = 0; i < LevelUpPoints.Length; i++)
-                    { LevelUpPoints[i] = 0; }
+                { LevelUpPoints[i] = 0; }
 
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
                 rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
@@ -1331,19 +1332,21 @@ namespace ModernStatsSystem
                 // I shit you not, this number is EXTREMELY important.
                 // Wihtout this, you can't leave the menu properly. I honestly have no idea why.
                 rstinit.GBWK.SeqInfo.Current = 0x18;
-                
+
                 // Clear the fact that you were setting stats.
                 SettingAsignParam = false;
 
                 // Grab the player unit.
                 datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
-                
+
                 // Distribute the Player's level up points to proper points.
                 for (int i = 0; i < LevelUpPoints.Length; i++)
                 {
                     pStock.param[i] += (sbyte)LevelUpPoints[i];
                     LevelUpPoints[i] = 0;
                 }
+
+                rstcalc.rstSetMaxHpMp(0, ref pStock);
 
                 // Return that you said yes.
                 return 1;
@@ -1365,7 +1368,7 @@ namespace ModernStatsSystem
                     {
                         // If you're in a Selection Message, then respond.
                         if (fclMisc.fclChkSelMessage() == 1)
-                            { YesResponse(); }
+                        { YesResponse(); }
                     }
 
                     // If you're at position 1 and you hit the OK button or you hit the Cancel button.
@@ -1377,7 +1380,7 @@ namespace ModernStatsSystem
                     {
                         // If you're in a Selection Message, then respond.
                         if (fclMisc.fclChkSelMessage() == 1)
-                            { NoResponse(); }
+                        { NoResponse(); }
                     }
 
                     // This is so it doesn't continue while you're in a message.
@@ -1398,7 +1401,7 @@ namespace ModernStatsSystem
                     pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
                     pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
                     pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
-                        { YesResponse(); return false; }
+                { YesResponse(); return false; }
 
                 // Same thing as above, but without Int.
                 else if (pStock.param[0] + LevelUpPoints[0] >= MAXSTATS &&
@@ -1406,15 +1409,15 @@ namespace ModernStatsSystem
                     pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
                     pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
                     pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
-                        { YesResponse(); return false; }
+                { YesResponse(); return false; }
 
                 // If the status object is null, immediately skip the entire process.
                 if (cmpStatus.statusObj == null)
-                    { YesResponse(); return false; }
+                { YesResponse(); return false; }
 
                 // If you're in a Message, skip the rest.
                 if (fclMisc.fclChkMessage() != 0)
-                    { return false; }
+                { return false; }
 
                 // Grab the Cursor's index and adjust it accordingly.
                 int cursorIndex = cmpMisc.cmpGetCursorIndex(rstinit.GBWK.ParamCursor);
@@ -1422,7 +1425,7 @@ namespace ModernStatsSystem
 
                 // If Int is disabled, make sure it doesn't select it.
                 if (!EnableIntStat)
-                    { cursorParam = cmpMisc.cmpExchgParamIndex((sbyte)cursorIndex); }
+                { cursorParam = cmpMisc.cmpExchgParamIndex((sbyte)cursorIndex); }
 
                 // Otherwise, make sure it can select it.
                 else
@@ -1459,12 +1462,15 @@ namespace ModernStatsSystem
 
                     // If the cursor index is under the maximum, decrement it and play a sound.
                     if (cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
-                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, -1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    {
+                        cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, -1);
+                        cmpMisc.cmpPlaySE(16 & 0xFFFF);
+                    }
 
                     // Otherwise just play a sound.
                     // This part never happens since the menu loops.
                     else
-                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
                 }
 
                 // Check if you pressed down. Works the same as the pressing up calls, just incrementing instead.
@@ -1475,12 +1481,15 @@ namespace ModernStatsSystem
 
                     // If under the cap, increment and play a sound.
                     if (cursorIndex < rstinit.GBWK.ParamCursor.CursorPos.ListNums)
-                        { cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 1); cmpMisc.cmpPlaySE(1 & 0xFFFF); }
+                    {
+                        cmpMisc.cmpMoveCursor(rstinit.GBWK.ParamCursor, 1);
+                        cmpMisc.cmpPlaySE(16 & 0xFFFF);
+                    }
 
                     // Otherwise just play a sound.
                     // Again, never happens.
                     else
-                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
                 }
 
                 // If you press the cancel Button.
@@ -1492,11 +1501,13 @@ namespace ModernStatsSystem
                 }
 
                 // If you press the OK button.
-                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
+                // This can also be done with Right on the DPad, so I had to add that back in.
+                if ((dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
+                    || (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.R) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.R) == true))
                 {
                     // If your Stat plus the LevelUp stats exceed or go up to the maximum, then play a sound and skip the rest of the function.
                     if (pStock.param[cursorParam] + LevelUpPoints[cursorParam] >= MAXSTATS)
-                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // If you still have points to assign, assing one.
                     if (rstinit.GBWK.AsignParam > 0)
@@ -1519,12 +1530,13 @@ namespace ModernStatsSystem
                 }
 
                 // If you press the Y/Triangle button.
-                // This functionality is new.
-                if (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) == true)
+                // This apparently can be done with DPad Left as well, so I had to readd that in.
+                if ((dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OPT1) == true)
+                    || (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.L) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.L) == true))
                 {
                     // If this stat has no points assigned to it, play a sound and skip.
                     if (LevelUpPoints[cursorParam] < 1)
-                        { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // Otherwise, remove unassign a point to redistribute and play a sound.
                     else
@@ -1541,6 +1553,27 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsAddPoint))]
+        private class PatchMagatamaAddPoint
+        {
+            private static void Postfix()
+            {
+                // Grab the current Demon (should be the Demifiend).
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                // Iterate through the Demon's LevelUp Stats
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                {
+                    // Forcibly set them to their Base Stats then clear them.
+                    pStock.param[i] += pStock.levelupparam[i];
+                    pStock.levelupparam[i] = 0;
+                }
+
+                // Recalculate HP/MP.
+                rstcalc.rstSetMaxHpMp(1, ref pStock);
+            }
+        }
+
         [HarmonyPatch(typeof(cmpMisc), nameof(cmpMisc.cmpGetParamName))]
         private class PatchGetParamName
         {
@@ -1550,6 +1583,147 @@ namespace ModernStatsSystem
                 Index = (sbyte)Math.Clamp((int)Index, 0, 5);
                 __result = paramNames[Index];
                 return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(fclRecoverDraw), nameof(fclRecoverDraw.rcvDrawStockWindowList))]
+        private class PatchRecoverReviveDraw
+        {
+            private static bool Prefix(GameObject obj, uint Col, sbyte localstockidx, bool curidx)
+            {
+                // String List of GameObject Names.
+                string[] objList = { "_current", "_full" };
+
+                // Grab the parent object of the entire Recovery menu.
+                GameObject g = GameObject.Find("recovUI/rcvlist");
+                GameObject g2;
+                GameObject g3;
+                GameObject g4;
+
+                // If the Recovery UI doesn't exist.
+                if (g == null)
+                { return true; }
+
+                // If the Recovery UI isn't active.
+                if (!g.activeSelf)
+                { return true; }
+
+                // Iterate between all 9 visible rows in the Recover List.
+                for (int i = 0; i < 9; i++)
+                {
+                    // Grab the Row.
+                    g2 = GameObject.Find("recovUI/rcvlist/rcv_row/rcv_row0" + (i + 1));
+
+                    if (g2 == null)
+                    { return true; }
+
+                    if (!g2.activeSelf)
+                    { return true; }
+
+                    // This is gonna be a bit jank, basically gotta iterate through a couple of partial object names.
+                    for (int j = 0; j < objList.Length; j++)
+                    {
+                        // Grab one of the HP Bar GameObjects.
+                        g3 = GameObject.Find("recovUI/rcvlist/rcv_row/rcv_row0" + (i + 1) + "/rcvhpbar/rcvhpnum" + objList[j]);
+
+                        // If there's less than 4 Digits, add another one.
+                        if (g3.GetComponent<CounterCtr>().image.Length < 4)
+                        {
+                            // Create a duplicate of the first number in the list.
+                            g4 = GameObject.Instantiate(g3.GetComponent<CounterCtr>().image[0].gameObject);
+                            GameObject.DontDestroyOnLoad(g4);
+
+                            // Rename it.
+                            g4.name = "num_hp04";
+
+                            // Parent it.
+                            g4.transform.parent = g3.transform;
+
+                            // Set up original local Position and Scale.
+                            g4.transform.localPosition.Set(g3.transform.localPosition.x - 30, g3.transform.localPosition.y, g3.transform.localPosition.z);
+                            g4.transform.localScale = g3.GetComponent<CounterCtr>().image[0].transform.localScale;
+
+                            // Add it to the CounterCtr's image list.
+                            g3.GetComponent<CounterCtr>().image = g3.GetComponent<CounterCtr>().image.Append<Image>(g4.GetComponent<Image>()).ToArray<Image>();
+
+                            // Iterate through the objects and reposition/rescale them.
+                            for (int k = 0; k < g3.GetComponent<CounterCtr>().image.Length; k++)
+                            {
+                                // Grab the game object.
+                                g4 = g3.GetComponent<CounterCtr>().image[k].gameObject;
+
+                                // Grab position and scale.
+                                Vector3 newPos = g4.transform.localPosition;
+                                Vector3 newScale = g4.transform.localScale;
+
+                                // Change position and scale.
+                                newPos.x += 15;
+                                newPos.x *= 0.825f;
+                                newPos.y *= 0.825f;
+                                newPos.z *= 1;
+                                newScale.x *= 0.825f;
+                                newScale.y *= 0.825f;
+                                newScale.z *= 1;
+
+                                g4.transform.localPosition = newPos;
+                                g4.transform.localScale = newScale;
+                            }
+                        }
+                    }
+
+                    // This is gonna be a bit jank, basically gotta iterate through a couple of partial object names.
+                    for (int j = 0; j < objList.Length; j++)
+                    {
+                        // Grab one of the HP Bar GameObjects.
+                        g3 = GameObject.Find("recovUI/rcvlist/rcv_row/rcv_row0" + (i + 1) + "/rcvmpbar/rcvmpnum" + objList[j]);
+
+                        // If there's less than 4 Digits, add another one.
+                        if (g3.GetComponent<CounterCtr>().image.Length < 4)
+                        {
+                            // Create a duplicate of the first number in the list.
+                            g4 = GameObject.Instantiate(g3.GetComponent<CounterCtr>().image[0].gameObject);
+                            GameObject.DontDestroyOnLoad(g4);
+
+                            // Rename it.
+                            g4.name = "num_mp04";
+
+                            // Parent it.
+                            g4.transform.parent = g3.transform;
+
+                            // Set up original local Position and Scale.
+                            g4.transform.localPosition.Set(g3.transform.localPosition.x - 30, g3.transform.localPosition.y, g3.transform.localPosition.z);
+                            g4.transform.localScale = g3.GetComponent<CounterCtr>().image[0].transform.localScale;
+
+                            // Add it to the CounterCtr's image list.
+                            g3.GetComponent<CounterCtr>().image = g3.GetComponent<CounterCtr>().image.Append<Image>(g4.GetComponent<Image>()).ToArray<Image>();
+
+                            // Iterate through the objects and reposition/rescale them.
+                            for (int k = 0; k < g3.GetComponent<CounterCtr>().image.Length; k++)
+                            {
+                                // Grab the game object.
+                                g4 = g3.GetComponent<CounterCtr>().image[k].gameObject;
+
+                                // Grab position and scale.
+                                Vector3 newPos = g4.transform.localPosition;
+                                Vector3 newScale = g4.transform.localScale;
+
+                                // Change position and scale.
+                                newPos.x += 15;
+                                newPos.x *= 0.825f;
+                                newPos.y *= 0.825f;
+                                newPos.z *= 1;
+                                newScale.x *= 0.825f;
+                                newScale.y *= 0.825f;
+                                newScale.z *= 1;
+
+                                g4.transform.localPosition = newPos;
+                                g4.transform.localScale = newScale;
+                            }
+                        }
+                    }
+                }
+
+                return true;
             }
         }
 
@@ -1762,7 +1936,7 @@ namespace ModernStatsSystem
                     fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, colorptr, 0xb, (ushort)unk, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
 
                     // Set up the numerical text object.
-                    cmpUpdate.cmpSetupObject(g2, hasHeart == 1 ? true : false);
+                    cmpUpdate.cmpSetupObject(g2, true);
 
                     // Grab the number object
                     g2 = GameObject.Find("magUI(Clone)/magstatus/" + g.name + "/magtex/num_mag");
@@ -2132,7 +2306,7 @@ namespace ModernStatsSystem
                     int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
 
                     // Set default LevelUp stat value equal to both your Level Up and Mitama Bonuses.
-                    int levelstat = LevelUpPoints[stat] + pStock.mitamaparam[stat];
+                    int levelstat = LevelUpPoints[stat] + pStock.levelupparam[stat] + pStock.mitamaparam[stat];
 
                     // Set Stat value and color.
                     g2.GetComponent<CounterCtr>().Set(pStock.param[stat] + levelstat, Color.white, 0);
@@ -2301,7 +2475,7 @@ namespace ModernStatsSystem
                 int mitamaValue = pStock.mitamaparam[ParamOfs];
 
                 // LevelUp Value.
-                int levelupValue = LevelUpPoints[ParamOfs];
+                int levelupValue = LevelUpPoints[ParamOfs] + pStock.levelupparam[ParamOfs];
 
                 // Set up the values into a list.
                 int[] values = new int[] { paramValue - heartValue, levelupValue, mitamaValue, heartValue };
@@ -2316,7 +2490,7 @@ namespace ModernStatsSystem
 
                     // Adjust.
                     barScale.x = BAR_SCALE_X * values[len];
-                    barPos.x = 274 + BAR_SEGMENT_X * posOffset;
+                    barPos.x = 274 + BAR_SEGMENT_X * 1.45f * BAR_SCALE_X * posOffset;
                     barPos.y = -16f;
 
                     // Iterate from the value list.

@@ -108,7 +108,7 @@ namespace ModernStatsSystem
             // Damage Mitigation Formula.
             // Requires a work unit and one of the parameter IDs.
             public static float Get(datUnitWork_t work, int param)
-                { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
+                { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
         }
 
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbCheckStoneDead))]
@@ -140,7 +140,7 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // Grab the user's Luc. It's actually used in the original formula.
-                int luckValue = datCalc.datGetParam(defender, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                int luckValue = (int)((float)datCalc.datGetParam(defender, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // Assign a basic flat value for a formula later.
                 float flatValue = 20f;
@@ -178,7 +178,7 @@ namespace ModernStatsSystem
                     { param = 1; }
 
                 // Resulting Formula
-                __result = (int)(((float)param / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) + (float)work.level) * 2f);
+                __result = (int)(((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level) * 2f);
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -531,7 +531,7 @@ namespace ModernStatsSystem
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
-                // Additionally, divide the previous result by 70%.
+                // Additionally, multiply the previous result by 70%.
                 if (EnableStatScaling)
                     { __result = (int)((float)__result * 0.7f / (maxhits > 1 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
                 return false;
@@ -557,7 +557,7 @@ namespace ModernStatsSystem
                     { param = datCalc.datGetParam(work, 1); }
 
                 // Final result considers your Magic buffs.
-                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)rng.Next(0, 8) + (float)param * 4f / (EnableStatScaling ? (float)POINTS_PER_LEVEL : 1f) + (float)work.level) / 10f * (float)waza);
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)rng.Next(0, 8) + (float)param * 4f / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level) / 10f * (float)waza);
                 return false;
             }
         }
@@ -601,8 +601,8 @@ namespace ModernStatsSystem
                 // Scale Luck variables.
                 if (EnableStatScaling)
                 {
-                    luck = luck / POINTS_PER_LEVEL;
-                    playerLuck = playerLuck / POINTS_PER_LEVEL;
+                    luck = (int)((float)luck / STATS_SCALING);
+                    playerLuck = (int)((float)playerLuck / STATS_SCALING);
                 }
 
                 // Flag nonsense again.
@@ -678,10 +678,10 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
-                __result = work.level + datCalc.datGetParam(work, 4) * 2 / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                __result = (int)((float)work.level + (float)datCalc.datGetParam(work, 4) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // Grabs the user's Luc.
-                int luc = datCalc.datGetParam(work, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                int luc = (int)((float)datCalc.datGetParam(work, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If it's under 2 or some weird "badstatus" flag nonsense is true, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
@@ -704,14 +704,14 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs Level, Mag, and Agi and does some math.
-                __result = work.level + datCalc.datGetParam(work, 2) * 2 / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                __result = (int)((float)work.level + (float)datCalc.datGetParam(work, 2) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 4 + (float)datCalc.datGetParam(work, 2) * 4) / (EnableStatScaling ? POINTS_PER_LEVEL : 1)); }
+                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 4 + (float)datCalc.datGetParam(work, 2) * 4) / (EnableStatScaling ? STATS_SCALING : 1)); }
 
                 // Grabs Luc.
-                int luc = datCalc.datGetParam(work, 5) / (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                int luc = (int)((float)datCalc.datGetParam(work, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If under 2 or flag nonsense, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
@@ -738,7 +738,7 @@ namespace ModernStatsSystem
 
                 // If enabled, do some actual math.
                 if (EnableStatScaling)
-                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)POINTS_PER_LEVEL + (float)work.level) * 2; }
+                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)STATS_SCALING + (float)work.level) * 2; }
                 return false;
             }
         }
@@ -751,24 +751,33 @@ namespace ModernStatsSystem
                 // Result init.
                 __result = 0;
 
-                // If the Skill is a larger ID than the table size, return and do the original function instead.
-                if (datSkill.tbl.Length <= nskill)
-                    { return true; }
-
-                // If the Skill's Effect Type is not zero (Physical Damage), return and do the original function instead.
-                if (datNormalSkill.tbl[nskill].koukatype != 0)
-                    { return true; }
-
-                // If EnableStatScaling is false, return and do the original function
-                if (!EnableStatScaling)
-                    { return true; }
-
                 // Grab the Process Data.
                 nbMainProcessData_t a = nbMainProcess.nbGetMainProcessData();
 
                 // Set up the attacker/defender objects from the indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
+
+                // "Aisyo" translates to "favorite book" with Google Translate.
+                // I dug deeper through another website and found out it means something more like "charm" or "character".
+                // Turns out this has to do with Affinities and Negotiations with said Demon. "Character" was a good assumption.
+                uint aisyo = nbCalc.nbGetAisyo(nskill, dformindex, datSkill.tbl[nskill].skillattr);
+
+                // If the Skill is a larger ID than the table size, return and do the original function instead.
+                if (datSkill.tbl.Length <= nskill)
+                { return true; }
+
+                // If the Skill's Effect Type is not zero (Physical Damage), return and do the original function instead.
+                if (datNormalSkill.tbl[nskill].koukatype != 0)
+                { return true; }
+
+                // If EnableStatScaling is false, return and do the original function
+                if (!EnableStatScaling)
+                { return true; }
+
+                // If the Defender Blocks, Repels, or Drains your attack, return the original function.
+                if ((aisyo & 0x10000) == 0x10000 || (aisyo & 0x100000) == 0x100000 || (aisyo & 0x1000000) == 0x1000000)
+                { return true; }
 
                 // More flag nonsense.
                 if (((a.stat + 1) >> 2 & 1) != 0 &&
@@ -803,8 +812,8 @@ namespace ModernStatsSystem
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
 
                 // Grab both users' Agi and math out the difference.
-                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / (float)POINTS_PER_LEVEL / ((float)defender.level / 5f + 3f);
-                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / (float)POINTS_PER_LEVEL / ((float)attacker.level / 5f + 3f);
+                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
+                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
 
                 // Calculate the overall hit chance.
                 float hitChanceCalc = multi * atkBuffs * defBuffs * ((defAgiCalc - atkAgiCalc) * 6.25f + (100 - nbCalc.GetFailpoint(nskill)));
@@ -813,7 +822,7 @@ namespace ModernStatsSystem
                 if ((attacker.badstatus & 0xFFF) == 0x100)
                     { hitChanceCalc *= 0.25f; }
 
-                // Make sure it's a minimum of 5% to hit.
+                // Make sure it's a maximum of 95% to miss.
                 if (hitChanceCalc >= 95.0f)
                     { hitChanceCalc = 95.0f; }
 
@@ -832,11 +841,10 @@ namespace ModernStatsSystem
                 if (hitCheck < hitChanceCalc)
                     { __result = 0; return false; }
 
-                // Whatever this "Devil Format Flag" is, if it's zero, return a different result.
+                // Whatever this "Devil Format Flag" is, if it's not zero, return a different result.
                 if ((nbCalc.nbGetDevilFormatFlag(dformindex) & 0x800) != 0)
                     { __result = 5; return false; }
-
-                __result = 4;
+                
                 return false;
             }
         }
@@ -846,6 +854,11 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, nbActionProcessData_t ad, int nskill, int sformindex, int dformindex)
             {
+                // Hit Types are as followed:
+                // 0 -> Normal
+                // 1 -> Critical
+                // 2 -> Weakness
+
                 // Grab units from form indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
@@ -853,22 +866,22 @@ namespace ModernStatsSystem
                 // Result init.
                 __result = 0;
 
+                // "Aisyo" translates to "favorite book" with Google Translate.
+                // I dug deeper through another website and found out it means something more like "charm" or "character".
+                // Turns out this has to do with Affinities and Negotiations with said Demon. "Character" was a good assumption.
+                uint aisyo = nbCalc.nbGetAisyo(nskill, dformindex, datSkill.tbl[nskill].skillattr);
+
                 // If false, return original function.
                 if (!EnableStatScaling)
-                    { return true; }
+                { return true; }
 
                 // Flag Nonsense. If true, return original function.
                 if ((byte)datSkill.tbl[nskill].skillattr == 0xff)
-                    { return true; }
+                { return true; }
 
                 // If the skill is Magic, return original function.
                 if (datNormalSkill.tbl[nskill].koukatype == 1)
-                    { return true; }
-
-                // "Aisyo" translates to "favorite book" with Google Translate.
-                // I dug deeper through another website and found out it means something more like "charm" or "character".
-                // Honestly I don't know what this is.
-                uint aisyo = nbCalc.nbGetAisyo(nskill, dformindex, datSkill.tbl[nskill].skillattr);
+                { return true; }
 
                 // If this skill is just the basic attack
                 if (nskill == 0)
@@ -896,7 +909,7 @@ namespace ModernStatsSystem
                     { __result = 1; return false; }
 
                 // A random boolean to check on things later.
-                bool chk = false;
+                bool chk;
 
                 // Infinite Loop Check.
                 // Because what the fuck.
@@ -982,12 +995,12 @@ namespace ModernStatsSystem
 
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
-                float atkCritStat = (float)datCalc.datGetParam(attacker, 5) / (float)POINTS_PER_LEVEL;
+                float atkCritStat = (float)datCalc.datGetParam(attacker, 5) / (float)STATS_SCALING;
                 float atkCritChance = 0f;
 
                 // Set Defender's Crit Chance values.
                 float defCritLevel = (float)defender.level / 5f + 3f;
-                float defCritStat = (float)datCalc.datGetParam(defender, 5) / (float)POINTS_PER_LEVEL;
+                float defCritStat = (float)datCalc.datGetParam(defender, 5) / (float)STATS_SCALING;
                 float defCritChance = 0f;
 
                 // Divide the Crit Chances by the opposite levels.
@@ -1100,14 +1113,14 @@ namespace ModernStatsSystem
                 // Otherwise Talk skills will be affected.
                 // Which they shouldn't since they don't target randomly.
                 if (datNormalSkill.tbl[nskill].koukatype == 0)
-                    { extrahits = Math.Max(datCalc.datGetParam(user, 4) / (5 * POINTS_PER_LEVEL), 0); }
+                    { extrahits = (int)Math.Max((float)datCalc.datGetParam(user, 4) / (5f * STATS_SCALING), 0f); }
 
                 // Magic Attacks (Luc Scaling)
                 else if (datNormalSkill.tbl[nskill].koukatype == 1)
-                    { extrahits = Math.Max(datCalc.datGetParam(user, 5) / (5 * POINTS_PER_LEVEL), 0); }
+                    { extrahits = (int)Math.Max((float)datCalc.datGetParam(user, 5) / (5f * STATS_SCALING), 0f); }
 
-                // Subtract by a quarter of the Skill's Rank, rounded up
-                extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 4d);
+                // Subtract by an eigth of the Skill's Rank, rounded up
+                extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 8d);
 
                 // If it somehow goes under, set it to zero.
                 if (extrahits < 0)
@@ -1115,7 +1128,7 @@ namespace ModernStatsSystem
 
                 // Calculate odds of being hit by this particular skill based on its maximum hit count.
                 // Additionally, cap the odds at min 25% and max 70%.
-                sbyte hitOdds = (sbyte)Math.Max(Math.Min(datNormalSkill.tbl[nskill].targetcntmax * 10 + extrahits * 5, 70), 25);
+                sbyte hitOdds = (sbyte)Math.Clamp(datNormalSkill.tbl[nskill].targetcntmax * 10 + extrahits * 5, 25, 70);
 
                 // Set the max hit count for a single target based on the average hit count
                 byte maxhits = (byte)((datNormalSkill.tbl[nskill].targetcntmax + datNormalSkill.tbl[nskill].targetcntmin + extrahits) / 2);

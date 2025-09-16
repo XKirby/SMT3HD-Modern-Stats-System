@@ -51,8 +51,10 @@ namespace ModernStatsSystem
                     if (rstCalcCore.cmbGetParamBase(ref pStock, statID) < MAXSTATS)
                     {
                         pStock.param[statID]++;
-                        rstcalc.rstSetMaxHpMp(0, ref pStock);
+                        pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                        pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
                         pStock.hp = pStock.maxhp;
+                        pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
                         return false;
                     }
                 }

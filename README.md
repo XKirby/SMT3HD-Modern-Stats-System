@@ -2,8 +2,8 @@
 A mod for Shin Megami Tensei III Nocture HD that changes the entire Stat system in the game.
 
 Includes the following:
-- All of your Stats can go to 100.
-- You gain 2 Stat Points per level. Demons get 2 points auto-distributed per level.
+- All of your Stats can go up to 99.
+- You gain 3 Stat Points per level. Demons get 3 points auto-distributed per level.
 - Intelligence is reintroduced.
 - Certain formulas have been changed to accomodate the increased limits and Intelligence.
 - All demon stats multiplied by how many Points you gain per level to accomodate for the new values.
