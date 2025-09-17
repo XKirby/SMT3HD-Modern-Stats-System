@@ -613,7 +613,7 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                        { baseform = Mathf.Abs(30f * ((float)w.level / 25.5f + (float)luck / 2f + 1)); }
+                        { baseform = Mathf.Abs(30f / ((float)w.level + (float)luck)); }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
@@ -624,9 +624,10 @@ namespace ModernStatsSystem
                     {
                         adjform = (float)macca / 20.0f * baseform;
 
-                        // If enabled, grab the whole stack instead.
+                        // If enabled, use 1/10 of your Macca instead of a 1/20.
+                        // Also, clamp it to as low as 0 and as high as fifth of your total Macca.
                         if (EnableStatScaling)
-                            { adjform = (float)(macca) * baseform; }
+                            { adjform = (float)Math.Clamp((float)macca / 10f * baseform, 0d, (float)macca / 5f); }
                     }
                 }
 
@@ -644,10 +645,11 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = Mathf.Abs(30f * ((float)work.level / 25.5f / 2f + (float)playerLuck / 2 + 1)); }
+                        { baseform = Mathf.Abs(30f * ((float)work.level + (float)playerLuck)); }
 
                     // Grab the enemy's whole stack.
-                    adjform = (float)devil.dropmakka * baseform;
+                    // Also make sure you don't accidentally generate more Macca than intended.
+                    adjform = (float)Math.Clamp(devil.dropmakka * baseform, 0d, devil.dropmakka);
                 }
 
                 // Generate a number between 0.0 and 1.0.
@@ -658,7 +660,7 @@ namespace ModernStatsSystem
 
                 // If enabled, scale it differently.
                 if (EnableStatScaling)
-                    { __result = (int)Mathf.Abs(Mathf.Pow((float)adjform, 1.125f) * (1f + Mathf.Log10(adjform)) * (0.1f + variance * 2 / 3) / baseform); }
+                    { __result = (int)Mathf.Abs((variance + 1f) / 2f * adjform); }
 
                 // If difficulty bit is 1 or lower and some more flag nonsense, divide by 10.
                 if (dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
