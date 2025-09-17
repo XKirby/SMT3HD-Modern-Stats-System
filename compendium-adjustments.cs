@@ -50,7 +50,7 @@ namespace ModernStatsSystem
                 int luc = (int)pelem.param[5] + (int)pelem.mitamaparam[5];
 
                 // Return the following result
-                return (int)(Math.Pow((double)(str + mag + vit + agi + luc + intStat), 2) / 20d * 100d * (EnableStatScaling ? 1d / (EnableIntStat ? (double)STATS_SCALING * 1.2d : (double)STATS_SCALING) : 1d));
+                return (int)(Math.Pow((double)(str + mag + vit + agi + luc + intStat) / (EnableStatScaling ? (EnableIntStat ? (double)STATS_SCALING + (double)STATS_SCALING / 6d : (double)STATS_SCALING) : 1d), 2) * 5d);
             }
 
             // Discount calculator
