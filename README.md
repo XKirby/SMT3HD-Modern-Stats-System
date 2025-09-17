@@ -14,6 +14,6 @@ Includes the following:
 - Install SMT3HD from your Steam Account.
 - Install MelonLoader v0.7 onto SMT3HD.
 - Put the included Asset Bundle for the Statpoint Bars in smt3hd's smt3hd_Data\StreamingAssets\PC folder.
-- Put "modern-stats-system.dll" in MelonLoader's Mods folder.
+- Put "ModernStatsSystem.dll" in MelonLoader's Mods folder.
 
-NOTE: Don't play on existing savefiles.
+NOTE: Don't play on savefiles made without using this mod.
