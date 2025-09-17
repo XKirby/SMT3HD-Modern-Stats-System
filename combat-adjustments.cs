@@ -613,7 +613,7 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                        { baseform = Mathf.Abs(30f / ((float)w.level + (float)luck)); }
+                        { baseform = ((float)w.level / 2.55f + (float)luck) / 175f; }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
@@ -627,7 +627,7 @@ namespace ModernStatsSystem
                         // If enabled, use 1/10 of your Macca instead of a 1/20.
                         // Also, clamp it to as low as 0 and as high as fifth of your total Macca.
                         if (EnableStatScaling)
-                            { adjform = (float)Math.Clamp((float)macca / 10f * baseform, 0d, (float)macca / 5f); }
+                            { adjform = (float)Math.Clamp((float)macca * baseform, 0d, (float)macca); }
                     }
                 }
 
@@ -645,7 +645,7 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = Mathf.Abs(30f * ((float)work.level + (float)playerLuck)); }
+                        { baseform = ((float)work.level / 2.55f + (float)playerLuck) / 175f; }
 
                     // Grab the enemy's whole stack.
                     // Also make sure you don't accidentally generate more Macca than intended.
@@ -660,15 +660,15 @@ namespace ModernStatsSystem
 
                 // If enabled, scale it differently.
                 if (EnableStatScaling)
-                    { __result = (int)Mathf.Abs((variance + 1f) / 2f * adjform); }
+                    { __result = (int)Math.Clamp((variance + 0.5f) * adjform, 0d, (w.flag >> 5 & 1) == 0 ? macca : devil.dropmakka); }
 
                 // If difficulty bit is 1 or lower and some more flag nonsense, divide by 10.
                 if (dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
-                    { __result = __result / 10; }
+                    { __result /= 10; }
 
                 // If result is less than 2, set it to 1.
-                if (__result < 2)
-                    { __result = 1; }
+                if (__result < 1)
+                    { __result = 0; }
                 return false;
             }
         }
