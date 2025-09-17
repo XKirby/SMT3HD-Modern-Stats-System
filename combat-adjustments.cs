@@ -598,13 +598,6 @@ namespace ModernStatsSystem
                 adjform = 0.0f;
                 baseform = 0.0f;
 
-                // Scale Luck variables.
-                if (EnableStatScaling)
-                {
-                    luck = (int)((float)luck / STATS_SCALING);
-                    playerLuck = (int)((float)playerLuck / STATS_SCALING);
-                }
-
                 // Flag nonsense again.
                 if ((w.flag >> 5 & 1) == 0)
                 {
@@ -613,7 +606,7 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                        { baseform = ((float)w.level / 2.55f + (float)luck) / 175f; }
+                        { baseform = ((float)w.level / 2.55f + (float)luck) / 50f; }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
@@ -625,9 +618,9 @@ namespace ModernStatsSystem
                         adjform = (float)macca / 20.0f * baseform;
 
                         // If enabled, use 1/10 of your Macca instead of a 1/20.
-                        // Also, clamp it to as low as 0 and as high as fifth of your total Macca.
+                        // Also, clamp it to as low as 1/10 of your total Macca and as high as your entire stack.
                         if (EnableStatScaling)
-                            { adjform = (float)Math.Clamp((float)macca * baseform, 0d, (float)macca); }
+                            { adjform = (float)Math.Clamp((float)macca * baseform, (float)macca / 10f, (float)macca); }
                     }
                 }
 
@@ -645,11 +638,11 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = ((float)work.level / 2.55f + (float)playerLuck) / 175f; }
+                        { baseform = ((float)work.level / 2.55f + (float)playerLuck) / 50f; }
 
                     // Grab the enemy's whole stack.
-                    // Also make sure you don't accidentally generate more Macca than intended.
-                    adjform = (float)Math.Clamp(devil.dropmakka * baseform, 0d, devil.dropmakka);
+                    // Also make sure you don't accidentally generate more (or less) Macca than intended.
+                    adjform = (float)Math.Clamp(devil.dropmakka * baseform, devil.dropmakka / 10f, devil.dropmakka);
                 }
 
                 // Generate a number between 0.0 and 1.0.
