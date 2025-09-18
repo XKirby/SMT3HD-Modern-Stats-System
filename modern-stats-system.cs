@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.4", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.5", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -889,12 +889,12 @@ namespace ModernStatsSystem
                 {
                     if (i == 1 && !EnableIntStat)
                     { continue; }
-                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    if (datCalc.datGetParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
                 }
 
                 // Iterate and set the demon's new LevelUp Stats.
-                i = 0;
+                i = rstinit.GBWK.AsignParam * (EnableStatScaling ? POINTS_PER_LEVEL : 1);
                 do
                 {
                     // If your stats are completely capped out.
@@ -914,15 +914,15 @@ namespace ModernStatsSystem
                         paramChecks[5] == true)
                     { break; }
 
-                    // If you end up going over the Stat points per level, break.
-                    if (rstinit.GBWK.AsignParam * (EnableStatScaling ? POINTS_PER_LEVEL : 1) <= i)
+                    // If you end up finishing the full distribution of stats, break the loop.
+                    if (i <= 0)
                     { break; }
 
                     // Add a random stat to the demon.
                     int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
 
-                    // If the Stat's ID is over 5 or somehow hit -1, continue.
-                    if (paramID == 6 || paramID == -1)
+                    // If the Stat's ID is over 5 or somehow goes under 0, continue.
+                    if (paramID > 5 || paramID < 0)
                     { continue; }
 
                     // If the Stat's ID is already full, continue and remove the point distributed.
@@ -934,11 +934,11 @@ namespace ModernStatsSystem
 
                     // Set a boolean to true if the stat becomed capped out.
                     // Also forcibly set the stat to its new cap.
-                    if (pStock.param[paramID] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    if (datCalc.datGetParam(pStock, paramID) >= MAXSTATS)
                     { paramChecks[paramID] = true; }
 
                     // Increment.
-                    i++;
+                    i--;
                 }
                 while (true);
 
@@ -972,10 +972,9 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(datUnitWork_t pStock, Il2CppReferenceArray<Il2Cppresult2_H.fclSkillParam_t> pEvent, sbyte EvtBufFlag, datUnitWork_t pEvoDevil)
             {
-                // If the event's Buffer Flag(?) and length of the event are both zero, return.
-                // Additionally, return if the event's length is under 2 at any point.
-                if ((EvtBufFlag == 0 && pEvent.Length == 0) || pEvent.Length < 2)
-                { return false; }
+                // If the event's Buffer Flag(?) is zero or the length of the event is under 2, return.
+                if (EvtBufFlag == 0 || pEvent.Length < 2)
+                { return true; }
 
                 // Grab an Event index.
                 fclSkillParam_t EventParam = pEvent[1];
@@ -985,32 +984,17 @@ namespace ModernStatsSystem
                 if (EventParam.Type != 5)
                 { EventParam = pEvent[0]; }
 
-                // Probably the demon ID your demon evolves into.
-                int DemonID = 0;
+                // Grab what's probably the demon ID your demon evolves into.
+                int DemonID = EventParam.Param;
 
-                // Loop through stock and count how many demons there are?
-                int demoncount = 0;
-                for (int i = 0; i < dds3GlobalWork.DDS3_GBWK.unitwork.Length; i++)
-                {
-                    if ((dds3GlobalWork.DDS3_GBWK.unitwork[i].flag & 5) == 1)
-                    { demoncount++; }
-                }
-
-                // Grab the Demon's ID from the event.
-                DemonID = EventParam.Param;
-
-                // If the demon count is too high, reset the Demon ID to 0.
-                if (demoncount >= rstCalcCore.cmbChkStockDarkDevilNums(dds3GlobalWork.DDS3_GBWK.unitwork, 0x10))
-                { DemonID = 0; }
-
-                // If the Evo Demon exists.
-                if (pEvoDevil != null)
+                // If the Evo Demon exists and the current DemonID is over zero.
+                if (pEvoDevil != null && DemonID > 0)
                 {
                     // Copy the Demon into your Stock.
                     fclCombineCalcCore.cmbCopyDefaultDevilToStock((ushort)DemonID, pEvoDevil);
 
-                    // If your current demon is a higher level.
-                    if (pStock.level > pEvoDevil.level)
+                    // If the new demon is a higher level.
+                    if (pStock.level < pEvoDevil.level)
                     {
                         // Recalculate the new demon's Experience.
                         pEvoDevil.exp = rstCalcCore.cmbCalcLevelUpExp(ref pEvoDevil, pStock.level);
@@ -1032,12 +1016,12 @@ namespace ModernStatsSystem
 
                             // Otherwise, break loop.
                             else
-                            { break; }
+                            { continue; }
 
                             // Increment.
                             i++;
                         }
-                        while (i < (pStock.level - pEvoDevil.level) * (EnableStatScaling ? STATS_SCALING : 1));
+                        while (i < Math.Abs(pStock.level - pEvoDevil.level) * (EnableStatScaling ? POINTS_PER_LEVEL : 1));
                     }
                 }
 
@@ -1570,25 +1554,85 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsAddPoint))]
-        private class PatchMagatamaAddPoint
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsEvent))]
+        private class PatchMagatamaEvent
         {
-            private static void Postfix()
+            private static void Postfix(sbyte EventType)
             {
                 // Grab the current Demon (should be the Demifiend).
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
-                // Iterate through the Demon's LevelUp Stats
-                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                // Distributes Levelup points added by the Magatama (hopefully).
+                for (int i = 0; i < pStock.param.Length; i++)
                 {
-                    // Forcibly set them to their Base Stats then clear them.
                     pStock.param[i] += pStock.levelupparam[i];
                     pStock.levelupparam[i] = 0;
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsAddPoint))]
+        private class PatchMagatamaAddPoint
+        {
+            private static bool Prefix()
+            {
+                // Grab the current Demon (should be the Demifiend).
+                datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                // This is a list of Stats it needs to check.
+                bool[] paramChecks = { false, false, false, false, false, false };
+
+                // Iterate a loop through Stats and checks for if the stat's capped already and set a boolean.
+                for (int i = 0; i < pStock.param.Length; i++)
+                {
+                    if (i == 1 && !EnableIntStat)
+                    { continue; }
+                    if (datCalc.datGetParam(pStock, i) >= MAXSTATS)
+                    { paramChecks[i] = true; }
+                }
+
+                // Loop until you find a stat to increase.
+                int param = 0;
+                do
+                {
+                    // If your stats are completely capped out, break.
+                    if (EnableIntStat &&
+                        paramChecks[0] == true &&
+                        paramChecks[1] == true &&
+                        paramChecks[2] == true &&
+                        paramChecks[3] == true &&
+                        paramChecks[4] == true &&
+                        paramChecks[5] == true)
+                    { break; }
+                    if (!EnableIntStat &&
+                        paramChecks[0] == true &&
+                        paramChecks[2] == true &&
+                        paramChecks[3] == true &&
+                        paramChecks[4] == true &&
+                        paramChecks[5] == true)
+                    { break; }
+
+                    // Grab a stat at random to add to.
+                    param = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
+
+                    // If a stat couldn't be found, break.
+                    if (param > 5 || param < 0)
+                    { break; }
+
+                    // if it's capped, search again.
+                    if (datCalc.datGetParam(pStock, param) >= MAXSTATS)
+                    { paramChecks[param] = true; continue; }
+
+                    // Increase their LevelUp points.
+                    pStock.param[param]++;
+                }
+                while (param < 0 || param > 5);
 
                 // Recalculate HP/MP.
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+
+                return false;
             }
         }
 

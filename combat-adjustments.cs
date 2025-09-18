@@ -239,19 +239,21 @@ namespace ModernStatsSystem
                     exp *= 3;
                 }
 
-                // If in the Boss Rush, massively reduce your gains.
+                // If in the Boss Rush, massively reduce your gains, add them to the encounter's data, and return.
                 if (datCalc.datBossRashChk(data.encno) != 0)
                 {
                     macca /= 10;
                     exp /= 10;
+
+                    data.maka += (uint)macca;
+                    data.exp += (uint)exp;
+
+                    return false;
                 }
 
+                // Add the new Macca and EXP values to the encounter's data.
                 data.maka += (uint)macca;
                 data.exp += (uint)exp;
-
-                // If in the Boss Rush, stop the function here.
-                if (datCalc.datBossRashChk(data.encno) != 0)
-                    { return false; }
 
                 // If this weird variable is 0 or an EventBit Check is true and the enemy has a special item.
                 if (devil.specialbit == 0 || (EventBit.evtBitCheck(devil.specialbit) && devil.specialitem != 0))
@@ -260,11 +262,11 @@ namespace ModernStatsSystem
                         { droppedItem = devil.specialitem; }
                 }
 
-                // If the Special Item was dropped or the above check failed.
-                else
+                // If the dropped Item is still 0.
+                if (droppedItem == 0)
                 {
-                    // Loop through the Demon's Items, unless one was found earlier.
-                    for (int i = 0; i < devil.dropitem.Length && droppedItem == 0; i++)
+                    // Loop through the Demon's Items.
+                    for (int i = 0; i < devil.dropitem.Length; i++)
                     {
                         // If the item doesn't exist here, continue.
                         if (devil.dropitem[i] == 0)
@@ -276,24 +278,23 @@ namespace ModernStatsSystem
                     }
                 }
 
-                // Not sure what's going on here.
-                int item = 4;
-                if (devil.hougyokupoint <= rng.Next(100) || droppedItem != 0)
-                    { item = droppedItem; }
-                droppedItem = 3;
-                if (devil.masekipoint <= rng.Next(100) || item != 0)
-                    { droppedItem = item; }
-
-                if (item == 0)
+                if (droppedItem == 0)
                     { return false; }
 
                 // Loop through the Data's Item list
                 for (int i = 0; i < data.item.Length; i++)
                 {
                     if (data.item[i] == 0)
-                        { data.item[i] = (byte)item; }
-                    if (item == data.item[i])
-                        { data.itemcnt[i] += 1; break; }
+                    {
+                        data.item[i] = (byte)droppedItem;
+                        data.itemcnt[i] += 1;
+                        break;
+                    }
+                    if (data.item[i] == droppedItem)
+                    {
+                        data.itemcnt[i] += 1;
+                        break;
+                    }
                 }
 
                 return false;
@@ -628,11 +629,6 @@ namespace ModernStatsSystem
                 // Effectively this means the demon isn't on your team.
                 else
                 {
-                    // If you're fine, return.
-                    // Basically this checks if you're not suffering from Panic.
-                    if (work.badstatus == 0)
-                        { return false; }
-
                     // Base formula math again.
                     baseform = Mathf.Abs((float)playerLuck / ((float)work.level / 5.0f + 4.0f));
 
@@ -660,8 +656,8 @@ namespace ModernStatsSystem
                     { __result /= 10; }
 
                 // If result is less than 2, set it to 1.
-                if (__result < 1)
-                    { __result = 0; }
+                if (__result < 2)
+                    { __result = 1; }
                 return false;
             }
         }
@@ -775,7 +771,7 @@ namespace ModernStatsSystem
                 { return true; }
 
                 // If the Defender Blocks, Repels, or Drains your attack, return the original function.
-                if ((aisyo & 0x10000) == 0x10000 || (aisyo & 0x100000) == 0x100000 || (aisyo & 0x1000000) == 0x1000000)
+                if (aisyo == 0x10000u || aisyo == 0x100000u || aisyo == 0x1000000u)
                 { return true; }
 
                 // More flag nonsense.
