@@ -214,6 +214,9 @@ namespace ModernStatsSystem
                 // Get the Demon's Macca
                 int macca = devil.dropmakka;
 
+                // Get the Demi-Fiend's current Luck and do some math for scaling Drop Rates.
+                float dropRateMult = EnableStatScaling ? 1f + ((float)datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5) / STATS_SCALING * 2f) : 1f;
+
                 // If the enemy has an Item.
                 int droppedItem = 0;
 
@@ -258,7 +261,7 @@ namespace ModernStatsSystem
                 // If this weird variable is 0 or an EventBit Check is true and the enemy has a special item.
                 if (devil.specialbit == 0 || (EventBit.evtBitCheck(devil.specialbit) && devil.specialitem != 0))
                 {
-                    if (devil.specialpoint <= rng.Next(100))
+                    if (devil.specialpoint / dropRateMult <= rng.Next(100))
                         { droppedItem = devil.specialitem; }
                 }
 
@@ -273,7 +276,7 @@ namespace ModernStatsSystem
                         { continue; }
 
                         // If you meet the Drop Chance, grab this particular item and break.
-                        if (devil.droppoint[i] <= rng.Next(100))
+                        if (devil.droppoint[i] / dropRateMult <= rng.Next(100))
                             { droppedItem = devil.dropitem[i]; break; }
                     }
                 }
@@ -655,9 +658,9 @@ namespace ModernStatsSystem
                 if (dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
                     { __result /= 10; }
 
-                // If result is less than 2, set it to 1.
-                if (__result < 2)
-                    { __result = 1; }
+                // If result is less than 1, set it to zero.
+                if (__result < 1)
+                    { __result = 0; }
                 return false;
             }
         }
