@@ -1554,10 +1554,10 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsEvent))]
-        private class PatchMagatamaEvent
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstUpdateSeqHeartsEvent))]
+        private class PatchUpdateSeqMagatamaEvent
         {
-            private static void Postfix(sbyte EventType)
+            private static void Postfix()
             {
                 // Grab the current Demon (should be the Demifiend).
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
@@ -1568,6 +1568,10 @@ namespace ModernStatsSystem
                     pStock.param[i] += pStock.levelupparam[i];
                     pStock.levelupparam[i] = 0;
                 }
+
+                // Recalculate HP/MP.
+                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
             }
         }
 
@@ -1592,7 +1596,7 @@ namespace ModernStatsSystem
                 }
 
                 // Loop until you find a stat to increase.
-                int param = 0;
+                int param = -1;
                 do
                 {
                     // If your stats are completely capped out, break.
@@ -1624,7 +1628,8 @@ namespace ModernStatsSystem
                     { paramChecks[param] = true; continue; }
 
                     // Increase their LevelUp points.
-                    pStock.param[param]++;
+                    pStock.levelupparam[param]++;
+                    break;
                 }
                 while (param < 0 || param > 5);
 
