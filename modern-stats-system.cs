@@ -2051,10 +2051,6 @@ namespace ModernStatsSystem
                 if (ctr2 > pStock.param.Length || pBaseCol.Length == 0 || cmpStatus.statusObj == null)
                     { return; }
 
-                // If the Stat is capped, make sure it doesn't overshoot.
-                if (pStock.param[ctr2] >= MAXSTATS)
-                    { pStock.param[ctr2] = MAXSTATS; }
-
                 // Grab the Status Menu object.
                 GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
 
@@ -2062,10 +2058,13 @@ namespace ModernStatsSystem
                 if (stsObj.GetComponentsInChildren<TMP_Text>() != null)
                     { stsObj.GetComponentsInChildren<TMP_Text>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].SetText(Localize.GetLocalizeText(cmpMisc.cmpGetParamName(ctr2))); }
 
-                // If there's Counter objects in the Status Menu's children, set up their values and colors.
+                // Check if there's a BirthDevil and return its stats instead.
+                if (fclCombineInit.CMB_GBWK != null)
+                { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
+
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
-                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 -1 : ctr2].Set(datCalc.datGetParam(pStock, ctr2), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
-                
+                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(datCalc.datGetParam(pStock, ctr2), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+
                 // If your Cursor Position is over -1, set the FlashMode to 2.
                 // Not sure what this does.
                 if (-1 < CursorPos)
@@ -2373,11 +2372,8 @@ namespace ModernStatsSystem
                     // Grab Stat ID.
                     int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
 
-                    // Set default LevelUp stat value equal to both your Level Up and Mitama Bonuses.
-                    int levelstat = LevelUpPoints[stat] + pStock.levelupparam[stat] + pStock.mitamaparam[stat];
-
                     // Set Stat value and color.
-                    g2.GetComponent<CounterCtr>().Set(pStock.param[stat] + levelstat, Color.white, 0);
+                    g2.GetComponent<CounterCtr>().Set(datCalc.datGetParam(pStock, stat), Color.white, 0);
                 }
 
                 // If the Status Bar UI components don't exist, return.
@@ -2419,6 +2415,16 @@ namespace ModernStatsSystem
                 ReworkParamGauge(pBaseCol, StepY, Pos, ParamOfs, FlashMode, pStock, stsObj);
                 return false;
             }
+            private static void Postfix(int X, int Y, uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
+            {
+                // If no demon or status object, return.
+                if (pStock == null || stsObj == null)
+                { return; }
+                // Rework the Stat Bar.
+                ReworkParamGauge(pBaseCol, StepY, Pos, ParamOfs, FlashMode, pStock, stsObj);
+                return;
+            }
+
             public static void ReworkParamGauge(uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
             {
                 // If the Status Bar UI count is wrong, return.

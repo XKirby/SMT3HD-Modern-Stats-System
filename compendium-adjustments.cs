@@ -2,8 +2,10 @@
 using Il2Cpp;
 using Il2Cppfacility_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2Cppkernel_H;
 using Il2Cppnewdata_H;
 using MelonLoader;
+using Newtonsoft.Json;
 
 namespace ModernStatsSystem
 {
@@ -90,13 +92,113 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(fclCombineCalc), nameof(fclCombineCalc.cmbAddBirthDevilToStock))]
+        private class PatchCombineCalcSequence
+        {
+            private static void Postfix(ref Il2CppReferenceArray<datUnitWork_t> pStock, int top, byte StockNums)
+            {
+                // Why this function use an array of demons is confusing imo, but I'm not gonna worry about it.
+                for (int i = 0; i < pStock.Length; i++)
+                {
+                    // Distributes Levelup points added by Sacrificial Fusion (hopefully).
+                    for (int j = 0; j < pStock[i].param.Length; j++)
+                    {
+                        pStock[i].param[j] += pStock[i].levelupparam[j];
+                        pStock[i].levelupparam[j] = 0;
+                    }
+
+                    // Recalculate HP/MP.
+                    pStock[i].maxhp = (ushort)datCalc.datGetMaxHp(pStock[i]);
+                    pStock[i].maxmp = (ushort)datCalc.datGetMaxMp(pStock[i]);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(fclCombineCalcCore), nameof(fclCombineCalcCore.cmbCalcIkenieExp))]
+        private class PatchCalcSacrificialFusionEXP
+        {
+            private static bool Prefix(datUnitWork_t pStock, datUnitWork_t pDevil1, datUnitWork_t pDevil2, datUnitWork_t pSacrifice)
+            {
+                // Calculate the Sacrificed Demon's EXP, multiplied by 1.5x, then add it to the current Demon's EXP total.
+                uint newExp = (uint)((float)pSacrifice.exp * 1.5f) + rstCalcCore.cmbCalcLevelUpExp(ref pStock, pStock.level);
+
+                // Calculate the new Level of the current Demon.
+                // Also, cap it at 255, we don't need to do the game's really wonky math it was doing.
+                int levelUpCount = rstCalcCore.cmbGetLevelUpCount(ref pStock, (int)newExp);
+                int newLevel = levelUpCount + pStock.level > 255 ? 255 : levelUpCount + pStock.level;
+
+                // This is a list of Stats it needs to check.
+                bool[] paramChecks = { false, false, false, false, false, false };
+
+                // Change the list's values to true if that Stat is capped.
+                int i = 0;
+                for (i = 0; i < paramChecks.Length; i++)
+                {
+                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    { paramChecks[i] = true; }
+                }
+
+                // If there's at least 1 Level Up in total.
+                i = 0;
+                if (levelUpCount > 0)
+                {
+                    // Loop through the number of LevelUps, multiplied by Points Per Level.
+                    do
+                    {
+                        // If your stats are completely capped out.
+                        if (EnableIntStat &&
+                            paramChecks[0] == true &&
+                            paramChecks[1] == true &&
+                            paramChecks[2] == true &&
+                            paramChecks[3] == true &&
+                            paramChecks[4] == true &&
+                            paramChecks[5] == true)
+                        { break; }
+                        if (!EnableIntStat &&
+                            paramChecks[0] == true &&
+                            paramChecks[2] == true &&
+                            paramChecks[3] == true &&
+                            paramChecks[4] == true &&
+                            paramChecks[5] == true)
+                        { break; }
+
+                        // Grab a random Parameter ID.
+                        int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
+                        
+                        // If within the correct Parameter ID ranges and not capped, increment both the Stat and the LevelUp Counter.
+                        if (paramID > -1 && paramID < 6 && datCalc.datGetParam(pStock, paramID) < MAXSTATS)
+                        {
+                            pStock.levelupparam[paramID]++;
+                            i++;
+                            if (datCalc.datGetParam(pStock, paramID) >= MAXSTATS)
+                            { paramChecks[paramID] = true; }
+                        }
+                    }
+                    while (i < (EnableStatScaling ? levelUpCount * POINTS_PER_LEVEL : levelUpCount));
+                }
+
+                // Flag Nonsense.
+                pStock.flag |= 0x200;
+
+                // Set the Demon's Level to the new value.
+                pStock.level = (ushort)newLevel;
+                pStock.exp = newExp;
+
+                // If the Demon's Level is 255, change their EXP.
+                if (pStock.level == 255)
+                { pStock.exp = rstCalcCore.cmbCalcLevelUpExp(ref pStock, 255); }
+
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(fclEncyc), nameof(fclEncyc.GetDevilParam))]
         private class PatchGetCompendiumDemonParam
         {
             // Returns a Compendium Demon's stat, making sure to cap it appropriately.
             private static bool Prefix(out int __result, fclencyceelem_t pelem, int type)
             {
-                __result = pelem.param[type] + pelem.mitamaparam[type] < MAXSTATS ? pelem.param[type] + pelem.mitamaparam[type] : MAXSTATS;
+                __result = pelem.param[type] + pelem.levelupparam[type] + pelem.mitamaparam[type] < MAXSTATS ? pelem.param[type] + pelem.levelupparam[type] + pelem.mitamaparam[type] : MAXSTATS;
                 return false;
             }
         }
@@ -241,21 +343,21 @@ namespace ModernStatsSystem
                 { return false; }
 
                 // If everything's capped, return.
-                if (EnableIntStat && pStock.param[0] + pStock.mitamaparam[0] >= MAXSTATS &&
-                    pStock.param[1] + pStock.mitamaparam[1] >= MAXSTATS &&
-                    pStock.param[2] + pStock.mitamaparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.mitamaparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.mitamaparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                if (EnableIntStat && pStock.param[0] + pStock.levelupparam[0] + pStock.mitamaparam[0] >= MAXSTATS &&
+                    pStock.param[1] + pStock.levelupparam[1] + pStock.mitamaparam[1] >= MAXSTATS &&
+                    pStock.param[2] + pStock.levelupparam[2] + pStock.mitamaparam[2] >= MAXSTATS &&
+                    pStock.param[3] + pStock.levelupparam[3] + pStock.mitamaparam[3] >= MAXSTATS &&
+                    pStock.param[4] + pStock.levelupparam[4] + pStock.mitamaparam[4] >= MAXSTATS &&
+                    pStock.param[5] + pStock.levelupparam[5] + pStock.mitamaparam[5] >= MAXSTATS)
                 { return false; }
 
                 // If everything's capped and Int is disabled, return.
                 // Yes I needed two checks, don't ask please.
-                else if (pStock.param[0] + pStock.mitamaparam[0] >= MAXSTATS &&
-                    pStock.param[2] + pStock.mitamaparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.mitamaparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.mitamaparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                else if (pStock.param[0] + pStock.levelupparam[0] + pStock.mitamaparam[0] >= MAXSTATS &&
+                    pStock.param[2] + pStock.levelupparam[2] + pStock.mitamaparam[2] >= MAXSTATS &&
+                    pStock.param[3] + pStock.levelupparam[3] + pStock.mitamaparam[3] >= MAXSTATS &&
+                    pStock.param[4] + pStock.levelupparam[4] + pStock.mitamaparam[4] >= MAXSTATS &&
+                    pStock.param[5] + pStock.levelupparam[5] + pStock.mitamaparam[5] >= MAXSTATS)
                 { return false; }
 
                 // Unseeded random number generator.
