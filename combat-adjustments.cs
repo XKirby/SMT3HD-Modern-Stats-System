@@ -774,7 +774,7 @@ namespace ModernStatsSystem
                 { return true; }
 
                 // If the Defender Blocks, Repels, or Drains your attack, return the original function.
-                if (aisyo == 0x10000u || aisyo == 0x100000u || aisyo == 0x1000000u)
+                if ((aisyo & 0x10000u) == 0x10000u || (aisyo & 0x100000u) == 0x100000u || (aisyo & 0x1000000u) == 0x1000000u)
                 { return true; }
 
                 // More flag nonsense.

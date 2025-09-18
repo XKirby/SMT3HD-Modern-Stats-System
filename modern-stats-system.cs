@@ -1340,8 +1340,9 @@ namespace ModernStatsSystem
                 // Distribute the Player's level up points to proper points.
                 for (int i = 0; i < LevelUpPoints.Length; i++)
                 {
-                    pStock.param[i] += (sbyte)LevelUpPoints[i];
+                    pStock.param[i] += (sbyte)(LevelUpPoints[i] + pStock.levelupparam[i]);
                     LevelUpPoints[i] = 0;
+                    pStock.levelupparam[i] = 0;
                 }
 
                 // Recalculate HP/MP
