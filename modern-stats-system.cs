@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.7", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -654,7 +654,8 @@ namespace ModernStatsSystem
                 {
                     // Adds to then clamps whatever stat you're adding to.
                     // Note that "add" can be negative.
-                    work.param[id] = (sbyte)Math.Clamp(work.param[id] + add, 0, MAXSTATS);
+                    int heartParam = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)id);
+                    work.param[id] = (sbyte)Math.Clamp(work.param[id] + add, 0, MAXSTATS + heartParam);
 
                     // Adjust Max HP/MP and fully heal.
                     work.maxhp = (ushort)datCalc.datGetMaxHp(work);
@@ -672,7 +673,8 @@ namespace ModernStatsSystem
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
                 // Just returns the parameter of the given type.
-                __result = Math.Clamp(work.param[paratype] + work.levelupparam[paratype], 0, MAXSTATS); ;
+                int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
+                __result = Math.Clamp(Math.Clamp(work.param[paratype] - heartParam, 0, MAXSTATS) + work.levelupparam[paratype], 0, MAXSTATS); ;
                 return false;
             }
         }
@@ -683,7 +685,8 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the base stat of the given parameter.
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype], 0, MAXSTATS);
+                int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
+                __result = Math.Clamp(Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam, 0, MAXSTATS + heartParam) + work.mitamaparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype]);
                 return false;
             }
         }
@@ -694,11 +697,11 @@ namespace ModernStatsSystem
             public static int GetBaseMaxHP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max HP value.
-                int result = (datCalc.datGetParam(work, 3) + work.level) * 6;
+                int result = (Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) + work.level) * 6;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)((float)(datCalc.datGetParam(work, 3) / (float)STATS_SCALING + (float)work.level) * 6f); }
+                { result = (int)((float)(Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 6f); }
 
                 // Return the result.
                 return result;
@@ -718,11 +721,11 @@ namespace ModernStatsSystem
             public static int GetBaseMaxMP(datUnitWork_t work)
             {
                 // Calculate the unit's actual Base Max MP value.
-                int result = (datCalc.datGetParam(work, 2) + work.level) * 3;
+                int result = (Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) + work.level) * 3;
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)((float)(datCalc.datGetParam(work, 2) / (float)STATS_SCALING + (float)work.level) * 3f); }
+                { result = (int)(((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 3f); }
 
                 // Return the result.
                 return result;
@@ -2061,7 +2064,7 @@ namespace ModernStatsSystem
                 }
 
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
-                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(datCalc.datGetParam(pStock, ctr2), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(Math.Clamp(datCalc.datGetParam(pStock, ctr2), 0, MAXSTATS), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
 
                 // If your Cursor Position is over -1, set the FlashMode to 2.
                 // Not sure what this does.
@@ -2371,7 +2374,7 @@ namespace ModernStatsSystem
                     int stat = (i > 0 && !EnableIntStat) ? i + 1 : i;
 
                     // Set Stat value and color.
-                    g2.GetComponent<CounterCtr>().Set(datCalc.datGetParam(pStock, stat), Color.white, 0);
+                    g2.GetComponent<CounterCtr>().Set(Math.Clamp(datCalc.datGetParam(pStock, stat), 0, MAXSTATS), Color.white, 0);
                 }
 
                 // If the Status Bar UI components don't exist, return.
@@ -2550,7 +2553,7 @@ namespace ModernStatsSystem
                 int levelupValue = pStock.levelupparam[ParamOfs];
 
                 // Set up the values into a list.
-                int[] values = new int[] { paramValue - heartValue, levelupValue, mitamaValue, heartValue };
+                int[] values = new int[] { Math.Max(paramValue - heartValue, 0), levelupValue, mitamaValue, heartValue };
 
                 // Iterate through the Animator list to set the correct scale and position.
                 float posOffset = 0;
@@ -2562,7 +2565,7 @@ namespace ModernStatsSystem
 
                     // Adjust the next value to be shorter if this exceeds the maximum.
                     if (posOffset + values[len] > MAXSTATS)
-                    { values[len] = (int)Math.Clamp(values[len], 0f, Math.Max(MAXSTATS - posOffset - values[len], 0f)); }
+                    { values[len] = (int)Math.Clamp(values[len], 0f, Math.Max(MAXSTATS - posOffset, 0f)); }
 
                     // Adjust.
                     barScale.x = BAR_SCALE_X * values[len];

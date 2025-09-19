@@ -140,7 +140,7 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // Grab the user's Luc. It's actually used in the original formula.
-                int luckValue = (int)((float)datCalc.datGetParam(defender, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
+                int luckValue = (int)((float)Math.Clamp(datCalc.datGetParam(defender, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // Assign a basic flat value for a formula later.
                 float flatValue = 20f;
@@ -171,7 +171,7 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
                 // Set this variable to the attacker's Str.
-                int param = datCalc.datGetParam(work, 0);
+                int param = Math.Clamp(datCalc.datGetParam(work, 0), 0, MAXSTATS);
 
                 // If their "badstatus" is 0x200, their Str is set to 1.
                 if ((work.badstatus & 0xFFF) == 0x200)
@@ -215,7 +215,7 @@ namespace ModernStatsSystem
                 int macca = devil.dropmakka;
 
                 // Get the Demi-Fiend's current Luck and do some math for scaling Drop Rates.
-                float dropRateMult = EnableStatScaling ? 0.75f + ((float)datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5) / STATS_SCALING) : 1f;
+                float dropRateMult = EnableStatScaling ? 0.75f + ((float)Math.Clamp(datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5), 0, MAXSTATS) / STATS_SCALING) : 1f;
 
                 // If the enemy has an Item.
                 int droppedItem = 0;
@@ -449,11 +449,11 @@ namespace ModernStatsSystem
                     { LevelLimit = 160; }
 
                 // Grab the attacker's Mag.
-                int param = datCalc.datGetParam(attacker, 2);
+                int param = Math.Clamp(datCalc.datGetParam(attacker, 2), 0, MAXSTATS);
 
                 // If Enabled, grab Int instead.
                 if (EnableIntStat)
-                    { param = datCalc.datGetParam(attacker, 1); }
+                    { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
@@ -554,11 +554,11 @@ namespace ModernStatsSystem
                 System.Random rng = new();
 
                 // Get Mag
-                int param = datCalc.datGetParam(work, 2);
+                int param = Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS);
 
                 // If enabled, get Int instead.
                 if (EnableIntStat)
-                    { param = datCalc.datGetParam(work, 1); }
+                    { param = Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS); }
 
                 // Final result considers your Magic buffs.
                 __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)rng.Next(0, 8) + (float)param * 4f / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level) / 10f * (float)waza);
@@ -578,10 +578,10 @@ namespace ModernStatsSystem
                 datDevilFormat_t devil = datDevilFormat.Get(w.id, true);
 
                 // Get the above demon's Luc.
-                int luck = datCalc.datGetParam(w, 5);
+                int luck = Math.Clamp(datCalc.datGetParam(w, 5), 0, MAXSTATS);
 
                 // Grab Demi-Fiend's Luc.
-                int playerLuck = datCalc.datGetParam(work, 5);
+                int playerLuck = Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS);
 
                 // Grab the player's total Macca.
                 int macca = dds3GlobalWork.DDS3_GBWK.maka;
@@ -672,10 +672,10 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
-                __result = (int)((float)work.level + (float)datCalc.datGetParam(work, 4) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
+                __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // Grabs the user's Luc.
-                int luc = (int)((float)datCalc.datGetParam(work, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
+                int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If it's under 2 or some weird "badstatus" flag nonsense is true, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
@@ -698,14 +698,14 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs Level, Mag, and Agi and does some math.
-                __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 2) * 2f + (float)datCalc.datGetParam(work, 4) * 2f) / (EnableStatScaling ? STATS_SCALING : 1f));
+                __result = (int)((float)work.level + ((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) * 2f + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) * 2f) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)datCalc.datGetParam(work, 1) * 8f) / (EnableStatScaling ? STATS_SCALING : 1)); }
+                    { __result = (int)((float)work.level + ((float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 8f) / (EnableStatScaling ? STATS_SCALING : 1)); }
 
                 // Grabs Luc.
-                int luc = (int)((float)datCalc.datGetParam(work, 5) / (EnableStatScaling ? STATS_SCALING : 1f));
+                int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
 
                 // If under 2 or flag nonsense, set Luc to 1.
                 if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
@@ -728,11 +728,11 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grab the user's Vit and Level and just multiply the result by 2.
-                __result = (datCalc.datGetParam(work, 3) + work.level) * 2;
+                __result = (Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) + work.level) * 2;
 
                 // If enabled, do some actual math.
                 if (EnableStatScaling)
-                    { __result = (int)((float)datCalc.datGetParam(work, 3) * 2f / (float)STATS_SCALING + (float)work.level) * 2; }
+                    { __result = (int)((float)Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) * 2f / (float)STATS_SCALING + (float)work.level) * 2; }
                 return false;
             }
         }
@@ -810,8 +810,8 @@ namespace ModernStatsSystem
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
 
                 // Grab both users' Agi and math out the difference.
-                float atkAgiCalc = (float)datCalc.datGetParam(attacker, 4) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
-                float defAgiCalc = (float)datCalc.datGetParam(defender, 4) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
+                float atkAgiCalc = (float)Math.Clamp(datCalc.datGetParam(attacker, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
+                float defAgiCalc = (float)Math.Clamp(datCalc.datGetParam(defender, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
 
                 // Calculate the overall hit chance.
                 float hitChanceCalc = multi * atkBuffs * defBuffs * ((defAgiCalc - atkAgiCalc) * 6.25f + (100 - nbCalc.GetFailpoint(nskill)));
@@ -993,12 +993,12 @@ namespace ModernStatsSystem
 
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
-                float atkCritStat = (float)datCalc.datGetParam(attacker, 5) / (float)STATS_SCALING;
+                float atkCritStat = (float)Math.Clamp(datCalc.datGetParam(attacker, 5), 0, MAXSTATS) / (float)STATS_SCALING;
                 float atkCritChance = 0f;
 
                 // Set Defender's Crit Chance values.
                 float defCritLevel = (float)defender.level / 5f + 3f;
-                float defCritStat = (float)datCalc.datGetParam(defender, 5) / (float)STATS_SCALING;
+                float defCritStat = (float)Math.Clamp(datCalc.datGetParam(defender, 5), 0, MAXSTATS) / (float)STATS_SCALING;
                 float defCritChance = 0f;
 
                 // Divide the Crit Chances by the opposite levels.
@@ -1111,11 +1111,11 @@ namespace ModernStatsSystem
                 // Otherwise Talk skills will be affected.
                 // Which they shouldn't since they don't target randomly.
                 if (datNormalSkill.tbl[nskill].koukatype == 0)
-                    { extrahits = (int)Math.Max((float)datCalc.datGetParam(user, 4) / (5f * STATS_SCALING), 0f); }
+                    { extrahits = (int)Math.Max((float)Math.Clamp(datCalc.datGetParam(user, 4), 0, MAXSTATS) / (5f * STATS_SCALING), 0f); }
 
                 // Magic Attacks (Luc Scaling)
                 else if (datNormalSkill.tbl[nskill].koukatype == 1)
-                    { extrahits = (int)Math.Max((float)datCalc.datGetParam(user, 5) / (5f * STATS_SCALING), 0f); }
+                    { extrahits = (int)Math.Max((float)Math.Clamp(datCalc.datGetParam(user, 5), 0, MAXSTATS) / (5f * STATS_SCALING), 0f); }
 
                 // Subtract by an eigth of the Skill's Rank, rounded up
                 extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 8d);

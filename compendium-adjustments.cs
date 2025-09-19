@@ -417,21 +417,21 @@ namespace ModernStatsSystem
                 { return false; }
 
                 // If everything's capped, return.
-                if (EnableIntStat && pStock.param[0] + pStock.levelupparam[0] + pStock.mitamaparam[0] >= MAXSTATS &&
-                    pStock.param[1] + pStock.levelupparam[1] + pStock.mitamaparam[1] >= MAXSTATS &&
-                    pStock.param[2] + pStock.levelupparam[2] + pStock.mitamaparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.levelupparam[3] + pStock.mitamaparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.levelupparam[4] + pStock.mitamaparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.levelupparam[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                if (EnableIntStat && datCalc.datGetBaseParam(pStock, 0) + pStock.mitamaparam[0] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 1) + pStock.mitamaparam[1] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 2) + pStock.mitamaparam[2] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 3) + pStock.mitamaparam[3] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 4) + pStock.mitamaparam[4] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 5) + pStock.mitamaparam[5] >= MAXSTATS)
                 { return false; }
 
                 // If everything's capped and Int is disabled, return.
                 // Yes I needed two checks, don't ask please.
-                else if (pStock.param[0] + pStock.levelupparam[0] + pStock.mitamaparam[0] >= MAXSTATS &&
-                    pStock.param[2] + pStock.levelupparam[2] + pStock.mitamaparam[2] >= MAXSTATS &&
-                    pStock.param[3] + pStock.levelupparam[3] + pStock.mitamaparam[3] >= MAXSTATS &&
-                    pStock.param[4] + pStock.levelupparam[4] + pStock.mitamaparam[4] >= MAXSTATS &&
-                    pStock.param[5] + pStock.levelupparam[5] + pStock.mitamaparam[5] >= MAXSTATS)
+                else if (datCalc.datGetBaseParam(pStock, 0) + pStock.mitamaparam[0] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 2) + pStock.mitamaparam[2] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 3) + pStock.mitamaparam[3] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 4) + pStock.mitamaparam[4] >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 5) + pStock.mitamaparam[5] >= MAXSTATS)
                 { return false; }
 
                 // Unseeded random number generator.
@@ -440,8 +440,8 @@ namespace ModernStatsSystem
                 // Pull a random stat from whatever the Mitama's upgradable stat pool is.
                 ushort paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
 
-                // If it's somehow below zero, just return here and don't continue.
-                if (paramID < 0)
+                // If it's somehow below zero or over 5, just return here and don't continue.
+                if (paramID < 0 || paramID > 5)
                 { return false; }
 
                 // If it's within the proper range
