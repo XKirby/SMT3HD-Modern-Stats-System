@@ -4,6 +4,7 @@ using Il2Cppfacility_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewdata_H;
 using MelonLoader;
+using UnityEngine;
 
 namespace ModernStatsSystem
 {
@@ -193,36 +194,74 @@ namespace ModernStatsSystem
         [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDraw1stDevilSelect))]
         private class PatchCalcFusionFirstDemon
         {
-            private static void Postfix()
+            private static void Prefix()
             {
-                ShowFusionStats = false;
+                // Check if you're viewing the first fusion fodder Demon.
+                GameObject g = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode01");
+                if (g == null)
+                { ShowFusionStats = false; return; }
+
+                // If you are, don't show the resulting Fusion's stats.
+                if (g.activeSelf && GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode01/dlistsort_baseon01").activeSelf)
+                { ShowFusionStats = false; }
             }
         }
 
         [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDraw2ndDevilSelect))]
         private class PatchCalcFusionSecondDemon
         {
-            private static void Postfix()
+            private static void Prefix()
             {
-                ShowFusionStats = false;
+                // Check if you're viewing the second fusion fodder Demon.
+                GameObject g = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode02");
+                if (g == null)
+                { ShowFusionStats = false; return; }
+
+                // If you are, don't show the resulting Fusion's stats.
+                if (g.activeSelf && GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode02/dlistsort_baseon01").activeSelf)
+                { ShowFusionStats = false; }
             }
         }
 
         [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDrawSacDevilSelect))]
         private class PatchCalcFusionSacrificeDemon
         {
-            private static void Postfix()
+            private static void Prefix()
             {
-                ShowFusionStats = false;
+                // Check if you're viewing the Sacrificial Fusion fodder Demon.
+                GameObject g = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode03");
+                GameObject g2 = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode04");
+                if (g == null || g2 == null)
+                { ShowFusionStats = false; return; }
+
+                // If you are, don't show the resulting Fusion's stats.
+                if (g.activeSelf && GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode03/dlistsort_baseon01").activeSelf && g2.activeSelf)
+                { ShowFusionStats = false; }
             }
         }
 
         [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDrawBirthDevil))]
         private class PatchCalcFusionResultDemon
         {
-            private static void Postfix()
+            private static void Prefix()
             {
-                ShowFusionStats = true;
+                // Check if you're viewing the fusion result Demon during a Sacrificial Fusion.
+                GameObject g = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode03");
+                GameObject g2 = GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode04");
+                if (g == null || g2 == null)
+                { ShowFusionStats = false; return; }
+
+                // If you are, show its stats.
+                if (g2.activeSelf && GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode04/dlistsort_baseon01").activeSelf)
+                { ShowFusionStats = true; }
+
+                // If this isn't Sacrificial Fusion, show its stats in another location.
+                else if (g.activeSelf && GameObject.Find("campUIBase/statusUI(Clone)/comstatus_parts/commode/commode_menu/commode03/dlistsort_baseon01").activeSelf && !g2.activeSelf)
+                { ShowFusionStats = true; }
+
+                // If neither, don't show its stats.
+                else
+                { ShowFusionStats = false; }
             }
         }
 

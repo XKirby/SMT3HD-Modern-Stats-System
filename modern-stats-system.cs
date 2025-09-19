@@ -2064,7 +2064,7 @@ namespace ModernStatsSystem
                 {
                     if (fclCombineInit.CMB_GBWK.BirthDevil != null)
                     {
-                        if (fclCombineInit.CMB_GBWK.BirthDevil.id != 0 && ShowFusionStats)
+                        if (ShowFusionStats)
                         { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
                     }
                 }
