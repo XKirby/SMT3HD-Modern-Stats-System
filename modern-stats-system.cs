@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.5", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.6", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -2060,7 +2060,10 @@ namespace ModernStatsSystem
 
                 // Check if there's a BirthDevil and return its stats instead.
                 if (fclCombineInit.CMB_GBWK != null)
-                { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
+                {
+                    if (fclCombineInit.CMB_GBWK.BirthDevil != null)
+                    { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
+                }
 
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
                     { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(datCalc.datGetParam(pStock, ctr2), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
