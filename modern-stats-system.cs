@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.1", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.2", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -639,6 +639,39 @@ namespace ModernStatsSystem
                 param = EnableStatScaling ? (int)Math.Floor((float)param / (Math.Ceiling((float)MAXSTATS / 40f) / STATS_SCALING)) : param;
                 ScrTraceCode.scrSetIntReturnValue(param);
                 __result = 1;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datCheckSkillTakaraSagasi))]
+        private class PatchLuckyFind
+        {
+            private static bool Prefix(out int __result)
+            {
+                __result = 0;
+
+                // Loop through all of your Demons to search for any that have Lucky Find.
+                for (int i = 0; i < dds3GlobalWork.DDS3_GBWK.unitwork.Length; i++)
+                {
+                    // Grab the work demon.
+                    datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[i];
+
+                    // Flag Check of some sort.
+                    if ((work.flag & 3) == 0)
+                    {
+                        // Grab the Demon's Luck.
+                        int luck = EnableStatScaling ? (int)((float)datCalc.datGetParam(work, 5) / STATS_SCALING) : datCalc.datGetParam(work, 5);
+
+                        // If the Demon has Lucky Find as a Skill.
+                        if(datCalc.datCheckSyojiSkill(work, 0x161) != 0)
+                        {
+                            // A random integer check to see if the Demon's ID is returned.
+                            if (dds3KernelCore.dds3GetRandIntA(0x20) <= (luck << 7) / 100)
+                            { __result = work.id; break; }
+                        }
+                    }
+                }
+
                 return false;
             }
         }

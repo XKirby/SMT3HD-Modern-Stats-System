@@ -4,31 +4,12 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using MelonLoader;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace ModernStatsSystem
 {
-    // Ripped from Stackoverflow
-    // Needed this for Item Drops mostly.
-    static class ArrayShuffler
-    {
-        public static void Shuffle<T>(this System.Random rng, T[] array)
-        {
-            int n = array.Length;
-            while (n > 1)
-            {
-                int k = rng.Next(n--);
-                T temp = array[n];
-                array[n] = array[k];
-                array[k] = temp;
-            }
-        }
-    }
-
     internal partial class ModernStatsSystem : MelonMod
     {
-
         public class TargetHitCountManager
         {
             public static Il2CppReferenceArray<Il2CppStructArray<sbyte>> targetData = new(3);
@@ -320,19 +301,40 @@ namespace ModernStatsSystem
                 if (droppedItem == 0)
                     { return false; }
 
+                // Check if a Bead drops.
+                chance = rng.Next(100);
+                bool foundBead = false;
+                if ((float)devil.hougyokupoint * dropRateMult >= chance)
+                { foundBead = true; }
+
+                // Check if a LifeStone drops.
+                chance = rng.Next(100);
+                bool foundLifeStone = false;
+                if ((float)devil.masekipoint * dropRateMult >= chance)
+                { foundLifeStone = true; }
+
                 // Loop through the Data's Item list
                 for (int i = 0; i < data.item.Length; i++)
                 {
-                    if (data.item[i] == 0)
+                    // Add a new Item to the table.
+                    if (data.item[i] == 0 && droppedItem != 0)
                     {
                         data.item[i] = (byte)droppedItem;
                         data.itemcnt[i] += 1;
-                        break;
                     }
-                    if (data.item[i] == droppedItem)
+                    // Add to an existing Item's count.
+                    if (data.item[i] == droppedItem && droppedItem != 0)
                     {
                         data.itemcnt[i] += 1;
-                        break;
+                    }
+                    // If no item was found, check for Bead and Life Stones.
+                    if (droppedItem == 0)
+                    {
+                        if (foundBead)
+                        { droppedItem = 4; foundBead = false; }
+
+                        else if (foundLifeStone)
+                        { droppedItem = 3; foundLifeStone = false; }
                     }
                 }
 
@@ -401,7 +403,7 @@ namespace ModernStatsSystem
                         { __result = (int)(finalvalue * 1.34); }
                 }
 
-                // This multiplies the final result by the attacker's attack buffs and the defender's defense buffs.
+                // This multiplies the final result by the attacker's attack buffs and the defender's Defense Buffs.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, introduce some further damage mitigation
@@ -494,7 +496,7 @@ namespace ModernStatsSystem
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
                 if (EnableStatScaling)
-                    { damageCalc = (int)(((float)waza + (float)skillPeak) * ((float)attacker.level / 2f + (float)param)/25.5f); }
+                    { damageCalc = (int)(((float)waza + (float)skillPeak) * ((float)attacker.level / 2f + (float)param / STATS_SCALING * 2f) / 25.5f); }
                 else
                     { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
 
@@ -504,7 +506,6 @@ namespace ModernStatsSystem
                 // If not enabled, use the game's Magic stat capping functions.
                 if (!EnableStatScaling)
                 {
-
                     // If your Level is over 100.
                     if (attacker.level > 100)
                     {
@@ -544,14 +545,13 @@ namespace ModernStatsSystem
                 }
 
                 // Don't ask me about the flag, I don't know what it does but it's important.
-                if ((attacker.flag >> 5 & 1) != 0)
+                if ((attacker.flag >> 5 & 1) != 0 && !EnableStatScaling)
                 {
-
                     // Do some more math.
                     damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
 
                     // If difficulty is 3 and that Event Bit is true, then multiply the damage by 134%.
-                    if (dds3ConfigMain.cfgGetBit(9) == 3 && !EnableStatScaling)
+                    if (dds3ConfigMain.cfgGetBit(9) == 3)
                     {
                         damageCalc2 = (int)(damageCalc * 1.34f);
                         if (!EventBit.evtBitCheck(0x8a0))
@@ -562,18 +562,18 @@ namespace ModernStatsSystem
                     else
                     {
                         damageCalc2 = damageCalc;
-                        if (dds3ConfigMain.cfgGetBit(9) == 2 && !EnableStatScaling)
+                        if (dds3ConfigMain.cfgGetBit(9) == 2)
                             { damageCalc2 = (int)(damageCalc * 1.34f); }
                     }
                 }
 
-                // Multiply the final value by the attacker's Magic buffs and the defender's Magic buffs.
+                // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
                 // Additionally, multiply the previous result by 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * 0.7f / (maxhits > 1 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result * 0.7f / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
