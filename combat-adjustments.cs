@@ -321,11 +321,13 @@ namespace ModernStatsSystem
                     {
                         data.item[i] = (byte)droppedItem;
                         data.itemcnt[i] += 1;
+                        droppedItem = 0;
                     }
                     // Add to an existing Item's count.
                     if (data.item[i] == droppedItem && droppedItem != 0)
                     {
                         data.itemcnt[i] += 1;
+                        droppedItem = 0;
                     }
                     // If no item was found, check for Bead and Life Stones.
                     if (droppedItem == 0)

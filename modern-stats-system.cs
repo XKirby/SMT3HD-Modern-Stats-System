@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.2", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.3", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -667,12 +667,12 @@ namespace ModernStatsSystem
                         {
                             // A random integer check to see if the Demon's ID is returned.
                             if (dds3KernelCore.dds3GetRandIntA(0x20) <= (luck << 7) / 100)
-                            { __result = work.id; break; }
+                            { __result = work.id; return false; }
                         }
                     }
                 }
 
-                return false;
+                return true;
             }
         }
 
