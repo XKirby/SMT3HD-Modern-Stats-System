@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.6", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.3.7", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -32,7 +32,6 @@ namespace ModernStatsSystem
         private static uint[] pCol = (uint[])Array.CreateInstance(typeof(uint), 4);
         private static AssetBundle barData = null;
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
-        private static int[] LevelUpPoints = { 0, 0, 0, 0, 0, 0 };
         private static bool ShowFusionStats = false;
         private const string barSpriteName = "sstatusbar_base";
         private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
@@ -673,15 +672,8 @@ namespace ModernStatsSystem
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
                 // Just returns the parameter of the given type.
-                __result = GetParam(work, paratype);
+                __result = Math.Clamp(work.param[paratype] + work.levelupparam[paratype], 0, MAXSTATS); ;
                 return false;
-            }
-            public static int GetParam(datUnitWork_t work, int paratype)
-            {
-                // Pulls the parameter for the other function and clamps it between 0 and the new maximum.
-                int result = work.param[paratype];
-                result = Math.Clamp(result, 0, MAXSTATS);
-                return result;
             }
         }
 
@@ -691,7 +683,7 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the base stat of the given parameter.
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + LevelUpPoints[paratype] + work.levelupparam[paratype] + work.mitamaparam[paratype], 0, MAXSTATS);
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype], 0, MAXSTATS);
                 return false;
             }
         }
@@ -810,7 +802,7 @@ namespace ModernStatsSystem
                 // Change the list's values to true if that Stat is capped.
                 for (int i = 0; i < paramChecks.Length; i++)
                 {
-                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
                 }
 
@@ -890,7 +882,7 @@ namespace ModernStatsSystem
                 {
                     if (i == 1 && !EnableIntStat)
                     { continue; }
-                    if (datCalc.datGetParam(pStock, i) >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
                 }
 
@@ -935,7 +927,7 @@ namespace ModernStatsSystem
 
                     // Set a boolean to true if the stat becomed capped out.
                     // Also forcibly set the stat to its new cap.
-                    if (datCalc.datGetParam(pStock, paramID) >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, paramID) >= MAXSTATS)
                     { paramChecks[paramID] = true; }
 
                     // Increment.
@@ -1011,7 +1003,7 @@ namespace ModernStatsSystem
                             if (paramID > -1 && paramID < 6)
                             {
                                 // If under the cap, increase the stat.
-                                if (datCalc.datGetParam(pEvoDevil, paramID) < MAXSTATS)
+                                if (datCalc.datGetBaseParam(pEvoDevil, paramID) < MAXSTATS)
                                 { pEvoDevil.param[paramID]++; }
                             }
 
@@ -1315,8 +1307,8 @@ namespace ModernStatsSystem
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
                 // Clears out whatever points you did distribute.
-                for (int i = 0; i < LevelUpPoints.Length; i++)
-                { LevelUpPoints[i] = 0; }
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
+                { pStock.levelupparam[i] = 0; }
 
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
                 rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
@@ -1339,10 +1331,9 @@ namespace ModernStatsSystem
                 datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
 
                 // Distribute the Player's level up points to proper points.
-                for (int i = 0; i < LevelUpPoints.Length; i++)
+                for (int i = 0; i < pStock.levelupparam.Length; i++)
                 {
-                    pStock.param[i] += (sbyte)(LevelUpPoints[i] + pStock.levelupparam[i]);
-                    LevelUpPoints[i] = 0;
+                    pStock.param[i] += (sbyte)pStock.levelupparam[i];
                     pStock.levelupparam[i] = 0;
                 }
 
@@ -1397,20 +1388,20 @@ namespace ModernStatsSystem
                 }
 
                 // If your stats are capped, immediately skip the entire process.
-                if (EnableIntStat && pStock.param[0] + LevelUpPoints[0] >= MAXSTATS &&
-                    pStock.param[1] + LevelUpPoints[1] >= MAXSTATS &&
-                    pStock.param[2] + LevelUpPoints[2] >= MAXSTATS &&
-                    pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
-                    pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
-                    pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
+                if (EnableIntStat && datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 1) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 2) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 3) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 4) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 5) >= MAXSTATS)
                 { YesResponse(); return false; }
 
                 // Same thing as above, but without Int.
-                else if (pStock.param[0] + LevelUpPoints[0] >= MAXSTATS &&
-                    pStock.param[2] + LevelUpPoints[2] >= MAXSTATS &&
-                    pStock.param[3] + LevelUpPoints[3] >= MAXSTATS &&
-                    pStock.param[4] + LevelUpPoints[4] >= MAXSTATS &&
-                    pStock.param[5] + LevelUpPoints[5] >= MAXSTATS)
+                else if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 2) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 3) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 4) >= MAXSTATS &&
+                    datCalc.datGetBaseParam(pStock, 5) >= MAXSTATS)
                 { YesResponse(); return false; }
 
                 // If the status object is null, immediately skip the entire process.
@@ -1508,13 +1499,13 @@ namespace ModernStatsSystem
                     || (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.R) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.R) == true))
                 {
                     // If your Stat plus the LevelUp stats exceed or go up to the maximum, then play a sound and skip the rest of the function.
-                    if (pStock.param[cursorParam] + LevelUpPoints[cursorParam] >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS)
                     { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // If you still have points to assign, assing one.
                     if (rstinit.GBWK.AsignParam > 0)
                     {
-                        LevelUpPoints[cursorParam]++;
+                        pStock.levelupparam[cursorParam]++;
                         rstinit.GBWK.AsignParam--;
                         cmpMisc.cmpPlaySE(1 & 0xFFFF);
                     }
@@ -1537,13 +1528,13 @@ namespace ModernStatsSystem
                     || (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.L) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.L) == true))
                 {
                     // If this stat has no points assigned to it, play a sound and skip.
-                    if (LevelUpPoints[cursorParam] < 1)
+                    if (pStock.levelupparam[cursorParam] < 1)
                     { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // Otherwise, remove unassign a point to redistribute and play a sound.
                     else
                     {
-                        LevelUpPoints[cursorParam]--;
+                        pStock.levelupparam[cursorParam]--;
                         rstinit.GBWK.AsignParam++;
                         cmpMisc.cmpPlaySE(1 & 0xFFFF);
                     }
@@ -1593,7 +1584,7 @@ namespace ModernStatsSystem
                 {
                     if (i == 1 && !EnableIntStat)
                     { continue; }
-                    if (datCalc.datGetParam(pStock, i) >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
                 }
 
@@ -1626,7 +1617,7 @@ namespace ModernStatsSystem
                     { break; }
 
                     // if it's capped, search again.
-                    if (datCalc.datGetParam(pStock, param) >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, param) >= MAXSTATS)
                     { paramChecks[param] = true; continue; }
 
                     // Increase their LevelUp points.
@@ -2556,7 +2547,7 @@ namespace ModernStatsSystem
                 int mitamaValue = pStock.mitamaparam[ParamOfs];
 
                 // LevelUp Value.
-                int levelupValue = LevelUpPoints[ParamOfs] + pStock.levelupparam[ParamOfs];
+                int levelupValue = pStock.levelupparam[ParamOfs];
 
                 // Set up the values into a list.
                 int[] values = new int[] { paramValue - heartValue, levelupValue, mitamaValue, heartValue };
@@ -2568,6 +2559,10 @@ namespace ModernStatsSystem
                     // Grab pos and scale.
                     Vector3 barScale = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localScale;
                     Vector3 barPos = stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition;
+
+                    // Adjust the next value to be shorter if this exceeds the maximum.
+                    if (posOffset + values[len] > MAXSTATS)
+                    { values[len] = (int)Math.Clamp(values[len], 0f, Math.Max(MAXSTATS - posOffset - values[len], 0f)); }
 
                     // Adjust.
                     barScale.x = BAR_SCALE_X * values[len];

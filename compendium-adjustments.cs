@@ -133,7 +133,7 @@ namespace ModernStatsSystem
                 int i = 0;
                 for (i = 0; i < paramChecks.Length; i++)
                 {
-                    if (pStock.param[i] + pStock.levelupparam[i] + pStock.mitamaparam[i] >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
                 }
 
@@ -165,11 +165,11 @@ namespace ModernStatsSystem
                         int paramID = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
                         
                         // If within the correct Parameter ID ranges and not capped, increment both the Stat and the LevelUp Counter.
-                        if (paramID > -1 && paramID < 6 && datCalc.datGetParam(pStock, paramID) < MAXSTATS)
+                        if (paramID > -1 && paramID < 6 && datCalc.datGetBaseParam(pStock, paramID) < MAXSTATS)
                         {
                             pStock.levelupparam[paramID]++;
                             i++;
-                            if (datCalc.datGetParam(pStock, paramID) >= MAXSTATS)
+                            if (datCalc.datGetBaseParam(pStock, paramID) >= MAXSTATS)
                             { paramChecks[paramID] = true; }
                         }
                     }
