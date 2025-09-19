@@ -571,9 +571,8 @@ namespace ModernStatsSystem
                 __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
-                // Additionally, multiply the previous result by 70%.
                 if (EnableStatScaling)
-                    { __result = (int)((float)__result * 0.7f / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
+                    { __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
                 return false;
             }
         }
