@@ -8,8 +8,26 @@ using UnityEngine;
 
 namespace ModernStatsSystem
 {
+    // Ripped from Stackoverflow
+    // Needed this for Item Drops mostly.
+    static class ArrayShuffler
+    {
+        public static void Shuffle<T>(this System.Random rng, T[] array)
+        {
+            int n = array.Length;
+            while (n > 1)
+            {
+                int k = rng.Next(n--);
+                T temp = array[n];
+                array[n] = array[k];
+                array[k] = temp;
+            }
+        }
+    }
+
     internal partial class ModernStatsSystem : MelonMod
     {
+
         public class TargetHitCountManager
         {
             public static Il2CppReferenceArray<Il2CppStructArray<sbyte>> targetData = new(3);
@@ -268,16 +286,32 @@ namespace ModernStatsSystem
                 // If the dropped Item is still 0.
                 if (droppedItem == 0)
                 {
+                    // Shuffle the Item list
+                    Il2CppStructArray<byte> Items = devil.dropitem;
+                    System.Random r = new System.Random();
+                    r.Shuffle<byte>(Items);
+
                     // Loop through the Demon's Items.
-                    for (int i = 0; i < devil.dropitem.Length; i++)
+                    for (int i = 0; i < Items.Length; i++)
                     {
                         // If the item doesn't exist here, continue.
-                        if (devil.dropitem[i] == 0)
+                        if (Items[i] == 0)
                         { continue; }
 
-                        // If you meet the Drop Chance, grab this particular item and break.
-                        if (devil.droppoint[i] / dropRateMult <= rng.Next(100))
-                            { droppedItem = devil.dropitem[i]; break; }
+                        // Search for the Item within the actual drop table.
+                        for (int j = 0; j < devil.dropitem.Length; j++)
+                        {
+                            // If the IDs match.
+                            if (Items[i] == devil.dropitem[j])
+                            {
+                                // If you meet the Drop Chance, grab this particular item and break.
+                                if (devil.droppoint[j] / dropRateMult <= rng.Next(100))
+                                { droppedItem = Items[i]; break; }
+                            }
+                        }
+
+                        if (droppedItem != 0)
+                        { break; }
                     }
                 }
 
