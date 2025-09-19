@@ -4,6 +4,7 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using MelonLoader;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace ModernStatsSystem
@@ -276,43 +277,44 @@ namespace ModernStatsSystem
                 data.maka += (uint)macca;
                 data.exp += (uint)exp;
 
+                // Check the Drop Chance
+                int chance = rng.Next(100);
+
+                // Keep looping until it finds an item and attempts to drop it.
+                do
+                {
+                    // If items exist, continue.
+                    bool found = false;
+                    for (int i = 0; i < devil.dropitem.Length; i++)
+                    {
+                        if (devil.dropitem[i] != 0)
+                        { found = true; break; }
+                    }
+
+                    // Grab an item.
+                    int newItem = rng.Next(0, devil.dropitem.Length - 1);
+
+                    // If it's not an item in the list, continue.
+                    if (devil.dropitem[newItem] == 0 && found == true)
+                    { continue; }
+
+                    // If you meet the Drop Chance, grab this particular item and break.
+                    // If the item ID is zero, skip to the break.
+                    if (devil.dropitem[newItem] != 0 && (float)devil.droppoint[newItem] * dropRateMult >= chance)
+                    {
+                        MelonLogger.Msg("Dropped Item Name:" + datItemName.Get(devil.dropitem[newItem]));
+                        droppedItem = devil.dropitem[newItem];
+                    }
+
+                    break;
+                }
+                while (true);
+
                 // If this weird variable is 0 or an EventBit Check is true and the enemy has a special item.
                 if (devil.specialbit == 0 || (EventBit.evtBitCheck(devil.specialbit) && devil.specialitem != 0))
                 {
-                    if (devil.specialpoint / dropRateMult <= rng.Next(100))
-                        { droppedItem = devil.specialitem; }
-                }
-
-                // If the dropped Item is still 0.
-                if (droppedItem == 0)
-                {
-                    // Shuffle the Item list
-                    Il2CppStructArray<byte> Items = devil.dropitem;
-                    System.Random r = new System.Random();
-                    r.Shuffle<byte>(Items);
-
-                    // Loop through the Demon's Items.
-                    for (int i = 0; i < Items.Length; i++)
-                    {
-                        // If the item doesn't exist here, continue.
-                        if (Items[i] == 0)
-                        { continue; }
-
-                        // Search for the Item within the actual drop table.
-                        for (int j = 0; j < devil.dropitem.Length; j++)
-                        {
-                            // If the IDs match.
-                            if (Items[i] == devil.dropitem[j])
-                            {
-                                // If you meet the Drop Chance, grab this particular item and break.
-                                if (devil.droppoint[j] / dropRateMult <= rng.Next(100))
-                                { droppedItem = Items[i]; break; }
-                            }
-                        }
-
-                        if (droppedItem != 0)
-                        { break; }
-                    }
+                    if ((float)devil.specialpoint >= chance)
+                    { droppedItem = devil.specialitem; }
                 }
 
                 if (droppedItem == 0)
