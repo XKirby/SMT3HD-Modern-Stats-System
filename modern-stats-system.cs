@@ -33,6 +33,7 @@ namespace ModernStatsSystem
         private static AssetBundle barData = null;
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
         private static int[] LevelUpPoints = { 0, 0, 0, 0, 0, 0 };
+        private static bool ShowFusionStats = false;
         private const string barSpriteName = "sstatusbar_base";
         private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
         private static string[] StockBarValues = { "barhp", "barmp" };
@@ -2062,7 +2063,10 @@ namespace ModernStatsSystem
                 if (fclCombineInit.CMB_GBWK != null)
                 {
                     if (fclCombineInit.CMB_GBWK.BirthDevil != null)
-                    { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
+                    {
+                        if (fclCombineInit.CMB_GBWK.BirthDevil.id != 0 && ShowFusionStats)
+                        { pStock = fclCombineInit.CMB_GBWK.BirthDevil; }
+                    }
                 }
 
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)

@@ -2,10 +2,8 @@
 using Il2Cpp;
 using Il2Cppfacility_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2Cppkernel_H;
 using Il2Cppnewdata_H;
 using MelonLoader;
-using Newtonsoft.Json;
 
 namespace ModernStatsSystem
 {
@@ -192,12 +190,49 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDraw1stDevilSelect))]
+        private class PatchCalcFusionFirstDemon
+        {
+            private static void Postfix()
+            {
+                ShowFusionStats = false;
+            }
+        }
+
+        [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDraw2ndDevilSelect))]
+        private class PatchCalcFusionSecondDemon
+        {
+            private static void Postfix()
+            {
+                ShowFusionStats = false;
+            }
+        }
+
+        [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDrawSacDevilSelect))]
+        private class PatchCalcFusionSacrificeDemon
+        {
+            private static void Postfix()
+            {
+                ShowFusionStats = false;
+            }
+        }
+
+        [HarmonyPatch(typeof(fclCombineDraw), nameof(fclCombineDraw.cmbDrawBirthDevil))]
+        private class PatchCalcFusionResultDemon
+        {
+            private static void Postfix()
+            {
+                ShowFusionStats = true;
+            }
+        }
+
         [HarmonyPatch(typeof(fclEncyc), nameof(fclEncyc.GetDevilParam))]
         private class PatchGetCompendiumDemonParam
         {
             // Returns a Compendium Demon's stat, making sure to cap it appropriately.
             private static bool Prefix(out int __result, fclencyceelem_t pelem, int type)
             {
+                ShowFusionStats = false;
                 __result = pelem.param[type] + pelem.levelupparam[type] + pelem.mitamaparam[type] < MAXSTATS ? pelem.param[type] + pelem.levelupparam[type] + pelem.mitamaparam[type] : MAXSTATS;
                 return false;
             }
