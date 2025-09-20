@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.3", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.4", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -657,7 +657,7 @@ namespace ModernStatsSystem
                     datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[i];
 
                     // Flag Check of some sort.
-                    if ((work.flag & 3) == 0)
+                    if ((~work.flag & 3) == 0)
                     {
                         // Grab the Demon's Luck.
                         int luck = EnableStatScaling ? (int)((float)datCalc.datGetParam(work, 5) / STATS_SCALING) : datCalc.datGetParam(work, 5);
@@ -666,13 +666,14 @@ namespace ModernStatsSystem
                         if(datCalc.datCheckSyojiSkill(work, 0x161) != 0)
                         {
                             // A random integer check to see if the Demon's ID is returned.
-                            if (dds3KernelCore.dds3GetRandIntA(0x20) <= (luck << 7) / 100)
+                            uint randomChance = dds3KernelCore.dds3GetRandIntA(0x20);
+                            if (randomChance <= (luck << 7) / 100)
                             { __result = work.id; return false; }
                         }
                     }
                 }
 
-                return true;
+                return false;
             }
         }
 
@@ -758,7 +759,7 @@ namespace ModernStatsSystem
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)(((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 3f); }
+                { result = (int)(((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 4f); }
 
                 // Return the result.
                 return result;

@@ -182,7 +182,7 @@ namespace ModernStatsSystem
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
-                    { __result = __result >> 1; }
+                    { __result = Math.Max(__result >> 1, 1); }
                 return false;
             }
         }
@@ -282,10 +282,7 @@ namespace ModernStatsSystem
                     // If you meet the Drop Chance, grab this particular item and break.
                     // If the item ID is zero, skip to the break.
                     if (devil.dropitem[newItem] != 0 && (float)devil.droppoint[newItem] * dropRateMult >= chance)
-                    {
-                        MelonLogger.Msg("Dropped Item Name:" + datItemName.Get(devil.dropitem[newItem]));
-                        droppedItem = devil.dropitem[newItem];
-                    }
+                    { droppedItem = devil.dropitem[newItem]; }
 
                     break;
                 }
@@ -313,9 +310,34 @@ namespace ModernStatsSystem
                 if ((float)devil.masekipoint * dropRateMult >= chance)
                 { foundLifeStone = true; }
 
+                // For Life Stones and Beads.
+                int droppedExtraItem = 0;
+
                 // Loop through the Data's Item list
                 for (int i = 0; i < data.item.Length; i++)
                 {
+                    if (foundBead && droppedExtraItem == 0)
+                    { droppedExtraItem = 4; foundBead = false; }
+
+                    else if (foundLifeStone && droppedExtraItem == 0)
+                    { droppedExtraItem = 3; foundLifeStone = false; }
+
+                    // Extra Drops
+                    // Add a new Item to the table.
+                    if (data.item[i] == 0 && droppedExtraItem != 0)
+                    {
+                        data.item[i] = (byte)droppedExtraItem;
+                        data.itemcnt[i] += 1;
+                        droppedExtraItem = 0;
+                    }
+                    // Add to an existing Item's count.
+                    if (data.item[i] == droppedExtraItem && droppedExtraItem != 0)
+                    {
+                        data.itemcnt[i] += 1;
+                        droppedExtraItem = 0;
+                    }
+
+                    // Main Drops
                     // Add a new Item to the table.
                     if (data.item[i] == 0 && droppedItem != 0)
                     {
@@ -328,15 +350,6 @@ namespace ModernStatsSystem
                     {
                         data.itemcnt[i] += 1;
                         droppedItem = 0;
-                    }
-                    // If no item was found, check for Bead and Life Stones.
-                    if (droppedItem == 0)
-                    {
-                        if (foundBead)
-                        { droppedItem = 4; foundBead = false; }
-
-                        else if (foundLifeStone)
-                        { droppedItem = 3; foundLifeStone = false; }
                     }
                 }
 
@@ -437,7 +450,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)(((0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * waza * 0.0114f * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)(((((float)datCalc.datGetNormalAtkPow(attacker) / 1.5f) + (float)waza) * (0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 return false;
             }
         }
@@ -469,7 +482,7 @@ namespace ModernStatsSystem
                 int skillBase = datNormalSkill.tbl[nskill].magicbase;
 
                 // This formula is the base game's Skill peak formula.
-                float skillPeak = ((float)skillLimit - (float)skillBase) / (float)waza * (255f / 24f);
+                float skillPeak = ((float)waza + (float)Math.Max((float)skillLimit - (float)skillBase, 1)) / 4f;
 
                 // Set up the initial Damage value.
                 int damageCalc = (int)((float)waza * (float)attacker.level * 2f / 21 + (float)skillBase);
@@ -477,10 +490,6 @@ namespace ModernStatsSystem
                 // If you exceeded the damage limit, scale it back.
                 if (damageCalc > skillLimit)
                     { damageCalc = skillLimit; }
-
-                // If enabled, scale it slightly less harshly and make sure it's uncapped.
-                if (EnableStatScaling)
-                    { damageCalc = (int)((float)waza * (float)attacker.level * 2f / 20f + (float)skillBase); }
 
                 // If not enabled and the Level Limit is over 160, cap it to 160.
                 // This means it'll stop scaling past level 160.
@@ -498,7 +507,7 @@ namespace ModernStatsSystem
                 // If enabled, perform some new math.
                 // Otherwise, use the game's normal formula.
                 if (EnableStatScaling)
-                    { damageCalc = (int)(((float)waza + (float)skillPeak) * ((float)attacker.level / 2f + (float)param / STATS_SCALING * 2f) / 25.5f); }
+                    { damageCalc = (int)((float)skillPeak * ((float)attacker.level + (float)param / STATS_SCALING * 2f) / 25.5f); }
                 else
                     { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
 
@@ -1080,7 +1089,7 @@ namespace ModernStatsSystem
                 // If the Skill doesn't target randomly or the Effect List is empty, then return.
                 // Additionally return if the Skill doesn't deal damage.
                 // Also return if EnableStatScaling is false.
-                if (datNormalSkill.tbl[nskill].targetrandom < 1 || datSkill.tbl[nskill].skillattr > 12 || effectlist.Length == 0 || !EnableStatScaling)
+                if ((0 < datNormalSkill.tbl[nskill].cost - a.work.mp && datNormalSkill.tbl[nskill].costtype == 2) || datNormalSkill.tbl[nskill].targetrandom < 1 || datSkill.tbl[nskill].skillattr > 12 || effectlist.Length == 0 || !EnableStatScaling)
                     { return true; }
 
                 // Loop through the Effect List and clear it.
