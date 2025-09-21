@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.4", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.4.5", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -708,7 +708,7 @@ namespace ModernStatsSystem
             {
                 // Just returns the parameter of the given type.
                 int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
-                __result = Math.Clamp(Math.Clamp(work.param[paratype] - heartParam, 0, MAXSTATS) + work.levelupparam[paratype], 0, MAXSTATS); ;
+                __result = Math.Clamp(work.param[paratype] - heartParam + work.levelupparam[paratype], 0, MAXSTATS); ;
                 return false;
             }
         }
@@ -720,7 +720,7 @@ namespace ModernStatsSystem
             {
                 // Returns the base stat of the given parameter.
                 int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
-                __result = Math.Clamp(Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam, 0, MAXSTATS + heartParam) + work.mitamaparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype]);
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam + work.mitamaparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype]);
                 return false;
             }
         }
