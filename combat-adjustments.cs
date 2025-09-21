@@ -111,6 +111,92 @@ namespace ModernStatsSystem
                 { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
         }
 
+        [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
+        private class PatchHamaMudoSkills
+        {
+            private static void Postfix()
+            {
+                // Hama
+                datNormalSkill.tbl[28].badlevel = 25;
+                datNormalSkill.tbl[28].hpn = 30;
+                datNormalSkill.tbl[28].hptype = 1;
+                datNormalSkill.tbl[28].mpn = 24;
+                datNormalSkill.tbl[28].mptype = 1;
+                datNormalSkill.tbl[28].magicbase = 10;
+                datNormalSkill.tbl[28].magiclimit = 96;
+
+                // Hamaon
+                datNormalSkill.tbl[29].badlevel = 40;
+                datNormalSkill.tbl[29].hpn = 40;
+                datNormalSkill.tbl[29].hptype = 1;
+                datNormalSkill.tbl[29].mpn = 32;
+                datNormalSkill.tbl[29].mptype = 1;
+                datNormalSkill.tbl[29].magicbase = 18;
+                datNormalSkill.tbl[29].magiclimit = 144;
+
+                // Mahama
+                datNormalSkill.tbl[30].badlevel = 25;
+                datNormalSkill.tbl[30].hpn = 24;
+                datNormalSkill.tbl[30].hptype = 1;
+                datNormalSkill.tbl[30].mpn = 16;
+                datNormalSkill.tbl[30].mptype = 1;
+                datNormalSkill.tbl[30].magicbase = 8;
+                datNormalSkill.tbl[30].magiclimit = 77;
+
+                // Mahamaon
+                datNormalSkill.tbl[31].badlevel = 40;
+                datNormalSkill.tbl[31].hpn = 35;
+                datNormalSkill.tbl[31].hptype = 1;
+                datNormalSkill.tbl[31].mpn = 27;
+                datNormalSkill.tbl[31].mptype = 1;
+                datNormalSkill.tbl[31].magicbase = 15;
+                datNormalSkill.tbl[31].magiclimit = 128;
+
+                // Mudo
+                datNormalSkill.tbl[32].badlevel = 25;
+                datNormalSkill.tbl[32].hpn = 45;
+                datNormalSkill.tbl[32].hptype = 1;
+                datNormalSkill.tbl[32].mpn = 15;
+                datNormalSkill.tbl[32].mptype = 1;
+                datNormalSkill.tbl[32].magicbase = 10;
+                datNormalSkill.tbl[32].magiclimit = 96;
+
+                // Mudoon
+                datNormalSkill.tbl[33].badlevel = 40;
+                datNormalSkill.tbl[33].hpn = 65;
+                datNormalSkill.tbl[33].hptype = 1;
+                datNormalSkill.tbl[33].mpn = 20;
+                datNormalSkill.tbl[33].mptype = 1;
+                datNormalSkill.tbl[33].magicbase = 18;
+                datNormalSkill.tbl[33].magiclimit = 144;
+
+                // Mamudo
+                datNormalSkill.tbl[34].badlevel = 25;
+                datNormalSkill.tbl[34].hpn = 32;
+                datNormalSkill.tbl[34].hptype = 1;
+                datNormalSkill.tbl[34].mpn = 12;
+                datNormalSkill.tbl[34].mptype = 1;
+                datNormalSkill.tbl[34].magicbase = 8;
+                datNormalSkill.tbl[34].magiclimit = 77;
+
+                // Mamudoon
+                datNormalSkill.tbl[35].badlevel = 40;
+                datNormalSkill.tbl[35].hpn = 54;
+                datNormalSkill.tbl[35].hptype = 1;
+                datNormalSkill.tbl[35].mpn = 18;
+                datNormalSkill.tbl[35].mptype = 1;
+                datNormalSkill.tbl[35].magicbase = 15;
+                datNormalSkill.tbl[35].magiclimit = 128;
+
+                // God's Bow
+                datNormalSkill.tbl[287].badlevel = 60;
+                datNormalSkill.tbl[287].hpn = 80;
+                datNormalSkill.tbl[287].hptype = 1;
+                datNormalSkill.tbl[287].magicbase = 40;
+                datNormalSkill.tbl[287].magiclimit = 320;
+            }
+        }
+
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbCheckStoneDead))]
         private class PatchStoneTargetKill
         {
@@ -1073,6 +1159,28 @@ namespace ModernStatsSystem
                     { ad.autoskill = 299; }
 
                 return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetKoukaBadDamage))]
+        private class PatchInstantDeathSkills
+        {
+            private static void Postfix(ref int nskill, int sformindex, int dformindex, float ai, int nvirtual, ref uint __result)
+            {
+                if (datSkill.tbl[nskill].skillattr == 6 || datSkill.tbl[nskill].skillattr == 7)
+                {
+                    int[] lightSkills = new int[] { 28, 29, 30, 31, 287 };
+                    int[] darkSkills = new int[] { 32, 33, 34, 35 };
+
+                    var lightResistance = nbCalc.nbGetAisyo(nskill, dformindex, 6);
+                    var darkResistance = nbCalc.nbGetAisyo(nskill, dformindex, 7);
+
+                    if ((lightSkills.Contains(nskill) && !((lightResistance & 1) == 1 && (lightResistance & 0x100000000000) == 0)) ||
+                        (darkSkills.Contains(nskill) && !((darkResistance & 1) == 1 && (darkResistance & 0x100000000000) == 0)))
+                    {
+                        __result = 0;
+                    }
+                }
             }
         }
 
