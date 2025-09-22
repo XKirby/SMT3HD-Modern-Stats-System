@@ -197,6 +197,65 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(datSkillHelp_msg), nameof(datSkillHelp_msg.Get))]
+        private class PatchSkillDescriptions
+        {
+            private static void Postfix(ref int id, ref string __result)
+            {
+                // Hama
+                if (id == 28)
+                { __result = "Low Light damage to one foe\nwith low chance to kill\nvulnerable targets"; }
+
+                // Hamaon
+                if (id == 29)
+                { __result = "Medium Light damage to one foe\nwith chance to kill\nvulnerable targets"; }
+
+                // Mahama
+                if (id == 30)
+                { __result = "Low Light damage to all foes\nwith low chance to kill\nvulnerable targets"; }
+
+                // Mahamaon
+                if (id == 31)
+                { __result = "Medium Light damage to all foes\nwith chance to kill\nvulnerable targets"; }
+
+                // Mudo
+                if (id == 32)
+                { __result = "Low Dark damage to one foe\nwith low chance to kill\nvulnerable targets"; }
+
+                // Mudoon
+                if (id == 33)
+                { __result = "Medium Dark damage to one foe\nwith chance to kill\nvulnerable targets"; }
+
+                // Mamudo
+                if (id == 34)
+                { __result = "Low Dark damage to all foes\nwith low chance to kill\nvulnerable targets"; }
+
+                // Mamudoon
+                if (id == 35)
+                { __result = "Medium Dark damage to all foes\nwith chance to kill\nvulnerable targets"; }
+
+                // God's Bow
+                if (id == 186)
+                { __result = "Severe Force damage to one foe"; }
+
+                // God's Bow
+                if (id == 287)
+                { __result = "Severe Light damage to one foe\nwith high chance to kill\nvulnerable targets"; }
+
+                // Might
+                if (id == 299)
+                { __result = "Raises Str Skill Critical Chance"; }
+
+                // Bright Might
+                if (id == 300)
+                { __result = "Raises Str Skill Critical Chance\nat full Kagatsuchi"; }
+
+                // Dark Might
+                if (id == 301)
+                { __result = "Raises Str Skill Critical Chance\nat new Kagatsuchi"; }
+            }
+        }
+
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbCheckStoneDead))]
         private class PatchStoneTargetKill
         {
