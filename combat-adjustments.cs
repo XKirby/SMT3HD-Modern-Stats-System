@@ -1005,7 +1005,7 @@ namespace ModernStatsSystem
                 if (!EnableStatScaling)
                 { return true; }
 
-                // Flag Nonsense. If true, return original function.
+                // Attribute nonsense. If true, return original function.
                 if ((byte)datSkill.tbl[nskill].skillattr == 0xff)
                 { return true; }
 
@@ -1013,115 +1013,30 @@ namespace ModernStatsSystem
                 if (datNormalSkill.tbl[nskill].koukatype == 1)
                 { return true; }
 
-                // If this skill is just the basic attack
-                if (nskill == 0)
-                {
-                    // I'm assuming this is some sort of passive or something.
-                    // Google Translate says that "hatsudo" means "each time". Is that the same phrase?
-                    if (nbCalc.nbHatudoCheckSkill(attacker, 300) != 0)
-                        { ad.autoskill = 300; __result = 1; return false; }
-
-                    // Doing it again, but with the next skill.
-                    if (nbCalc.nbHatudoCheckSkill(attacker, 301) != 0)
-                        { ad.autoskill = 301; __result = 1; return false; }
-                }
-
                 // Seriously, Nocturne, why are you like this???
                 // For the record, unsigned integers can't go below 0, so it actively converts it to an int so it can.
                 if ((int)aisyo < 0)
                     { __result = 2; return false; }
 
-                // Set the party object from the attacker.
-                nbParty_t party = nbMainProcess.nbGetPartyFromFormindex(sformindex);
-
-                // Flag stuff.
-                if (((party.flag + 1) & 1) != 0)
-                    { __result = 1; return false; }
-
-                // A random boolean to check on things later.
-                bool chk;
-
-                // Infinite Loop Check.
-                // Because what the fuck.
-                bool wtf = false;
-
                 // Base Crit Chance value.
                 float val = 1.0f;
 
-                // Yes, I am labeling this section "WhatTheFuck".
-                // Go ahead and read it.
-                // You'll understand.
-            WhatTheFuck:
+                // Might Check.
+                if (datCalc.datCheckSyojiSkill(attacker, 299) != 0)
+                { ad.autoskill = 299; val += 0.25f; }
 
-                // Check yet more flag nonsense.
-                if ((((ad.data.form[dformindex].stat + 1) >> 5) & 1) == 0 || wtf)
-                {
-                    // If the currently used Skill's ID isn't zero.
-                    if (nskill != 0)
-                        { chk = false; }
+                // This is Bright Might, so adjust crit rate.
+                if (nbCalc.nbHatudoCheckSkill(attacker, 300) != 0)
+                { ad.autoskill = 300; val += 0.25f; }
 
-                    // Otherwise, do some other stuff.
-                    else
-                    {
+                // Which happens to be Dark Might, so adjust crit rate.
+                if (nbCalc.nbHatudoCheckSkill(attacker, 301) != 0)
+                { ad.autoskill = 301; val += 0.25f; }
 
-                        // Some random Skill check.
-                        // TURNS OUT THIS IS MIGHT SO IT ADJUSTS CRIT CHANCE. THANKS GAME.
-                        if (datCalc.datCheckSyojiSkill(attacker, 299) == 0)
-                            { chk = false; }
-                        
-                        // If the above check fails, do some wonky math.
-                        else
-                        {
-                            // The variables are actually single characters.
-                            // They're all short integers.
-                            // This tells me nothing as to how they function.
-                            // Additionally, ghidra doesn't tell me which one to actually use.
-                            // I'm taking a blind guess here.
-                            if (datSpecialSkill.tbl[nskill].a < 0xc)
-                                { __result = 0; return false; }
-
-                            // I can't believe this is making me double-check so hard what goes where.
-                            val = datSpecialSkill.tbl[nskill].n / 100f;
-                            
-                            // Set check to true, finally.
-                            chk = true;
-                        }
-                    }
-                }
-
-                // Okay, if the above fuckfest doesn't get called, do the following.
-                else
-                {
-                    // If the Difficulty Bit is over zero, go up and do the previous section.
-                    // Seriously. What the fuck Nocturne.
-                    if (dds3ConfigMain.cfgGetBit(9) > 0)
-                    {
-                        // If it's above 1, change the value.
-                        if (dds3ConfigMain.cfgGetBit(9) > 1)
-                            { val = 1f; }
-
-                        // Make sure this is true so it doesn't loop forever.
-                        wtf = true;
-
-                        // Jump back up.
-                        goto WhatTheFuck;
-                    }
-
-                    // Value adjustment.
-                    val = 0.7f;
-
-                    // If you're using a normal attack, jump back up.
-                    if (nskill == 0)
-                        { wtf = true; goto WhatTheFuck; }
-
-                    // Set check to false.
-                    chk = false;
-                }
-                
                 // More flag stuff.
-                // Sets the above value to something.
+                // Sets the base crit value to 100%, AKA guaranteed crits.
                 if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
-                    { val = 100f; }
+                { val = 100f; }
 
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
@@ -1135,9 +1050,9 @@ namespace ModernStatsSystem
 
                 // Divide the Crit Chances by the opposite levels.
                 if (defCritLevel != 0f)
-                    { atkCritChance = atkCritStat / defCritLevel; }
+                { atkCritChance = atkCritStat / defCritLevel; }
                 if (atkCritLevel != 0f)
-                    { defCritChance = defCritStat / atkCritLevel; }
+                { defCritChance = defCritStat / atkCritLevel; }
 
                 // Set total Crit Value.
                 float critValue = (atkCritChance - defCritChance) * 6.25f + (100f - nbCalc.GetFailpoint(nskill));
@@ -1146,17 +1061,10 @@ namespace ModernStatsSystem
                 critValue = val * (critValue / 100f) * datNormalSkill.tbl[nskill].criticalpoint;
 
                 // Generate a random interger and compare to the Crit Value.
-                // If it's higher, it's a crit.
+                // If it's lower, it's a crit.
                 System.Random rng = new();
                 if (rng.Next(100) < critValue)
-                    { __result = 1; return false; }
-
-                // Finally reference the above check value.
-                // And all it's used for is to set the autoskill value to 299.
-                // As noted above, this is Might, so it modified crit chance.
-                // God damnit.
-                if (chk)
-                    { ad.autoskill = 299; }
+                { __result = 1; }
 
                 return false;
             }

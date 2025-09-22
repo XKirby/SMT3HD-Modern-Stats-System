@@ -5,8 +5,8 @@
 		<Nullable>disable</Nullable>
 		<RootNamespace>ModernStatsSystem</RootNamespace>
 		<IsPackable>false</IsPackable>
-		<AssemblyVersion>1.4.7.0</AssemblyVersion>
-		<FileVersion>1.4.7.0</FileVersion>
+		<AssemblyVersion>1.5.0.0</AssemblyVersion>
+		<FileVersion>1.5.0.0</FileVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<AssemblyName>ModernStatsSystem</AssemblyName>
 		<LangVersion>10</LangVersion>
