@@ -117,83 +117,83 @@ namespace ModernStatsSystem
             private static void Postfix()
             {
                 // Hama
-                datNormalSkill.tbl[28].badlevel = 25;
+                datNormalSkill.tbl[28].badlevel = 30;
                 datNormalSkill.tbl[28].hpn = 20;
                 datNormalSkill.tbl[28].hptype = 1;
-                datNormalSkill.tbl[28].mpn = 24;
+                datNormalSkill.tbl[28].mpn = 12;
                 datNormalSkill.tbl[28].mptype = 1;
-                datNormalSkill.tbl[28].magicbase = 10;
-                datNormalSkill.tbl[28].magiclimit = 96;
+                datNormalSkill.tbl[28].magicbase = 26;
+                datNormalSkill.tbl[28].magiclimit = 40;
 
                 // Hamaon
-                datNormalSkill.tbl[29].badlevel = 40;
-                datNormalSkill.tbl[29].hpn = 30;
+                datNormalSkill.tbl[29].badlevel = 50;
+                datNormalSkill.tbl[29].hpn = 45;
                 datNormalSkill.tbl[29].hptype = 1;
-                datNormalSkill.tbl[29].mpn = 32;
+                datNormalSkill.tbl[29].mpn = 30;
                 datNormalSkill.tbl[29].mptype = 1;
-                datNormalSkill.tbl[29].magicbase = 18;
-                datNormalSkill.tbl[29].magiclimit = 144;
+                datNormalSkill.tbl[29].magicbase = 32;
+                datNormalSkill.tbl[29].magiclimit = 46;
 
                 // Mahama
-                datNormalSkill.tbl[30].badlevel = 25;
-                datNormalSkill.tbl[30].hpn = 19;
+                datNormalSkill.tbl[30].badlevel = 30;
+                datNormalSkill.tbl[30].hpn = 15;
                 datNormalSkill.tbl[30].hptype = 1;
-                datNormalSkill.tbl[30].mpn = 16;
+                datNormalSkill.tbl[30].mpn = 6;
                 datNormalSkill.tbl[30].mptype = 1;
-                datNormalSkill.tbl[30].magicbase = 8;
-                datNormalSkill.tbl[30].magiclimit = 77;
+                datNormalSkill.tbl[30].magicbase = 28;
+                datNormalSkill.tbl[30].magiclimit = 40;
 
                 // Mahamaon
-                datNormalSkill.tbl[31].badlevel = 40;
-                datNormalSkill.tbl[31].hpn = 32;
+                datNormalSkill.tbl[31].badlevel = 50;
+                datNormalSkill.tbl[31].hpn = 38;
                 datNormalSkill.tbl[31].hptype = 1;
-                datNormalSkill.tbl[31].mpn = 27;
+                datNormalSkill.tbl[31].mpn = 22;
                 datNormalSkill.tbl[31].mptype = 1;
-                datNormalSkill.tbl[31].magicbase = 15;
-                datNormalSkill.tbl[31].magiclimit = 128;
+                datNormalSkill.tbl[31].magicbase = 37;
+                datNormalSkill.tbl[31].magiclimit = 46;
 
                 // Mudo
-                datNormalSkill.tbl[32].badlevel = 25;
-                datNormalSkill.tbl[32].hpn = 45;
+                datNormalSkill.tbl[32].badlevel = 30;
+                datNormalSkill.tbl[32].hpn = 40;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 10;
+                datNormalSkill.tbl[32].mpn = 6;
                 datNormalSkill.tbl[32].mptype = 1;
-                datNormalSkill.tbl[32].magicbase = 10;
-                datNormalSkill.tbl[32].magiclimit = 96;
+                datNormalSkill.tbl[32].magicbase = 26;
+                datNormalSkill.tbl[32].magiclimit = 40;
 
                 // Mudoon
-                datNormalSkill.tbl[33].badlevel = 40;
-                datNormalSkill.tbl[33].hpn = 65;
+                datNormalSkill.tbl[33].badlevel = 50;
+                datNormalSkill.tbl[33].hpn = 58;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 15;
+                datNormalSkill.tbl[33].mpn = 12;
                 datNormalSkill.tbl[33].mptype = 1;
-                datNormalSkill.tbl[33].magicbase = 18;
-                datNormalSkill.tbl[33].magiclimit = 144;
+                datNormalSkill.tbl[33].magicbase = 32;
+                datNormalSkill.tbl[33].magiclimit = 46;
 
                 // Mamudo
-                datNormalSkill.tbl[34].badlevel = 25;
-                datNormalSkill.tbl[34].hpn = 32;
+                datNormalSkill.tbl[34].badlevel = 30;
+                datNormalSkill.tbl[34].hpn = 27;
                 datNormalSkill.tbl[34].hptype = 1;
-                datNormalSkill.tbl[34].mpn = 9;
+                datNormalSkill.tbl[34].mpn = 2;
                 datNormalSkill.tbl[34].mptype = 1;
-                datNormalSkill.tbl[34].magicbase = 8;
-                datNormalSkill.tbl[34].magiclimit = 77;
+                datNormalSkill.tbl[34].magicbase = 28;
+                datNormalSkill.tbl[34].magiclimit = 40;
 
                 // Mamudoon
-                datNormalSkill.tbl[35].badlevel = 40;
-                datNormalSkill.tbl[35].hpn = 54;
+                datNormalSkill.tbl[35].badlevel = 50;
+                datNormalSkill.tbl[35].hpn = 44;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 15;
+                datNormalSkill.tbl[35].mpn = 11;
                 datNormalSkill.tbl[35].mptype = 1;
-                datNormalSkill.tbl[35].magicbase = 15;
-                datNormalSkill.tbl[35].magiclimit = 128;
+                datNormalSkill.tbl[35].magicbase = 37;
+                datNormalSkill.tbl[35].magiclimit = 46;
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
                 datNormalSkill.tbl[287].hpn = 80;
                 datNormalSkill.tbl[287].hptype = 1;
                 datNormalSkill.tbl[287].magicbase = 40;
-                datNormalSkill.tbl[287].magiclimit = 320;
+                datNormalSkill.tbl[287].magiclimit = 400;
             }
         }
 
@@ -1169,14 +1169,16 @@ namespace ModernStatsSystem
             {
                 if (datSkill.tbl[nskill].skillattr == 6 || datSkill.tbl[nskill].skillattr == 7)
                 {
+                    // Hama/Mudo and God's Bow are affected.
                     int[] lightSkills = new int[] { 28, 29, 30, 31, 287 };
                     int[] darkSkills = new int[] { 32, 33, 34, 35 };
 
-                    var lightResistance = nbCalc.nbGetAisyo(nskill, dformindex, 6);
-                    var darkResistance = nbCalc.nbGetAisyo(nskill, dformindex, 7);
+                    uint lightResistance = nbCalc.nbGetAisyo(nskill, dformindex, 6);
+                    uint darkResistance = nbCalc.nbGetAisyo(nskill, dformindex, 7);
 
-                    if ((lightSkills.Contains(nskill) && !((lightResistance & 1) == 1 && (lightResistance & 0x100000000000) == 0)) ||
-                        (darkSkills.Contains(nskill) && !((darkResistance & 1) == 1 && (darkResistance & 0x100000000000) == 0)))
+                    // If you're not weakened to the skills in particular, disable Instakills.
+                    if ((lightSkills.Contains(nskill) && !((lightResistance & 0b10000000000000000000000000000000) == 0b10000000000000000000000000000000 && (lightResistance & 0b100000000000000000000) == 0)) ||
+                        (darkSkills.Contains(nskill) && !((darkResistance & 0b10000000000000000000000000000000) == 0b10000000000000000000000000000000 && (darkResistance & 0b100000000000000000000) == 0)))
                     {
                         __result = 0;
                     }
