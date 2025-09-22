@@ -83,10 +83,14 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                 {
                     // Mitama Bonuses
-                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(4).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(2).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(2).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(3).ToArray();
+                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(1).ToArray(); // Saki  -> Int
+                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(2).ToArray(); // Saki  -> Mag
+                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(1).ToArray(); // Musi -> Int
+                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(5).ToArray(); // Musi -> Luc
+                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(3).ToArray(); // Nigi  -> Vit
+                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(5).ToArray(); // Nigi  -> Luc
+                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(2).ToArray(); // Ara   -> Mag
+                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(4).ToArray(); // Ara   -> Agi
                 }
             }
         }
