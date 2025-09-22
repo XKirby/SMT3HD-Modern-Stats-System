@@ -438,7 +438,7 @@ namespace ModernStatsSystem
                 System.Random rng = new();
 
                 // New Parameter Value
-                int paramNewValue = 0;
+                float paramNewValue = 0;
                 ushort paramID = 6;
 
                 do
@@ -451,11 +451,11 @@ namespace ModernStatsSystem
                     { return false; }
 
                     // Check the chance of the stat upgrading and if it's greater than 1, set it to 1.
-                    paramNewValue = (int)Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - (float)pStock.param[paramID]);
-                    if (paramNewValue >= 1)
-                    { paramNewValue = 1; }
+                    paramNewValue += (float)Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - (float)pStock.param[paramID]);
+                    if (paramNewValue >= 1f)
+                    { paramNewValue = 1f; }
                 }
-                while (paramNewValue < 1);
+                while (paramNewValue < 1f);
 
                 // If it's under or equal to the maximum, set the Mitama Bonus.
                 if (pStock.param[paramID] + pStock.mitamaparam[paramID] + paramNewValue < MAXSTATS)
