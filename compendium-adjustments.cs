@@ -4,6 +4,7 @@ using Il2Cppfacility_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewdata_H;
 using MelonLoader;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace ModernStatsSystem
@@ -83,14 +84,14 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                 {
                     // Mitama Bonuses
-                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(1).ToArray(); // Saki  -> Int
-                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(2).ToArray(); // Saki  -> Mag
-                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(1).ToArray(); // Musi -> Int
-                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(5).ToArray(); // Musi -> Luc
-                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(3).ToArray(); // Nigi  -> Vit
-                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(5).ToArray(); // Nigi  -> Luc
-                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(2).ToArray(); // Ara   -> Mag
-                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(4).ToArray(); // Ara   -> Agi
+                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(2).ToArray(); // Saki  -> Int
+                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(3).ToArray(); // Saki  -> Mag
+                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(2).ToArray(); // Musi -> Int
+                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(6).ToArray(); // Musi -> Luc
+                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(4).ToArray(); // Nigi  -> Vit
+                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(6).ToArray(); // Nigi  -> Luc
+                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(3).ToArray(); // Ara   -> Mag
+                    fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(5).ToArray(); // Ara   -> Agi
                 }
             }
         }
@@ -451,14 +452,14 @@ namespace ModernStatsSystem
                     do
                     {
                         // Pull a random stat from whatever the Mitama's upgradable stat pool is.
-                        paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
+                        paramID = (ushort)(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType.Length)] - 1);
 
                         // If it's somehow below zero or over 5, just return here and don't continue.
                         if (paramID < 0 || paramID > 5)
                         { return false; }
 
                         // Check the chance of the stat upgrading and if it's greater than 1, set it to 1.
-                        paramNewValue += (float)Math.Max(Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - ((float)pStock.param[paramID] / 2f)), 0);
+                        paramNewValue += (float)Math.Max(Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[3 - mitama].UpRate) / 100f - ((float)pStock.param[paramID] / 2f)), 0);
                         if (paramNewValue > 0f)
                         { paramNewValue = 1f; }
 
