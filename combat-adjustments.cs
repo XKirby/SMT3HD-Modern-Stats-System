@@ -118,7 +118,7 @@ namespace ModernStatsSystem
             {
                 // Hama
                 datNormalSkill.tbl[28].badlevel = 25;
-                datNormalSkill.tbl[28].hpn = 30;
+                datNormalSkill.tbl[28].hpn = 20;
                 datNormalSkill.tbl[28].hptype = 1;
                 datNormalSkill.tbl[28].mpn = 24;
                 datNormalSkill.tbl[28].mptype = 1;
@@ -127,7 +127,7 @@ namespace ModernStatsSystem
 
                 // Hamaon
                 datNormalSkill.tbl[29].badlevel = 40;
-                datNormalSkill.tbl[29].hpn = 40;
+                datNormalSkill.tbl[29].hpn = 30;
                 datNormalSkill.tbl[29].hptype = 1;
                 datNormalSkill.tbl[29].mpn = 32;
                 datNormalSkill.tbl[29].mptype = 1;
@@ -136,7 +136,7 @@ namespace ModernStatsSystem
 
                 // Mahama
                 datNormalSkill.tbl[30].badlevel = 25;
-                datNormalSkill.tbl[30].hpn = 24;
+                datNormalSkill.tbl[30].hpn = 19;
                 datNormalSkill.tbl[30].hptype = 1;
                 datNormalSkill.tbl[30].mpn = 16;
                 datNormalSkill.tbl[30].mptype = 1;
@@ -145,7 +145,7 @@ namespace ModernStatsSystem
 
                 // Mahamaon
                 datNormalSkill.tbl[31].badlevel = 40;
-                datNormalSkill.tbl[31].hpn = 35;
+                datNormalSkill.tbl[31].hpn = 32;
                 datNormalSkill.tbl[31].hptype = 1;
                 datNormalSkill.tbl[31].mpn = 27;
                 datNormalSkill.tbl[31].mptype = 1;
@@ -156,7 +156,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[32].badlevel = 25;
                 datNormalSkill.tbl[32].hpn = 45;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 15;
+                datNormalSkill.tbl[32].mpn = 10;
                 datNormalSkill.tbl[32].mptype = 1;
                 datNormalSkill.tbl[32].magicbase = 10;
                 datNormalSkill.tbl[32].magiclimit = 96;
@@ -165,7 +165,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[33].badlevel = 40;
                 datNormalSkill.tbl[33].hpn = 65;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 20;
+                datNormalSkill.tbl[33].mpn = 15;
                 datNormalSkill.tbl[33].mptype = 1;
                 datNormalSkill.tbl[33].magicbase = 18;
                 datNormalSkill.tbl[33].magiclimit = 144;
@@ -174,7 +174,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[34].badlevel = 25;
                 datNormalSkill.tbl[34].hpn = 32;
                 datNormalSkill.tbl[34].hptype = 1;
-                datNormalSkill.tbl[34].mpn = 12;
+                datNormalSkill.tbl[34].mpn = 9;
                 datNormalSkill.tbl[34].mptype = 1;
                 datNormalSkill.tbl[34].magicbase = 8;
                 datNormalSkill.tbl[34].magiclimit = 77;
@@ -183,7 +183,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[35].badlevel = 40;
                 datNormalSkill.tbl[35].hpn = 54;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 18;
+                datNormalSkill.tbl[35].mpn = 15;
                 datNormalSkill.tbl[35].mptype = 1;
                 datNormalSkill.tbl[35].magicbase = 15;
                 datNormalSkill.tbl[35].magiclimit = 128;

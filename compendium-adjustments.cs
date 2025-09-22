@@ -84,9 +84,9 @@ namespace ModernStatsSystem
                 {
                     // Mitama Bonuses
                     fclCombineTable.fclSpiritParamUpTbl[0].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(4).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(2).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(2).ToArray();
-                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[0].ParamType.Append<ushort>(3).ToArray();
+                    fclCombineTable.fclSpiritParamUpTbl[1].ParamType = fclCombineTable.fclSpiritParamUpTbl[1].ParamType.Append<ushort>(2).ToArray();
+                    fclCombineTable.fclSpiritParamUpTbl[2].ParamType = fclCombineTable.fclSpiritParamUpTbl[2].ParamType.Append<ushort>(2).ToArray();
+                    fclCombineTable.fclSpiritParamUpTbl[3].ParamType = fclCombineTable.fclSpiritParamUpTbl[3].ParamType.Append<ushort>(3).ToArray();
                 }
             }
         }
@@ -437,30 +437,31 @@ namespace ModernStatsSystem
                 // Unseeded random number generator.
                 System.Random rng = new();
 
-                // Pull a random stat from whatever the Mitama's upgradable stat pool is.
-                ushort paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
+                // New Parameter Value
+                int paramNewValue = 0;
+                ushort paramID = 6;
 
-                // If it's somehow below zero or over 5, just return here and don't continue.
-                if (paramID < 0 || paramID > 5)
-                { return false; }
-
-                // If it's within the proper range
-                if (paramID < pStock.param.Length && paramID < pStock.mitamaparam.Length)
+                do
                 {
-                    // Check the chance of the stat upgrading and if it's less than 1, set it to 1.
-                    int paramNewValue = (pStock.param[paramID] * fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100 - pStock.param[paramID];
-                    if (paramNewValue <= 0)
+                    // Pull a random stat from whatever the Mitama's upgradable stat pool is.
+                    paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
+
+                    // If it's somehow below zero or over 5, just return here and don't continue.
+                    if (paramID < 0 || paramID > 5)
+                    { return false; }
+
+                    // Check the chance of the stat upgrading and if it's greater than 1, set it to 1.
+                    paramNewValue = (int)Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - (float)pStock.param[paramID]);
+                    if (paramNewValue >= 1)
                     { paramNewValue = 1; }
+                }
+                while (paramNewValue < 1);
 
-                    // Make sure it doesn't overwrite previous Mitama Bonuses.
-                    paramNewValue += pStock.mitamaparam[paramID];
-
-                    // If it's under or equal to the maximum, set the Mitama Bonus.
-                    if (pStock.param[paramID] + paramNewValue <= MAXSTATS)
-                    {
-                        pStock.mitamaparam[paramID] = (sbyte)paramNewValue;
-                        __result = 1;
-                    }
+                // If it's under or equal to the maximum, set the Mitama Bonus.
+                if (pStock.param[paramID] + pStock.mitamaparam[paramID] + paramNewValue < MAXSTATS)
+                {
+                    pStock.mitamaparam[paramID] += (sbyte)paramNewValue;
+                    __result = 1;
                 }
                 return false;
             }
