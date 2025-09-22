@@ -440,29 +440,41 @@ namespace ModernStatsSystem
                 // New Parameter Value
                 float paramNewValue = 0;
                 ushort paramID = 6;
+                int fails = 0;
 
-                do
+                for (int i = 0; i < POINTS_PER_LEVEL; i++)
                 {
-                    // Pull a random stat from whatever the Mitama's upgradable stat pool is.
-                    paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
+                    do
+                    {
+                        // Pull a random stat from whatever the Mitama's upgradable stat pool is.
+                        paramID = fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[mitama].ParamType.Length)];
 
-                    // If it's somehow below zero or over 5, just return here and don't continue.
-                    if (paramID < 0 || paramID > 5)
-                    { return false; }
+                        // If it's somehow below zero or over 5, just return here and don't continue.
+                        if (paramID < 0 || paramID > 5)
+                        { return false; }
 
-                    // Check the chance of the stat upgrading and if it's greater than 1, set it to 1.
-                    paramNewValue += (float)Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - (float)pStock.param[paramID]);
-                    if (paramNewValue >= 1f)
-                    { paramNewValue = 1f; }
+                        // Check the chance of the stat upgrading and if it's greater than 1, set it to 1.
+                        paramNewValue += (float)Math.Max(Math.Ceiling(((float)pStock.param[paramID] / 2f * (float)fclCombineTable.fclSpiritParamUpTbl[mitama].UpRate) / 100f - ((float)pStock.param[paramID] / 2f)), 0);
+                        if (paramNewValue > 0f)
+                        { paramNewValue = 1f; }
+
+                        // If it fails, increment then return false if we failed 100 times.
+                        else if (fails++ >= 100)
+                        { return false; }
+                    }
+                    while (paramNewValue < 1f);
+
+                    // If it's under or equal to the maximum, set the Mitama Bonus.
+                    if (pStock.param[paramID] + pStock.mitamaparam[paramID] + paramNewValue < MAXSTATS)
+                    {
+                        pStock.mitamaparam[paramID] += (sbyte)paramNewValue;
+                        paramNewValue = 0;
+                    }
                 }
-                while (paramNewValue < 1f);
 
-                // If it's under or equal to the maximum, set the Mitama Bonus.
-                if (pStock.param[paramID] + pStock.mitamaparam[paramID] + paramNewValue < MAXSTATS)
-                {
-                    pStock.mitamaparam[paramID] += (sbyte)paramNewValue;
-                    __result = 1;
-                }
+                // Return 1
+                __result = 1;
+
                 return false;
             }
         }
