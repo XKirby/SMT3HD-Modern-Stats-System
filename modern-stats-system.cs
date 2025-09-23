@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.0.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.0.1", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -90,7 +90,7 @@ namespace ModernStatsSystem
             11, // Erthys
             // Mitama
             18, // Saki Mitama
-            24, // Kishi Mitama
+            24, // Kusi Mitama
             32, // Nigi Mitama
             27, // Ara Mitama
             // Yoma
@@ -170,7 +170,7 @@ namespace ModernStatsSystem
             32, // Baphomet
             // Tyrant
             69, // Mot (Nice.)
-            55, // Aciel
+            55, // Alciel
             48, // Surt
             53, // Abaddon
             45, // Loki

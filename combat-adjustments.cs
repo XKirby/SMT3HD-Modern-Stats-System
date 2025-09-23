@@ -118,75 +118,75 @@ namespace ModernStatsSystem
             {
                 // Hama
                 datNormalSkill.tbl[28].badlevel = 30;
-                datNormalSkill.tbl[28].hpn = 20;
+                datNormalSkill.tbl[28].hpn = 30;
                 datNormalSkill.tbl[28].hptype = 1;
                 datNormalSkill.tbl[28].mpn = 12;
                 datNormalSkill.tbl[28].mptype = 1;
                 datNormalSkill.tbl[28].magicbase = 26;
-                datNormalSkill.tbl[28].magiclimit = 40;
+                datNormalSkill.tbl[28].magiclimit = 90;
 
                 // Hamaon
                 datNormalSkill.tbl[29].badlevel = 50;
-                datNormalSkill.tbl[29].hpn = 45;
+                datNormalSkill.tbl[29].hpn = 55;
                 datNormalSkill.tbl[29].hptype = 1;
                 datNormalSkill.tbl[29].mpn = 30;
                 datNormalSkill.tbl[29].mptype = 1;
                 datNormalSkill.tbl[29].magicbase = 32;
-                datNormalSkill.tbl[29].magiclimit = 46;
+                datNormalSkill.tbl[29].magiclimit = 160;
 
                 // Mahama
                 datNormalSkill.tbl[30].badlevel = 30;
-                datNormalSkill.tbl[30].hpn = 15;
+                datNormalSkill.tbl[30].hpn = 25;
                 datNormalSkill.tbl[30].hptype = 1;
                 datNormalSkill.tbl[30].mpn = 6;
                 datNormalSkill.tbl[30].mptype = 1;
                 datNormalSkill.tbl[30].magicbase = 28;
-                datNormalSkill.tbl[30].magiclimit = 40;
+                datNormalSkill.tbl[30].magiclimit = 75;
 
                 // Mahamaon
                 datNormalSkill.tbl[31].badlevel = 50;
-                datNormalSkill.tbl[31].hpn = 38;
+                datNormalSkill.tbl[31].hpn = 40;
                 datNormalSkill.tbl[31].hptype = 1;
                 datNormalSkill.tbl[31].mpn = 22;
                 datNormalSkill.tbl[31].mptype = 1;
                 datNormalSkill.tbl[31].magicbase = 37;
-                datNormalSkill.tbl[31].magiclimit = 46;
+                datNormalSkill.tbl[31].magiclimit = 140;
 
                 // Mudo
                 datNormalSkill.tbl[32].badlevel = 30;
                 datNormalSkill.tbl[32].hpn = 40;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 6;
+                datNormalSkill.tbl[32].mpn = 5;
                 datNormalSkill.tbl[32].mptype = 1;
                 datNormalSkill.tbl[32].magicbase = 26;
-                datNormalSkill.tbl[32].magiclimit = 40;
+                datNormalSkill.tbl[32].magiclimit = 90;
 
                 // Mudoon
                 datNormalSkill.tbl[33].badlevel = 50;
                 datNormalSkill.tbl[33].hpn = 58;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 12;
+                datNormalSkill.tbl[33].mpn = 10;
                 datNormalSkill.tbl[33].mptype = 1;
                 datNormalSkill.tbl[33].magicbase = 32;
-                datNormalSkill.tbl[33].magiclimit = 46;
+                datNormalSkill.tbl[33].magiclimit = 160;
 
                 // Mamudo
                 datNormalSkill.tbl[34].badlevel = 30;
-                datNormalSkill.tbl[34].hpn = 27;
+                datNormalSkill.tbl[34].hpn = 30;
                 datNormalSkill.tbl[34].hptype = 1;
-                datNormalSkill.tbl[34].mpn = 2;
+                datNormalSkill.tbl[34].mpn = 3;
                 datNormalSkill.tbl[34].mptype = 1;
                 datNormalSkill.tbl[34].magicbase = 28;
-                datNormalSkill.tbl[34].magiclimit = 40;
+                datNormalSkill.tbl[34].magiclimit = 75;
 
                 // Mamudoon
                 datNormalSkill.tbl[35].badlevel = 50;
-                datNormalSkill.tbl[35].hpn = 44;
+                datNormalSkill.tbl[35].hpn = 50;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 11;
+                datNormalSkill.tbl[35].mpn = 8;
                 datNormalSkill.tbl[35].mptype = 1;
                 datNormalSkill.tbl[35].magicbase = 37;
-                datNormalSkill.tbl[35].magiclimit = 46;
+                datNormalSkill.tbl[35].magiclimit = 140;
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
@@ -323,7 +323,7 @@ namespace ModernStatsSystem
                     { param = 1; }
 
                 // Resulting Formula
-                __result = (int)(((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level) * 2f);
+                __result = (int)((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level);
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -509,66 +509,26 @@ namespace ModernStatsSystem
             {
                 __result = 0;
 
+                if (!EnableStatScaling)
+                { return true; }
+
                 // Set up the attacker and defender objects from the form indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
-
-                // This value changes the damage output slightly.
-                int scale = 48;
 
                 // This eventually becomes the final damage value.
                 int finalvalue = 0;
 
                 // Do some initial math for basic attacks.
-                finalvalue = (int)(((datCalc.datGetNormalAtkPow(attacker) * 2) * 1.33f) * 0.8f);
+                finalvalue = (int)(datCalc.datGetNormalAtkPow(attacker) * 1.7f);
 
-                // If you're not doing a basic attack, then use the Physical Skill formula.
-                // Additionally change the scale value.
+                // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
-                {
-                    finalvalue = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza * 2 / 23.2f * 0.8f);
-                    scale = 50;
-                }
+                { finalvalue = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f); }
 
-                // Use that number and the attacker's level to figure out some damage reduction.
-                int reduction = (int)((float)scale / (float)(attacker.level + 10));
-
-                // If enabled, use a new formula based on the defender's level instead.
-                // I'm using a different formula because the above formula reduces the reduction with each level and I need to increase it instead.
-                if (EnableStatScaling)
-                    { reduction = (int)((float)(scale + (float)defender.level * 2f) / 10f); }
-
-                // The final value is cut down to 60% and reduced by the above reduction formula.
-                finalvalue = (int)((float)finalvalue * 0.6f - (float)reduction);
-
-                // Additionally, scale the previous result down to 70%.
-                __result = (int)((float)finalvalue * 0.7f);
-
-                // If the difficulty bit is 3 and Event Bit 0x8a0 is true, multiply damage by 134%.
-                // Otherwise, damage is normal.
-                if (dds3ConfigMain.cfgGetBit(9) == 3 && !EnableStatScaling)
-                {
-                    __result = (int)(finalvalue * 1.34f);
-                    if (!EventBit.evtBitCheck(0x8a0))
-                        { __result = finalvalue; }
-                }
-
-                // If difficulty is 2, it's also multipled by 134%.
-                // Otherwise, it's just normal.
-                else
-                {
-                    __result = finalvalue;
-                    if (dds3ConfigMain.cfgGetBit(9) == 2 && !EnableStatScaling)
-                        { __result = (int)(finalvalue * 1.34); }
-                }
-
-                // This multiplies the final result by the attacker's attack buffs and the defender's Defense Buffs.
-                __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
-
-                // If enabled, introduce some further damage mitigation
-                if (EnableStatScaling)
-                    { __result = (int)((float)__result * DamageMitigation.Get(defender, 3)); }
+                // This multiplies the final result by the attacker's attack buffs, the defender's Defense Buffs, and a Damage Mitigation formula.
+                __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
                 return false;
             }
         }
@@ -595,7 +555,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)(((((float)datCalc.datGetNormalAtkPow(attacker) / 1.5f) + (float)waza) * (0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) / 1.5f * (float)waza / 10) * (0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 return false;
             }
         }
@@ -609,7 +569,8 @@ namespace ModernStatsSystem
                 __result = 0;
 
                 // If this skill doesn't deal damage, skip this function altogether.
-                if (datSkill.tbl[nskill].skillattr > 12)
+                // Also return true if Stat Scaling is disabled.
+                if (datSkill.tbl[nskill].skillattr > 12 || !EnableStatScaling)
                     { return true; }
 
                 // Set up the attacker/defender objects from the indices.
@@ -619,28 +580,9 @@ namespace ModernStatsSystem
                 // Hit Count Maximum Check
                 int maxhits = datNormalSkill.tbl[nskill].targetcntmax - (datNormalSkill.tbl[nskill].targetcntmin - 1);
 
-                // There's a Level Limit for Magic Skills normally.
-                int LevelLimit = attacker.level;
-
-                // Magic Skills additionally have a Base Power and Magic Damage Limit.
+                // Magic Skills additionally have a couple other values, such as this Magic Limit.
+                // This won't be used to cap the formula anymore though.
                 int skillLimit = datNormalSkill.tbl[nskill].magiclimit;
-                int skillBase = datNormalSkill.tbl[nskill].magicbase;
-
-                // This formula is the base game's Skill peak formula.
-                float skillPeak = ((float)waza + (float)Math.Max((float)skillLimit - (float)skillBase, 1)) / 4f;
-
-                // Set up the initial Damage value.
-                int damageCalc = (int)((float)waza * (float)attacker.level * 2f / 21 + (float)skillBase);
-
-                // If you exceeded the damage limit, scale it back.
-                if (damageCalc > skillLimit)
-                    { damageCalc = skillLimit; }
-
-                // If not enabled and the Level Limit is over 160, cap it to 160.
-                // This means it'll stop scaling past level 160.
-                // The maximum level is 255, but really you'll probably not get there without some insane grinding.
-                if (LevelLimit > 160 && !EnableStatScaling)
-                    { LevelLimit = 160; }
 
                 // Grab the attacker's Mag.
                 int param = Math.Clamp(datCalc.datGetParam(attacker, 2), 0, MAXSTATS);
@@ -649,86 +591,14 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
-                // If enabled, perform some new math.
-                // Otherwise, use the game's normal formula.
-                if (EnableStatScaling)
-                    { damageCalc = (int)((float)skillPeak * ((float)attacker.level + (float)param / STATS_SCALING * 2f) / 25.5f); }
-                else
-                    { damageCalc = (int)((float)damageCalc + (float)damageCalc / 100f * ((float)param - ((float)LevelLimit / 5f + 4f)) * 2.5f * 0.8f); }
-
-                // This second "damageCalc" number is to make sure things don't get out of hand normally.
-                int damageCalc2 = damageCalc;
-
-                // If not enabled, use the game's Magic stat capping functions.
-                if (!EnableStatScaling)
-                {
-                    // If your Level is over 100.
-                    if (attacker.level > 100)
-                    {
-                        // Calculate the Skill's Magic Power for 100 levels.
-                        int wazaCalc = waza * 200;
-                        int levelcheck = 100;
-
-                        // Loop until the above level check is greater or equal to your level.
-                        do
-                        {
-                            // Do some math, then make sure it doesn't exceed the Skill's Power Limit.
-                            damageCalc2 = (wazaCalc * attacker.level) / 21 + skillBase;
-                            if (damageCalc2 > skillLimit)
-                            { damageCalc2 = skillLimit; }
-
-                            // Also make sure it doesn't exceed the Limit Limit.
-                            LevelLimit = levelcheck;
-                            if (LevelLimit > 160)
-                            { LevelLimit = 160; }
-
-                            // Increment the loop.
-                            levelcheck++;
-
-                            // Increment the Power scaling.
-                            wazaCalc += waza * 2;
-
-                            // Do some math, then if it's more than the old "damageCalc", replace its value.
-                            damageCalc2 = (int)((damageCalc2 + (damageCalc2 / 100) * (param - (LevelLimit / 5 + 4)) * 2.5f) * 0.8f);
-                            if (damageCalc <= damageCalc2)
-                            { damageCalc = damageCalc2; }
-
-                            // Set the new "damageCalc" to the old one.
-                            damageCalc2 = damageCalc;
-                        }
-                        while (levelcheck < attacker.level);
-                    }
-                }
-
-                // Don't ask me about the flag, I don't know what it does but it's important.
-                if ((attacker.flag >> 5 & 1) != 0 && !EnableStatScaling)
-                {
-                    // Do some more math.
-                    damageCalc = (int)(damageCalc2 * 0.75f + -50 / (attacker.level + 10));
-
-                    // If difficulty is 3 and that Event Bit is true, then multiply the damage by 134%.
-                    if (dds3ConfigMain.cfgGetBit(9) == 3)
-                    {
-                        damageCalc2 = (int)(damageCalc * 1.34f);
-                        if (!EventBit.evtBitCheck(0x8a0))
-                            { damageCalc2 = damageCalc; }
-                    }
-
-                    // Otherwise, if the difficulty is 2, do the same thing.
-                    else
-                    {
-                        damageCalc2 = damageCalc;
-                        if (dds3ConfigMain.cfgGetBit(9) == 2)
-                            { damageCalc2 = (int)(damageCalc * 1.34f); }
-                    }
-                }
+                // Math
+                int damageCalc = (int)((waza * ((float)attacker.level + (float)param / STATS_SCALING * 2) * (float)skillLimit) / 5000f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
-                __result = (int)(damageCalc2 * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)(damageCalc * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
-                // If enabled, add some more damage mitigation based on the defender's Mag and scale the original result by a hitcount parameter.
-                if (EnableStatScaling)
-                    { __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 2f : 1) * DamageMitigation.Get(defender, 2)); }
+                // Random-Target Multihit scaling and Damage Mitigation.
+                __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 1.5f : 1) * DamageMitigation.Get(defender, 2));
                 return false;
             }
         }
@@ -1100,12 +970,12 @@ namespace ModernStatsSystem
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
                 float atkCritStat = (float)Math.Clamp(datCalc.datGetParam(attacker, 5), 0, MAXSTATS) / (float)STATS_SCALING;
-                float atkCritChance = 0f;
+                float atkCritChance = atkCritStat;
 
                 // Set Defender's Crit Chance values.
                 float defCritLevel = (float)defender.level / 5f + 3f;
                 float defCritStat = (float)Math.Clamp(datCalc.datGetParam(defender, 5), 0, MAXSTATS) / (float)STATS_SCALING;
-                float defCritChance = 0f;
+                float defCritChance = defCritStat;
 
                 // Divide the Crit Chances by the opposite levels.
                 if (defCritLevel != 0f)
