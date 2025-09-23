@@ -204,55 +204,55 @@ namespace ModernStatsSystem
             {
                 // Hama
                 if (id == 28)
-                { __result = "Low Light damage to one foe\nwith low chance to kill\nvulnerable targets"; }
+                { __result = "Low Light damage to one foe.\nLow chance to kill\nvulnerable targets."; }
 
                 // Hamaon
                 if (id == 29)
-                { __result = "Medium Light damage to one foe\nwith chance to kill\nvulnerable targets"; }
+                { __result = "Medium Light damage to one foe.\nMedium chance to kill\nvulnerable targets."; }
 
                 // Mahama
                 if (id == 30)
-                { __result = "Low Light damage to all foes\nwith low chance to kill\nvulnerable targets"; }
+                { __result = "Low Light damage to all foes.\nLow chance to kill\nvulnerable targets."; }
 
                 // Mahamaon
                 if (id == 31)
-                { __result = "Medium Light damage to all foes\nwith chance to kill\nvulnerable targets"; }
+                { __result = "Medium Light damage to all foes.\nMedium chance to kill\nvulnerable targets."; }
 
                 // Mudo
                 if (id == 32)
-                { __result = "Low Dark damage to one foe\nwith low chance to kill\nvulnerable targets"; }
+                { __result = "Low Dark damage to one foe.\nLow chance to kill\nvulnerable targets."; }
 
                 // Mudoon
                 if (id == 33)
-                { __result = "Medium Dark damage to one foe\nwith chance to kill\nvulnerable targets"; }
+                { __result = "Medium Dark damage to one foe.\nMedium chance to kill\nvulnerable targets."; }
 
                 // Mamudo
                 if (id == 34)
-                { __result = "Low Dark damage to all foes\nwith low chance to kill\nvulnerable targets"; }
+                { __result = "Low Dark damage to all foes.\nLow chance to kill\nvulnerable targets."; }
 
                 // Mamudoon
                 if (id == 35)
-                { __result = "Medium Dark damage to all foes\nwith chance to kill\nvulnerable targets"; }
+                { __result = "Medium Dark damage to all foes.\nMedium chance to kill\nvulnerable targets."; }
 
                 // God's Bow
                 if (id == 186)
-                { __result = "Severe Force damage to one foe"; }
+                { __result = "Severe Force damage to one foe."; }
 
                 // God's Bow
                 if (id == 287)
-                { __result = "Severe Light damage to one foe\nwith high chance to kill\nvulnerable targets"; }
+                { __result = "Severe Light damage to one foe.\nHigh chance to kill\nvulnerable targets."; }
 
                 // Might
                 if (id == 299)
-                { __result = "Raises Str Skill Critical Chance"; }
+                { __result = "Raises Str Skill Critical Chance."; }
 
                 // Bright Might
                 if (id == 300)
-                { __result = "Raises Str Skill Critical Chance\nat full Kagatsuchi"; }
+                { __result = "Raises Str Skill critical rate\nat full Kagatsuchi."; }
 
                 // Dark Might
                 if (id == 301)
-                { __result = "Raises Str Skill Critical Chance\nat new Kagatsuchi"; }
+                { __result = "Raises Str Skill critical rate\nat new Kagatsuchi."; }
             }
         }
 
@@ -1086,11 +1086,11 @@ namespace ModernStatsSystem
 
                 // This is Bright Might, so adjust crit rate.
                 if (nbCalc.nbHatudoCheckSkill(attacker, 300) != 0)
-                { ad.autoskill = 300; val += 0.25f; }
+                { ad.autoskill = 300; val += 0.5f; }
 
                 // Which happens to be Dark Might, so adjust crit rate.
                 if (nbCalc.nbHatudoCheckSkill(attacker, 301) != 0)
-                { ad.autoskill = 301; val += 0.25f; }
+                { ad.autoskill = 301; val += 0.5f; }
 
                 // More flag stuff.
                 // Sets the base crit value to 100%, AKA guaranteed crits.
@@ -1124,6 +1124,10 @@ namespace ModernStatsSystem
                 System.Random rng = new();
                 if (rng.Next(100) < critValue)
                 { __result = 1; }
+
+                // If it's not a crit, clear the autoskill
+                else if (ad.autoskill >= 299 && ad.autoskill <= 301)
+                { ad.autoskill = 0; }
 
                 return false;
             }
