@@ -14,6 +14,8 @@ Includes the following:
 - Various menu adjustments, including the Stat bars being mostly retooled completely.
 - A separate Unity Asset Bundle to use for the Statpoint Bars.
 - Reworks of MatthiewPurple's *Cursed Gospel* and *Compendium Discounts* mods, specifically so that they work properly with this mod.
+- You can find the Cursed Gospel and Stat Incense items for sale in the final shop of the game. Go nuts.
+- Even more stuff I probably forgot.
 
 ### How to Install
 - Install SMT3HD from your Steam Account.
