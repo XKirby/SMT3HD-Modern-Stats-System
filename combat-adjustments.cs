@@ -118,72 +118,72 @@ namespace ModernStatsSystem
             {
                 // Hama
                 datNormalSkill.tbl[28].badlevel = 30;
-                datNormalSkill.tbl[28].hpn = 30;
+                datNormalSkill.tbl[28].hpn = 50;
                 datNormalSkill.tbl[28].hptype = 1;
-                datNormalSkill.tbl[28].mpn = 12;
+                datNormalSkill.tbl[28].mpn = 20;
                 datNormalSkill.tbl[28].mptype = 1;
                 datNormalSkill.tbl[28].magicbase = 26;
-                datNormalSkill.tbl[28].magiclimit = 90;
+                datNormalSkill.tbl[28].magiclimit = 120;
 
                 // Hamaon
                 datNormalSkill.tbl[29].badlevel = 50;
-                datNormalSkill.tbl[29].hpn = 55;
+                datNormalSkill.tbl[29].hpn = 75;
                 datNormalSkill.tbl[29].hptype = 1;
-                datNormalSkill.tbl[29].mpn = 30;
+                datNormalSkill.tbl[29].mpn = 40;
                 datNormalSkill.tbl[29].mptype = 1;
                 datNormalSkill.tbl[29].magicbase = 32;
                 datNormalSkill.tbl[29].magiclimit = 160;
 
                 // Mahama
                 datNormalSkill.tbl[30].badlevel = 30;
-                datNormalSkill.tbl[30].hpn = 25;
+                datNormalSkill.tbl[30].hpn = 35;
                 datNormalSkill.tbl[30].hptype = 1;
-                datNormalSkill.tbl[30].mpn = 6;
+                datNormalSkill.tbl[30].mpn = 16;
                 datNormalSkill.tbl[30].mptype = 1;
                 datNormalSkill.tbl[30].magicbase = 28;
-                datNormalSkill.tbl[30].magiclimit = 75;
+                datNormalSkill.tbl[30].magiclimit = 100;
 
                 // Mahamaon
                 datNormalSkill.tbl[31].badlevel = 50;
-                datNormalSkill.tbl[31].hpn = 40;
+                datNormalSkill.tbl[31].hpn = 60;
                 datNormalSkill.tbl[31].hptype = 1;
-                datNormalSkill.tbl[31].mpn = 22;
+                datNormalSkill.tbl[31].mpn = 32;
                 datNormalSkill.tbl[31].mptype = 1;
                 datNormalSkill.tbl[31].magicbase = 37;
                 datNormalSkill.tbl[31].magiclimit = 140;
 
                 // Mudo
                 datNormalSkill.tbl[32].badlevel = 30;
-                datNormalSkill.tbl[32].hpn = 40;
+                datNormalSkill.tbl[32].hpn = 70;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 5;
+                datNormalSkill.tbl[32].mpn = 6;
                 datNormalSkill.tbl[32].mptype = 1;
                 datNormalSkill.tbl[32].magicbase = 26;
-                datNormalSkill.tbl[32].magiclimit = 90;
+                datNormalSkill.tbl[32].magiclimit = 120;
 
                 // Mudoon
                 datNormalSkill.tbl[33].badlevel = 50;
-                datNormalSkill.tbl[33].hpn = 58;
+                datNormalSkill.tbl[33].hpn = 90;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 10;
+                datNormalSkill.tbl[33].mpn = 9;
                 datNormalSkill.tbl[33].mptype = 1;
                 datNormalSkill.tbl[33].magicbase = 32;
                 datNormalSkill.tbl[33].magiclimit = 160;
 
                 // Mamudo
                 datNormalSkill.tbl[34].badlevel = 30;
-                datNormalSkill.tbl[34].hpn = 30;
+                datNormalSkill.tbl[34].hpn = 55;
                 datNormalSkill.tbl[34].hptype = 1;
                 datNormalSkill.tbl[34].mpn = 3;
                 datNormalSkill.tbl[34].mptype = 1;
                 datNormalSkill.tbl[34].magicbase = 28;
-                datNormalSkill.tbl[34].magiclimit = 75;
+                datNormalSkill.tbl[34].magiclimit = 100;
 
                 // Mamudoon
                 datNormalSkill.tbl[35].badlevel = 50;
-                datNormalSkill.tbl[35].hpn = 50;
+                datNormalSkill.tbl[35].hpn = 77;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 8;
+                datNormalSkill.tbl[35].mpn = 7;
                 datNormalSkill.tbl[35].mptype = 1;
                 datNormalSkill.tbl[35].magicbase = 37;
                 datNormalSkill.tbl[35].magiclimit = 140;
@@ -517,15 +517,12 @@ namespace ModernStatsSystem
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
                 // This eventually becomes the final damage value.
-                int finalvalue = 0;
-
-                // Do some initial math for basic attacks.
-                finalvalue = (int)(datCalc.datGetNormalAtkPow(attacker) * 1.7f);
+                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.7f);
 
                 // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
-                { finalvalue = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f); }
+                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.7 * (float)waza / 10f); }
 
                 // This multiplies the final result by the attacker's attack buffs, the defender's Defense Buffs, and a Damage Mitigation formula.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
@@ -555,7 +552,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) / 1.5f * (float)waza / 10) * (0.5f + 0.5f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10) * (0.5f + 1.2f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 return false;
             }
         }
@@ -592,10 +589,10 @@ namespace ModernStatsSystem
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
                 // Math
-                int damageCalc = (int)((waza * ((float)attacker.level + (float)param / STATS_SCALING * 2) * (float)skillLimit) / 5000f);
+                __result = (int)((waza * (float)attacker.level + (float)param / STATS_SCALING * 2) * (float)skillLimit / 5000f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
-                __result = (int)(damageCalc * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)(__result * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // Random-Target Multihit scaling and Damage Mitigation.
                 __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 1.5f : 1) * DamageMitigation.Get(defender, 2));
