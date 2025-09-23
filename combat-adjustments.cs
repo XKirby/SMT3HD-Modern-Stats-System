@@ -112,7 +112,7 @@ namespace ModernStatsSystem
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
-        private class PatchHamaMudoSkills
+        private class PatchSkillValues
         {
             private static void Postfix()
             {
@@ -156,7 +156,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[32].badlevel = 30;
                 datNormalSkill.tbl[32].hpn = 70;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 6;
+                datNormalSkill.tbl[32].mpn = 11;
                 datNormalSkill.tbl[32].mptype = 1;
                 datNormalSkill.tbl[32].magicbase = 26;
                 datNormalSkill.tbl[32].magiclimit = 120;
@@ -165,7 +165,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[33].badlevel = 50;
                 datNormalSkill.tbl[33].hpn = 90;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 9;
+                datNormalSkill.tbl[33].mpn = 22;
                 datNormalSkill.tbl[33].mptype = 1;
                 datNormalSkill.tbl[33].magicbase = 32;
                 datNormalSkill.tbl[33].magiclimit = 160;
@@ -174,7 +174,7 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[34].badlevel = 30;
                 datNormalSkill.tbl[34].hpn = 55;
                 datNormalSkill.tbl[34].hptype = 1;
-                datNormalSkill.tbl[34].mpn = 3;
+                datNormalSkill.tbl[34].mpn = 8;
                 datNormalSkill.tbl[34].mptype = 1;
                 datNormalSkill.tbl[34].magicbase = 28;
                 datNormalSkill.tbl[34].magiclimit = 100;
@@ -183,10 +183,23 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[35].badlevel = 50;
                 datNormalSkill.tbl[35].hpn = 77;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 7;
+                datNormalSkill.tbl[35].mpn = 16;
                 datNormalSkill.tbl[35].mptype = 1;
                 datNormalSkill.tbl[35].magicbase = 37;
                 datNormalSkill.tbl[35].magiclimit = 140;
+
+                // Mana Drain
+                datNormalSkill.tbl[191].mpn = 25;
+                datNormalSkill.tbl[191].magiclimit = 84;
+
+                // Life Drain
+                datNormalSkill.tbl[192].hpn = 50;
+                datNormalSkill.tbl[192].magiclimit = 84;
+
+                // Meditation
+                datNormalSkill.tbl[192].hpn = 60;
+                datNormalSkill.tbl[192].mpn = 60;
+                datNormalSkill.tbl[192].magiclimit = 100;
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
@@ -194,6 +207,11 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[287].hptype = 1;
                 datNormalSkill.tbl[287].magicbase = 40;
                 datNormalSkill.tbl[287].magiclimit = 400;
+
+                // Skills that have an extremely low Magic Limit value need to be globally buffed, I ain't typing all this shit out for every skill.
+                // For each skill, it checks if the Magic Level is 10 or less, then hpn of 30, mpn of 30, a magic number of 50, or the original value gets set to it.
+                for (int i = 0; i < datNormalSkill.tbl.Length; i++)
+                { datNormalSkill.tbl[i].magiclimit = (short)(datNormalSkill.tbl[i].magiclimit <= 10 ? datNormalSkill.tbl[i].hpn >= 30 ? datNormalSkill.tbl[i].hpn : datNormalSkill.tbl[i].mpn >= 30 ? datNormalSkill.tbl[i].mpn : 50 : datNormalSkill.tbl[i].magiclimit); }
             }
         }
 
@@ -204,43 +222,43 @@ namespace ModernStatsSystem
             {
                 // Hama
                 if (id == 28)
-                { __result = "Low Light damage to one foe.\nLow chance to kill\nvulnerable targets."; }
+                { __result = "Low Light damage to one foe. \nLow chance to kill \nvulnerable targets."; }
 
                 // Hamaon
                 if (id == 29)
-                { __result = "Medium Light damage to one foe.\nMedium chance to kill\nvulnerable targets."; }
+                { __result = "Medium Light damage to one foe. \nMedium chance to kill \nvulnerable targets."; }
 
                 // Mahama
                 if (id == 30)
-                { __result = "Low Light damage to all foes.\nLow chance to kill\nvulnerable targets."; }
+                { __result = "Low Light damage to all foes. \nLow chance to kill \nvulnerable targets."; }
 
                 // Mahamaon
                 if (id == 31)
-                { __result = "Medium Light damage to all foes.\nMedium chance to kill\nvulnerable targets."; }
+                { __result = "Medium Light damage to all foes. \nMedium chance to kill \nvulnerable targets."; }
 
                 // Mudo
                 if (id == 32)
-                { __result = "Low Dark damage to one foe.\nLow chance to kill\nvulnerable targets."; }
+                { __result = "Low Dark damage to one foe. \nLow chance to kill \nvulnerable targets."; }
 
                 // Mudoon
                 if (id == 33)
-                { __result = "Medium Dark damage to one foe.\nMedium chance to kill\nvulnerable targets."; }
+                { __result = "Medium Dark damage to one foe. \nMedium chance to kill \nvulnerable targets."; }
 
                 // Mamudo
                 if (id == 34)
-                { __result = "Low Dark damage to all foes.\nLow chance to kill\nvulnerable targets."; }
+                { __result = "Low Dark damage to all foes. \nLow chance to kill \nvulnerable targets."; }
 
                 // Mamudoon
                 if (id == 35)
-                { __result = "Medium Dark damage to all foes.\nMedium chance to kill\nvulnerable targets."; }
+                { __result = "Medium Dark damage to all foes. \nMedium chance to kill \nvulnerable targets."; }
 
-                // God's Bow
+                // Wind Cutter
                 if (id == 186)
                 { __result = "Severe Force damage to one foe."; }
 
                 // God's Bow
                 if (id == 287)
-                { __result = "Severe Light damage to one foe.\nHigh chance to kill\nvulnerable targets."; }
+                { __result = "Severe Light damage to one foe. \nHigh chance to kill \nvulnerable targets."; }
 
                 // Might
                 if (id == 299)
@@ -248,11 +266,11 @@ namespace ModernStatsSystem
 
                 // Bright Might
                 if (id == 300)
-                { __result = "Raises Str Skill critical rate\nat full Kagatsuchi."; }
+                { __result = "Raises Str Skill critical rate \nat full Kagatsuchi."; }
 
                 // Dark Might
                 if (id == 301)
-                { __result = "Raises Str Skill critical rate\nat new Kagatsuchi."; }
+                { __result = "Raises Str Skill critical rate \nat new Kagatsuchi."; }
             }
         }
 
