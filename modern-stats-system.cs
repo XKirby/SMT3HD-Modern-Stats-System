@@ -284,16 +284,16 @@ namespace ModernStatsSystem
             37, // Sakahagi
             53, // Black Frost
             62, // Beelzebub (Man)
+            // Broker Demons
+            20, // Pisaca
+            15, // Nue
+            30, // Arahabaki
+            9, // Preta
+            54, // Mothman
+            32, // Girimekhala
+            0, // Unused
+            60, // Uber Pixie
             // More Unused Data
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            60, // I THINK THIS IS USED, It has Uber Pixie's Stats
-            // Some more Unused Data
             // According to the Amicitia Wiki, these demons have japanese name entries.
             0,
             0,
@@ -415,7 +415,7 @@ namespace ModernStatsSystem
             80, // Station Staff (Max stats for the station guy lol)
             80, // Loki (More than likely unused.)
             67, // Mada
-            99,// Mot (He's gonna hit REALLY hard.)
+            MAXSTATS,// Mot (He's gonna hit REALLY hard.)
             90, // Surt
             27, // Jack-o'-Lantern
             57, // Thor
@@ -425,7 +425,7 @@ namespace ModernStatsSystem
             48, // Raidou 3
             72, // Metatron
             55, // Beelzebub (Fly)
-            99,// Lucifer (I'm doing this so Mot isn't technically ahead of the final boss in terms of magic damage.)
+            MAXSTATS, // Lucifer (He's gonna have max stats anyway)
             55, // Pale Rider
             33, // White Rider
             44, // Red Rider
@@ -498,27 +498,25 @@ namespace ModernStatsSystem
                 if (i == 318)
                 { datDevilFormat.tbl[i].param[0] = 1; }
 
-                // If enabled, give the demons Int.
+                // If enabled, give the demons Int equal to their Mag.
                 if (EnableIntStat)
-                { datDevilFormat.tbl[i].param[1] = (sbyte)(DemonIntTable[i] / STATS_SCALING); }
+                { datDevilFormat.tbl[i].param[1] = datDevilFormat.tbl[i].param[2]; }
 
                 // If enabled, scale each demon's stats by a fixed stat scaling value.
                 if (EnableStatScaling)
                 {
                     for (int j = 0; j < datDevilFormat.tbl[i].param.Length; j++)
-                    { datDevilFormat.tbl[i].param[j] = (sbyte)((float)datDevilFormat.tbl[i].param[j] * STATS_SCALING); }
+                    {
+                        datDevilFormat.tbl[i].param[j] = (sbyte)((float)datDevilFormat.tbl[i].param[j] * STATS_SCALING);
+
+                        // Lucifer's Stats get forcibly set to the maximum.
+                        if (i == 344)
+                        { datDevilFormat.tbl[i].param[j] = MAXSTATS; }
+                    }
+                    
+                    // If enabled, give them properly scaled Intelligence.
                     if (EnableIntStat)
                     { datDevilFormat.tbl[i].param[1] = DemonIntTable[i]; }
-
-                    /* // The HP/MP recalculation here is gonna remain commented out until I do something that necessitates it.
-                    if (i < 254)
-                    {
-                        datDevilFormat.tbl[i].maxhp = (ushort)((datDevilFormat.tbl[i].param[3] / STATS_SCALING + datDevilFormat.tbl[i].level) * 6);
-                        datDevilFormat.tbl[i].hp = datDevilFormat.tbl[i].maxhp;
-                        datDevilFormat.tbl[i].maxmp = (ushort)((datDevilFormat.tbl[i].param[2] / STATS_SCALING + datDevilFormat.tbl[i].level) * 3);
-                        datDevilFormat.tbl[i].mp = datDevilFormat.tbl[i].maxmp;
-                    }
-                    */
                 }
             }
 
