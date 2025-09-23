@@ -30,7 +30,7 @@ Includes the following:
 - *This really wasn't planned to be an entire rebalance mod.* I really just wanted to see if I could increase the stat caps first, but then adding Intelligence back in, among other things, kinda just happened. With this in mind, I will not be rebalancing much more with this, if anything.
 
 ### Credits
-- Me, the developer of the mod. I spent about 2 or 3 months worth of near-constant work on this thing.
+- X Kirby, the developer of the mod. I spent about 2 or 3 months worth of near-constant work on this thing.
 - The SMT Modding Discord. They had a great amount of information and helped me get started with making this.
 - MatthiewPurple, for both the mods I included as well as for making his own mods open-source. Thanks for the help!
 - Zephhyr, for both code snippets as well as the massive amount of information gathered through the work done on his own mod. Thanks for the help, and I look forward to Insaniax!
