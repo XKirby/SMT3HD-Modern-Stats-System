@@ -197,9 +197,9 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[192].magiclimit = 84;
 
                 // Meditation
-                datNormalSkill.tbl[192].hpn = 60;
-                datNormalSkill.tbl[192].mpn = 60;
-                datNormalSkill.tbl[192].magiclimit = 100;
+                datNormalSkill.tbl[279].hpn = 60;
+                datNormalSkill.tbl[279].mpn = 60;
+                datNormalSkill.tbl[279].magiclimit = 100;
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
@@ -535,12 +535,12 @@ namespace ModernStatsSystem
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
                 // This eventually becomes the final damage value.
-                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.7f);
+                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.25f);
 
                 // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
-                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.7 * (float)waza / 10f); }
+                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f * 1.25f); }
 
                 // This multiplies the final result by the attacker's attack buffs, the defender's Defense Buffs, and a Damage Mitigation formula.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
@@ -570,7 +570,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10) * (0.5f + 1.2f * ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f) * (1.5f - ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
                 return false;
             }
         }
