@@ -292,7 +292,7 @@ namespace ModernStatsSystem
             0,
             0,
             0,
-            0,
+            60, // I THINK THIS IS USED, It has Uber Pixie's Stats
             // Some more Unused Data
             // According to the Amicitia Wiki, these demons have japanese name entries.
             0,
