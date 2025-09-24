@@ -211,7 +211,7 @@ namespace ModernStatsSystem
                 // Skills that have an extremely low Magic Limit value need to be globally buffed, I ain't typing all this shit out for every skill.
                 // For each skill, it checks if the Magic Level is 10 or less, then hpn of 30, mpn of 30, a magic number of 50, or the original value gets set to it.
                 for (int i = 0; i < datNormalSkill.tbl.Length; i++)
-                { datNormalSkill.tbl[i].magiclimit = (short)(datNormalSkill.tbl[i].magiclimit <= 10 ? datNormalSkill.tbl[i].hpn >= 30 ? datNormalSkill.tbl[i].hpn : datNormalSkill.tbl[i].mpn >= 30 ? datNormalSkill.tbl[i].mpn : 50 : datNormalSkill.tbl[i].magiclimit); }
+                { datNormalSkill.tbl[i].magiclimit = (short)(datNormalSkill.tbl[i].magiclimit <= 35 ? datNormalSkill.tbl[i].hpn >= 35 ? datNormalSkill.tbl[i].hpn : datNormalSkill.tbl[i].mpn >= 35 ? datNormalSkill.tbl[i].mpn : 35 : datNormalSkill.tbl[i].magiclimit); }
             }
         }
 
@@ -220,57 +220,39 @@ namespace ModernStatsSystem
         {
             private static void Postfix(ref int id, ref string __result)
             {
-                // Hama
-                if (id == 28)
-                { __result = "Low Light damage to one foe. \nLow chance to kill \nvulnerable targets."; }
-
-                // Hamaon
-                if (id == 29)
-                { __result = "Medium Light damage to one foe. \nMedium chance to kill \nvulnerable targets."; }
-
-                // Mahama
-                if (id == 30)
-                { __result = "Low Light damage to all foes. \nLow chance to kill \nvulnerable targets."; }
-
-                // Mahamaon
-                if (id == 31)
-                { __result = "Medium Light damage to all foes. \nMedium chance to kill \nvulnerable targets."; }
-
-                // Mudo
-                if (id == 32)
-                { __result = "Low Dark damage to one foe. \nLow chance to kill \nvulnerable targets."; }
-
-                // Mudoon
-                if (id == 33)
-                { __result = "Medium Dark damage to one foe. \nMedium chance to kill \nvulnerable targets."; }
-
-                // Mamudo
-                if (id == 34)
-                { __result = "Low Dark damage to all foes. \nLow chance to kill \nvulnerable targets."; }
-
-                // Mamudoon
-                if (id == 35)
-                { __result = "Medium Dark damage to all foes. \nMedium chance to kill \nvulnerable targets."; }
-
-                // Wind Cutter
-                if (id == 186)
-                { __result = "Severe Force damage to one foe."; }
-
-                // God's Bow
-                if (id == 287)
-                { __result = "Severe Light damage to one foe. \nHigh chance to kill \nvulnerable targets."; }
-
-                // Might
-                if (id == 299)
-                { __result = "Raises Str Skill Critical Chance."; }
-
-                // Bright Might
-                if (id == 300)
-                { __result = "Raises Str Skill critical rate \nat full Kagatsuchi."; }
-
-                // Dark Might
-                if (id == 301)
-                { __result = "Raises Str Skill critical rate \nat new Kagatsuchi."; }
+                switch (id)
+                {
+                    // Hama
+                    case 28: { __result = "Low Light damage to one foe. \nLow chance to kill \nvulnerable targets."; return; }
+                    // Hamaon
+                    case 29: { __result = "Medium Light damage to one foe. \nMedium chance to kill \nvulnerable targets."; return; }
+                    // Mahama                    
+                    case 30: { __result = __result = "Low Light damage to all foes. \nLow chance to kill \nvulnerable targets."; return; }
+                    // Mahamon
+                    case 31: { __result = "Medium Light damage to all foes. \nMedium chance to kill \nvulnerable targets."; return; }
+                    // Mudo
+                    case 32: { __result = "Low Dark damage to one foe. \nLow chance to kill \nvulnerable targets."; return; }
+                    // Mudoon
+                    case 33: { __result = "Medium Dark damage to one foe. \nMedium chance to kill \nvulnerable targets."; return; }
+                    // Mamudo
+                    case 34: { __result = "Low Dark damage to all foes. \nLow chance to kill \nvulnerable targets."; return; }
+                    // Mamudoon
+                    case 35: { __result = "Medium Dark damage to all foes. \nMedium chance to kill \nvulnerable targets."; return; }
+                    // Venom Claw
+                    case 124: { __result = "Low Physical damage to one foe. \nMay inflict poison."; return; }
+                    // Ragnarok
+                    case 179: { __result = "Colossal Fire damage to one foe."; return; }
+                    // Wind Cutter
+                    case 186: { __result = "Severe Force damage to one foe."; return; }
+                    // God's Bow
+                    case 287: { __result = "Severe Light damage to one foe. \nHigh chance to kill \nvulnerable targets."; return; }
+                    // Might
+                    case 299: { __result = "Raises Str Skill Critical Chance."; return; }
+                    // Bright Might
+                    case 300: { __result = "Raises Str Skill critical rate \nat full Kagatsuchi."; return; }
+                    // Dark Might
+                    case 301: { __result = "Raises Str Skill critical rate \nat new Kagatsuchi."; return; }
+                }
             }
         }
 
@@ -341,7 +323,7 @@ namespace ModernStatsSystem
                     { param = 1; }
 
                 // Resulting Formula
-                __result = (int)((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level);
+                __result = (int)((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2 + (float)work.level);
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -540,7 +522,7 @@ namespace ModernStatsSystem
                 // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
-                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f * 1.25f); }
+                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)Math.Max((float)waza - 20f, 10f) * 1.25f / 10f); }
 
                 // This multiplies the final result by the attacker's attack buffs, the defender's Defense Buffs, and a Damage Mitigation formula.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
@@ -607,7 +589,7 @@ namespace ModernStatsSystem
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
                 // Math
-                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * (float)waza * (float)skillLimit / 5000f);
+                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * ((float)waza + (float)skillLimit) * 1.25 / 100f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
                 __result = (int)(__result * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
