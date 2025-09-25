@@ -318,7 +318,7 @@ namespace ModernStatsSystem
                     { param = 1; }
 
                 // Resulting Formula
-                __result = (int)((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2 + (float)work.level);
+                __result = (int)((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level);
 
                 // I dunno what "badstatus" actually is besides a bitflag, but if this setup works, your attack power is basically halved.
                 if ((work.badstatus & 0xFFF) == 0x40)
@@ -512,12 +512,12 @@ namespace ModernStatsSystem
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
                 // This eventually becomes the final damage value.
-                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.75f);
+                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.25f);
 
                 // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
                 if (nskill != 0)
-                { __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * (float)Math.Max((float)waza - 20f, 10f) * 1.25f / 10f); }
+                { __result = (int)(((float)datCalc.datGetParam(attacker, 0) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f + attacker.level) * (float)Math.Max((float)waza - 20f, 10f) * 1.25f / 10f); }
 
                 // This multiplies the final result by the attacker's attack buffs, the defender's Defense Buffs, and a Damage Mitigation formula.
                 __result = (int)((float)__result * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
@@ -547,7 +547,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)(((float)datCalc.datGetNormalAtkPow(attacker) * (float)Math.Max((float)waza - 20f, 10) * 1.25 / 10f) * (1.5f - ((float)attacker.hp / attacker.maxhp) * 0.75f) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
+                __result = (int)((((float)datCalc.datGetParam(attacker, 0) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f + attacker.level) * (float)Math.Max((float)waza - 20f, 10) * 1.25 / 10f) * (1.5f - ((float)attacker.hp / attacker.maxhp) * 0.75f) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
                 return false;
             }
         }

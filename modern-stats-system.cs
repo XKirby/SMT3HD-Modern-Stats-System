@@ -288,10 +288,10 @@ namespace ModernStatsSystem
             20, // Pisaca
             15, // Nue
             30, // Arahabaki
-            9, // Preta
+            9,  // Preta
             54, // Mothman
             32, // Girimekhala
-            0, // Unused
+            0,  // Unused
             60, // Uber Pixie
             // More Unused Data
             // According to the Amicitia Wiki, these demons have japanese name entries.
