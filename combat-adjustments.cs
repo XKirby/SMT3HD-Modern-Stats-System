@@ -108,7 +108,7 @@ namespace ModernStatsSystem
             // Damage Mitigation Formula.
             // Requires a work unit and one of the parameter IDs.
             public static float Get(datUnitWork_t work, int param)
-                { return 255f / (255f + (float)Math.Pow((double)(0.34f + 0.66f * ((float)work.param[param] / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + (float)work.level / 2f)), 2d) * 4f / 100f); }
+            { return 255f / (255f + (float)Math.Pow(((float)work.param[param] / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + Math.Min(99f, (float)work.level)), 2.05d) / 100f); }
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
@@ -207,11 +207,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[287].hptype = 1;
                 datNormalSkill.tbl[287].magicbase = 40;
                 datNormalSkill.tbl[287].magiclimit = 400;
-
-                // Skills that have an extremely low Magic Limit value need to be globally buffed, I ain't typing all this shit out for every skill.
-                // For each skill, it checks if the Magic Level is 10 or less, then hpn of 30, mpn of 30, a magic number of 50, or the original value gets set to it.
-                for (int i = 0; i < datNormalSkill.tbl.Length; i++)
-                { datNormalSkill.tbl[i].magiclimit = (short)(datNormalSkill.tbl[i].magiclimit <= 35 ? datNormalSkill.tbl[i].hpn >= 35 ? datNormalSkill.tbl[i].hpn : datNormalSkill.tbl[i].mpn >= 35 ? datNormalSkill.tbl[i].mpn : 35 : datNormalSkill.tbl[i].magiclimit); }
             }
         }
 
@@ -305,7 +300,7 @@ namespace ModernStatsSystem
                 System.Random rng = new();
 
                 // Return 1 if you hit the defender and killed them, otherwise return 0.
-                __result = finalvalue <= rng.Next(100) ? 1 : 0;
+                __result = finalvalue >= rng.Next(100) ? 1 : 0;
                 return false;
             }
         }
@@ -517,7 +512,7 @@ namespace ModernStatsSystem
                 datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
                 // This eventually becomes the final damage value.
-                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.25f);
+                __result = (int)((float)datCalc.datGetNormalAtkPow(attacker) * 1.75f);
 
                 // If you're not doing a basic attack, then use this Physical Skill formula.
                 // Note that "waza" is Skill Power.
@@ -552,7 +547,7 @@ namespace ModernStatsSystem
                 // This formula uses your Current HP, plus the cost of the Skill, divided by your maximum HP to determine how strong it is.
                 // If you're at Maximum HP when casting, you deal full damage.
                 // If you're at very low HP when casting, you deal half as much damage.
-                __result = (int)((((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza / 10f) * (1.5f - ((float)attacker.hp + (float)hpCost) / attacker.maxhp)) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7));
+                __result = (int)(((float)datCalc.datGetNormalAtkPow(attacker) * (float)waza * 1.25 / 10f) * (1.5f - (float)attacker.hp / attacker.maxhp) * nbCalc.nbGetHojoRitu(sformindex, 4) * nbCalc.nbGetHojoRitu(dformindex, 7) * DamageMitigation.Get(defender, 3));
                 return false;
             }
         }
@@ -619,7 +614,7 @@ namespace ModernStatsSystem
                     { param = Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS); }
 
                 // Final result considers your Magic buffs.
-                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)rng.Next(0, 8) + (float)param * 4f / (EnableStatScaling ? (float)STATS_SCALING : 1f) + (float)work.level) / 10f * (float)waza);
+                __result = (int)(nbCalc.nbGetHojoRitu(sformindex, 5) * ((float)param / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + (float)work.level) * (float)waza * 1.25 / 10f);
                 return false;
             }
         }
@@ -668,7 +663,7 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                        { baseform = ((float)w.level / 2.55f + (float)luck) / 50f; }
+                        { baseform = ((float)w.level + (float)luck) / 300f; }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
@@ -679,7 +674,7 @@ namespace ModernStatsSystem
                     {
                         adjform = (float)macca / 20.0f * baseform;
 
-                        // If enabled, use 1/10 of your Macca instead of a 1/20.
+                        // If enabled, use your whole stack of Macca instead of 1/20.
                         // Also, clamp it to as low as 1/10 of your total Macca and as high as your entire stack.
                         if (EnableStatScaling)
                             { adjform = (float)Math.Clamp((float)macca * baseform, (float)macca / 10f, (float)macca); }
@@ -695,7 +690,7 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = ((float)work.level / 2.55f + (float)playerLuck) / 50f; }
+                        { baseform = ((float)work.level + (float)playerLuck) / 300f; }
 
                     // Grab the enemy's whole stack.
                     // Also make sure you don't accidentally generate more (or less) Macca than intended.
@@ -730,7 +725,7 @@ namespace ModernStatsSystem
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
-                __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) * 2f / (EnableStatScaling ? STATS_SCALING : 1f));
+                __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f);
 
                 // Grabs the user's Luc.
                 int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
@@ -760,7 +755,7 @@ namespace ModernStatsSystem
 
                 // If enabled, adds Int scaling.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + ((float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 8f) / (EnableStatScaling ? STATS_SCALING : 1)); }
+                    { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 4f / (EnableStatScaling ? STATS_SCALING : 1f)); }
 
                 // Grabs Luc.
                 int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
@@ -775,22 +770,6 @@ namespace ModernStatsSystem
 
                 // Bitshift the above result by 1 and add 15.
                 __result += luckValue >> 1 + 0xf;
-                return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetDefPow))]
-        private class PatchGetDefPow
-        {
-            private static bool Prefix(out int __result, datUnitWork_t work)
-            {
-                // Result init.
-                // Grab the user's Vit and Level and just multiply the result by 2.
-                __result = (Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) + work.level) * 2;
-
-                // If enabled, do some actual math.
-                if (EnableStatScaling)
-                    { __result = (int)((float)Math.Clamp(datCalc.datGetParam(work, 3), 0, MAXSTATS) * 2f / (float)STATS_SCALING + (float)work.level) * 2; }
                 return false;
             }
         }
@@ -888,7 +867,7 @@ namespace ModernStatsSystem
                     (defender.badstatus & 0xFFF) == 4 ||
                     (defender.badstatus & 0xFFF) == 8 ||
                     (defender.badstatus & 0xFFF) == 0x10)
-                        { hitChanceCalc = 100.0f; }
+                        { hitChanceCalc = -1.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
@@ -981,10 +960,11 @@ namespace ModernStatsSystem
                 { defCritChance = defCritStat / atkCritLevel; }
 
                 // Set total Crit Value.
-                float critValue = (atkCritChance - defCritChance) * 6.25f + (100f - nbCalc.GetFailpoint(nskill));
+                float critValue = (atkCritChance - defCritChance) * 6.25f;
 
-                // Adjust the Crit Value.
-                critValue = val * (critValue / 100f) * datNormalSkill.tbl[nskill].criticalpoint;
+                // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
+                // If "Critical Point" is 0, the Skill can't crit.
+                critValue = datNormalSkill.tbl[nskill].criticalpoint > 0f ? val * (critValue + datNormalSkill.tbl[nskill].criticalpoint) : 0f;
 
                 // Generate a random interger and compare to the Crit Value.
                 // If it's lower, it's a crit.
@@ -1037,6 +1017,7 @@ namespace ModernStatsSystem
                 // If the Skill doesn't target randomly or the Effect List is empty, then return.
                 // Additionally return if the Skill doesn't deal damage.
                 // Also return if EnableStatScaling is false.
+                // Additionally return if you end up running out of MP on an MP-using Skill.
                 if ((0 < datNormalSkill.tbl[nskill].cost - a.work.mp && datNormalSkill.tbl[nskill].costtype == 2) || datNormalSkill.tbl[nskill].targetrandom < 1 || datSkill.tbl[nskill].skillattr > 12 || effectlist.Length == 0 || !EnableStatScaling)
                     { return true; }
 
@@ -1101,9 +1082,6 @@ namespace ModernStatsSystem
                 int extrahits = 0;
 
                 // Physical Attacks (Agi Scaling)
-                // 12 is Shot in Insaniax.
-                // Otherwise Talk skills will be affected.
-                // Which they shouldn't since they don't target randomly.
                 if (datNormalSkill.tbl[nskill].koukatype == 0)
                     { extrahits = (int)Math.Max((float)Math.Clamp(datCalc.datGetParam(user, 4), 0, MAXSTATS) / (5f * STATS_SCALING), 0f); }
 
@@ -1111,19 +1089,15 @@ namespace ModernStatsSystem
                 else if (datNormalSkill.tbl[nskill].koukatype == 1)
                     { extrahits = (int)Math.Max((float)Math.Clamp(datCalc.datGetParam(user, 5), 0, MAXSTATS) / (5f * STATS_SCALING), 0f); }
 
-                // Subtract by an eigth of the Skill's Rank, rounded up
-                extrahits -= (int)Math.Ceiling((double)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level / 8d);
-
-                // If it somehow goes under, set it to zero.
-                if (extrahits < 0)
-                    { extrahits = 0; }
+                // Subtract by a third of the Skill's Rank, rounded down, and multiplied by 2.
+                extrahits = (int)Math.Clamp((float)extrahits - Math.Floor((float)Math.Clamp((float)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level - 5f, 0f, 5f)), 0f, (float)extrahits);
 
                 // Calculate odds of being hit by this particular skill based on its maximum hit count.
                 // Additionally, cap the odds at min 25% and max 70%.
                 sbyte hitOdds = (sbyte)Math.Clamp(datNormalSkill.tbl[nskill].targetcntmax * 10 + extrahits * 5, 25, 70);
 
-                // Set the max hit count for a single target based on the average hit count
-                byte maxhits = (byte)((datNormalSkill.tbl[nskill].targetcntmax + datNormalSkill.tbl[nskill].targetcntmin + extrahits) / 2);
+                // Set the max hit count for a single target equal to the maximum hitcount.
+                byte maxhits = (byte)((datNormalSkill.tbl[nskill].targetcntmax + extrahits));
 
                 // Sets the minimum hit count before reductions start applying.
                 byte minhits = (byte)Math.Max(datNormalSkill.tbl[nskill].targetcntmin, maxhits / 3);

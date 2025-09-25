@@ -4,7 +4,6 @@ using Il2Cppfacility_H;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewdata_H;
 using MelonLoader;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace ModernStatsSystem
