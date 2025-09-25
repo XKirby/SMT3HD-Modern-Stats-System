@@ -584,7 +584,7 @@ namespace ModernStatsSystem
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
                 // Math
-                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * ((float)waza + (float)skillLimit) / 100f);
+                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * ((float)waza + (float)skillLimit) / 150f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
                 __result = (int)(__result * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
