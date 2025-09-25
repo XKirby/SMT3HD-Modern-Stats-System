@@ -108,7 +108,7 @@ namespace ModernStatsSystem
             // Damage Mitigation Formula.
             // Requires a work unit and one of the parameter IDs.
             public static float Get(datUnitWork_t work, int param)
-            { return 255f / (255f + (float)Math.Pow(((float)work.param[param] / (EnableStatScaling ? (float)STATS_SCALING : 1f) * 2f + Math.Min(99f, (float)work.level)), 2.05d) / 100f); }
+            { return 150f / (150f + (((float)work.param[param] / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level))); }
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
