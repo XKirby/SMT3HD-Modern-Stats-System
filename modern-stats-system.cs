@@ -612,7 +612,7 @@ namespace ModernStatsSystem
                 value = datCalc.datGetPlayerParam(value);
 
                 // Scale properly, then return.
-                value = EnableStatScaling ? (int)Math.Floor((float)value / (Math.Ceiling((float)MAXSTATS / 40f) / STATS_SCALING)) : value;
+                value = EnableStatScaling ? (int)Math.Floor((float)value / ((float)MAXSTATS / 40f)) : value;
                 ScrTraceCode.scrSetIntReturnValue(value);
                 __result = 1;
                 return false;
