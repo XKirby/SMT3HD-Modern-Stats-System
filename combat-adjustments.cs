@@ -584,13 +584,13 @@ namespace ModernStatsSystem
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
                 // Math
-                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * ((float)waza + (float)skillLimit) / 150f);
+                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * 1.1f * ((float)waza + (float)skillLimit) / 150f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
                 __result = (int)(__result * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // Random-Target Multihit scaling and Damage Mitigation.
-                __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? (float)maxhits / 1.5f : 1) * DamageMitigation.Get(defender, 2));
+                __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? Math.Max((float)maxhits / 3f, 1f) : 1) * DamageMitigation.Get(defender, 2));
                 return false;
             }
         }
