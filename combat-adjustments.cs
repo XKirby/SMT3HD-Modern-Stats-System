@@ -122,7 +122,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[28].hptype = 1;
                 datNormalSkill.tbl[28].mpn = 20;
                 datNormalSkill.tbl[28].mptype = 1;
-                datNormalSkill.tbl[28].magicbase = 26;
                 datNormalSkill.tbl[28].magiclimit = 120;
 
                 // Hamaon
@@ -131,7 +130,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[29].hptype = 1;
                 datNormalSkill.tbl[29].mpn = 40;
                 datNormalSkill.tbl[29].mptype = 1;
-                datNormalSkill.tbl[29].magicbase = 32;
                 datNormalSkill.tbl[29].magiclimit = 160;
 
                 // Mahama
@@ -140,7 +138,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[30].hptype = 1;
                 datNormalSkill.tbl[30].mpn = 16;
                 datNormalSkill.tbl[30].mptype = 1;
-                datNormalSkill.tbl[30].magicbase = 28;
                 datNormalSkill.tbl[30].magiclimit = 100;
 
                 // Mahamaon
@@ -149,7 +146,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[31].hptype = 1;
                 datNormalSkill.tbl[31].mpn = 32;
                 datNormalSkill.tbl[31].mptype = 1;
-                datNormalSkill.tbl[31].magicbase = 37;
                 datNormalSkill.tbl[31].magiclimit = 140;
 
                 // Mudo
@@ -158,7 +154,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[32].hptype = 1;
                 datNormalSkill.tbl[32].mpn = 11;
                 datNormalSkill.tbl[32].mptype = 1;
-                datNormalSkill.tbl[32].magicbase = 26;
                 datNormalSkill.tbl[32].magiclimit = 120;
 
                 // Mudoon
@@ -167,7 +162,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[33].hptype = 1;
                 datNormalSkill.tbl[33].mpn = 22;
                 datNormalSkill.tbl[33].mptype = 1;
-                datNormalSkill.tbl[33].magicbase = 32;
                 datNormalSkill.tbl[33].magiclimit = 160;
 
                 // Mamudo
@@ -176,7 +170,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[34].hptype = 1;
                 datNormalSkill.tbl[34].mpn = 8;
                 datNormalSkill.tbl[34].mptype = 1;
-                datNormalSkill.tbl[34].magicbase = 28;
                 datNormalSkill.tbl[34].magiclimit = 100;
 
                 // Mamudoon
@@ -185,7 +178,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[35].hptype = 1;
                 datNormalSkill.tbl[35].mpn = 16;
                 datNormalSkill.tbl[35].mptype = 1;
-                datNormalSkill.tbl[35].magicbase = 37;
                 datNormalSkill.tbl[35].magiclimit = 140;
 
                 // Mana Drain
@@ -196,6 +188,10 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[192].hpn = 50;
                 datNormalSkill.tbl[192].magiclimit = 84;
 
+                // Mirage
+                datNormalSkill.tbl[245].hpn = 60;
+                datNormalSkill.tbl[245].magiclimit = 120;
+
                 // Meditation
                 datNormalSkill.tbl[279].hpn = 60;
                 datNormalSkill.tbl[279].mpn = 60;
@@ -205,7 +201,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[287].badlevel = 60;
                 datNormalSkill.tbl[287].hpn = 80;
                 datNormalSkill.tbl[287].hptype = 1;
-                datNormalSkill.tbl[287].magicbase = 40;
                 datNormalSkill.tbl[287].magiclimit = 400;
             }
         }

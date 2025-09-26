@@ -80,7 +80,7 @@ namespace ModernStatsSystem
             {
                 // If this is the Int Incense, write its help message properly.
                 if (id == 0x27)
-                    { __result = "Raises Intelligence by 1\nand full HP recovery\nfor one ally."; }
+                    { __result = "Raises Intelligence by 1 \nand full HP recovery \nfor one ally."; }
             }
         }
 
