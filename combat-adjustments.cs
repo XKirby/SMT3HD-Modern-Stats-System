@@ -108,7 +108,7 @@ namespace ModernStatsSystem
             // Damage Mitigation Formula.
             // Requires a work unit and one of the parameter IDs.
             public static float Get(datUnitWork_t work, int param)
-            { return 150f / (150f + (((float)work.param[param] / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level))); }
+            { return 150f / (150f + (((float)work.param[param] + (float)work.mitamaparam[param]) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level)); }
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
@@ -189,7 +189,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[192].magiclimit = 84;
 
                 // Mirage
-                datNormalSkill.tbl[245].hpn = 60;
                 datNormalSkill.tbl[245].magiclimit = 120;
 
                 // Meditation
@@ -562,7 +561,7 @@ namespace ModernStatsSystem
 
                 // Set up the attacker/defender objects from the indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
-                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
+                datUnitWork_t defender = nbMainProcess.nbGetUnitWorkFromFormindex(dformindex);
 
                 // Hit Count Maximum Check
                 int maxhits = datNormalSkill.tbl[nskill].targetcntmax - (datNormalSkill.tbl[nskill].targetcntmin - 1);
@@ -578,14 +577,18 @@ namespace ModernStatsSystem
                 if (EnableIntStat)
                     { param = Math.Clamp(datCalc.datGetParam(attacker, 1), 0, MAXSTATS); }
 
+                // Maximum Hit Reduction Value
+                float reduction = (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? Math.Max((float)maxhits / 3f, 1f) : 1f);
+
                 // Math
-                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * 1.1f * ((float)waza + (float)skillLimit) / 150f);
+                __result = (int)(((float)attacker.level + (float)param / STATS_SCALING * 2f) * ((float)waza + (float)skillLimit) * 1.1f / 150f);
 
                 // Multiply the final value by the attacker's Magic buffs and the defender's Defense buffs.
                 __result = (int)(__result * nbCalc.nbGetHojoRitu(sformindex, 5) * nbCalc.nbGetHojoRitu(dformindex, 7));
 
                 // Random-Target Multihit scaling and Damage Mitigation.
-                __result = (int)((float)__result / (maxhits > 1 && datNormalSkill.tbl[nskill].targetrandom > 0 ? Math.Max((float)maxhits / 3f, 1f) : 1) * DamageMitigation.Get(defender, 2));
+                __result = (int)((float)__result / reduction * DamageMitigation.Get(defender, 2));
+
                 return false;
             }
         }

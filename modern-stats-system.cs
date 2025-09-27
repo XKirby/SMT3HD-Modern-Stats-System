@@ -7,10 +7,12 @@ using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
 using Il2CppTMPro;
 using MelonLoader;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
+using static Il2Cpp.SteamDlcFileUtil;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.0.1", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.1", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -338,7 +340,7 @@ namespace ModernStatsSystem
             0,
             // Actual Bosses
             23, // Forneus
-            4,  // Specter
+            4,  // Specter (There's a bunch of entries for Specter. I'm guessing they're all different.)
             80, // Ahriman
             55, // Noah
             28, // Incubus
@@ -354,7 +356,7 @@ namespace ModernStatsSystem
             47, // Clotho
             48, // Lachesis
             66, // Atropos
-            30, // Specter (There's a bunch of entries for Specter. I'm guessing they're all different.)
+            30, // Specter
             55, // Girimekhala
             25, // Specter
             81, // Aciel
@@ -373,13 +375,13 @@ namespace ModernStatsSystem
             28, // Ose Hallel
             26, // Flauros Hallel
             55, // Ahriman (Phase 2?)
-            55, // Noah (Phase 2?
+            55, // Noah (Phase 2?)
             70, // Kagatsuchi (Phase 2?)
             28, // Specter
             2,  // Specter
             2,  // Specter
-            80, // Mizuchi (Uhh, when does this one show up?)
-            40, // Reserve (Not sure if an actual boss or just some leftover data)
+            80, // Mizuchi (Big one)
+            40, // Reserve (Unused)
             48, // Sakahagi
             34, // Orthrus
             70, // Yaksini
@@ -470,6 +472,37 @@ namespace ModernStatsSystem
 
         // Menu manipulation variables
         private static bool SettingAsignParam;
+
+        /* Fight Cube in Asakusa for testing purposes
+        [HarmonyPatch(typeof(fldFileResolver), nameof(fldFileResolver.fldLoadFile))]
+        private class fldLoadFilePatch
+        {
+            public static void Prefix(string pFileName, string akey)
+            {
+                MelonLogger.Msg("-fldFileResolver.fldLoadFile-");
+                MelonLogger.Msg("pFileName: " + pFileName);
+                MelonLogger.Msg("akey: " + akey);
+            }
+
+            public static void Postfix(string pFileName, string akey)
+            {
+                if (pFileName == "dds3data/fld/f/f027/f027_001") // Asakusa 1
+                {
+                    // Co-ordinates are divided by 100 in-game, y co-ordinate is reversed
+                    // 4.0364 0.2 31.4621
+                    int id = 351;
+
+                    fld_Npc.fldItemBoxAdd(id, -403.64f, -20f, 3146.21f, new Vector4(0, 0, 0, 1)); // Add Item Box in Asakusa
+
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Type = 2;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemID = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemNum = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Trap = 1;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Param = 194;
+                }
+            }
+        }
+        */
 
         public override void OnInitializeMelon()
         {
