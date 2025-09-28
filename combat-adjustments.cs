@@ -936,11 +936,6 @@ namespace ModernStatsSystem
                 if (nbCalc.nbHatudoCheckSkill(attacker, 301) != 0)
                 { ad.autoskill = 301; val += 0.5f; }
 
-                // More flag stuff.
-                // Sets the base crit value to 100%, AKA guaranteed crits.
-                if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
-                { val = 100f; }
-
                 // Set Attacker's Crit Chance values.
                 float atkCritLevel = (float)attacker.level / 5f + 3f;
                 float atkCritStat = (float)Math.Clamp(datCalc.datGetParam(attacker, 5), 0, MAXSTATS) / (float)STATS_SCALING;
@@ -959,6 +954,11 @@ namespace ModernStatsSystem
 
                 // Set total Crit Value.
                 float critValue = (atkCritChance - defCritChance) * 6.25f;
+
+                // More flag stuff.
+                // Sets the base crit value to 100%, AKA guaranteed crits.
+                if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
+                { critValue = 100f; }
 
                 // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
                 // If "Critical Point" is 0, the Skill can't crit.
