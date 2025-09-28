@@ -955,14 +955,14 @@ namespace ModernStatsSystem
                 // Set total Crit Value.
                 float critValue = (atkCritChance - defCritChance) * 6.25f;
 
+                // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
+                // If "Critical Point" is 0, the Skill can't crit.
+                critValue = datNormalSkill.tbl[nskill].criticalpoint > 0f ? val * (critValue + datNormalSkill.tbl[nskill].criticalpoint) : 0f;
+
                 // More flag stuff.
                 // Sets the base crit value to 100%, AKA guaranteed crits.
                 if ((defender.badstatus & 0xFFF) == 1 || (defender.badstatus & 0xFFF) == 2 || (defender.badstatus & 0xFFF) == 0x10 || (defender.badstatus & 0xFFF) == 4)
                 { critValue = 100f; }
-
-                // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
-                // If "Critical Point" is 0, the Skill can't crit.
-                critValue = datNormalSkill.tbl[nskill].criticalpoint > 0f ? val * (critValue + datNormalSkill.tbl[nskill].criticalpoint) : 0f;
 
                 // Generate a random interger and compare to the Crit Value.
                 // If it's lower, it's a crit.
