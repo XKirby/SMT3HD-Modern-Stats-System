@@ -1087,8 +1087,15 @@ namespace ModernStatsSystem
                 else if (datNormalSkill.tbl[nskill].koukatype == 1)
                     { extrahits = (int)Math.Max((float)Math.Clamp(datCalc.datGetParam(user, 5), 0, MAXSTATS) / (5f * STATS_SCALING), 0f); }
 
+                // Skill Rank
+                int rank = 0;
+                
+                // Set the Rank accordingly
+                if (nskill < tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl.Length)
+                { rank = tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level; }
+
                 // Subtract by a third of the Skill's Rank, rounded down, and multiplied by 2.
-                extrahits = (int)Math.Clamp((float)extrahits - Math.Floor((float)Math.Clamp((float)tblKeisyoSkillLevel.fclKeisyoSkillLevelTbl[nskill].Level - 5f, 0f, 5f)), 0f, (float)extrahits);
+                extrahits = (int)Math.Clamp((float)extrahits - Math.Floor((float)Math.Clamp((float)rank - 5f, 0f, 5f)), 0f, (float)extrahits);
 
                 // Calculate odds of being hit by this particular skill based on its maximum hit count.
                 // Additionally, cap the odds at min 25% and max 70%.
