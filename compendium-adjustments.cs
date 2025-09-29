@@ -27,7 +27,11 @@ namespace ModernStatsSystem
             {
                 // If the unit is null, return nothing.
                 if (pelem == null)
-                    { return 0; }
+                { return 0; }
+
+                // If the unit is either Dante or Raidou, return 0.
+                if (pelem.id == 192)
+                { return 0; }
 
                 // Summoning price formula with applied discount
                 return (int)((double)GetBasePrice(pelem) * (double)GetDiscountFactor(limitDiscount, finalDiscount));
@@ -38,7 +42,11 @@ namespace ModernStatsSystem
 
                 // If the unit is null, return nothing.
                 if (pelem == null)
-                    { return 0; }
+                { return 0; }
+
+                // If the unit is either Dante or Raidou, return 0.
+                if (pelem.id == 192)
+                { return 0; }
 
                 // Grab unit's stats
                 int exp = (int)pelem.exp;
@@ -61,9 +69,7 @@ namespace ModernStatsSystem
                 float discountFactor;
 
                 if (compendiumProgress < 100)
-                {
-                    discountFactor = 1 - (compendiumProgress * limitDiscount) / (100f * 100f);
-                }
+                { discountFactor = 1 - (compendiumProgress * limitDiscount) / (100f * 100f); }
                 else
                 {
                     discountFactor = 1 - (compendiumProgress * finalDiscount) / (100f * 100f);

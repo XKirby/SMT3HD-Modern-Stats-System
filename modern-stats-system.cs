@@ -7,10 +7,8 @@ using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
 using Il2CppTMPro;
 using MelonLoader;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
-using static Il2Cpp.SteamDlcFileUtil;
 
 [assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.1", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
@@ -667,7 +665,7 @@ namespace ModernStatsSystem
                 param = datCalc.datGetNakamaParam(id, param);
 
                 // Scale it properly, then return.
-                param = EnableStatScaling ? (int)Math.Floor((float)param / (Math.Ceiling((float)MAXSTATS / 40f) / STATS_SCALING)) : param;
+                param = EnableStatScaling ? (int)Math.Floor((float)param / (Math.Ceiling((float)MAXSTATS / 40f))) : param;
                 ScrTraceCode.scrSetIntReturnValue(param);
                 __result = 1;
                 return false;
