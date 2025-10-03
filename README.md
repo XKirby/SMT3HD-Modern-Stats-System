@@ -28,7 +28,7 @@ Includes the following:
 - Incompatible with the previously mentioned *Cursed Gospel* and *Compendium Discounts* mods since they had to be manually included.
 - Unfortunately, this will not be compatible with the upcoming overhaul mod by Zephhyr, Insaniax. Instead, he's going to partially incorporate my addtions/changes to his mod in a way that works for him.
 - Quality of Death by MatthiewPurple is compatible as I've been personally testing my mod with QoD locally.
-- The formula for Magic Damage is kinda nuts with Surt's Ragnarok. It's survivable, but expect to get chunked hard.
+- The formula for Magic Damage is kinda nuts with Surt's Ragnarok, Lucifer's High King, and Kagutsuchi's Infinite Light. Expect to get chunked very hard, even with full buffs/debuffs.
 - *This really wasn't planned to be an entire rebalance mod.* I really just wanted to see if I could increase the stat caps first, but then adding Intelligence back in, among other things, kinda just happened. With this in mind, I will not be rebalancing much more with this, if anything.
 
 ### Credits
