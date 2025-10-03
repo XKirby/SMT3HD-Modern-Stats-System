@@ -643,7 +643,7 @@ namespace ModernStatsSystem
                 value = datCalc.datGetPlayerParam(value);
 
                 // Scale properly, then return.
-                value = EnableStatScaling ? (int)Math.Floor((float)value / ((float)MAXSTATS / 40f)) : value;
+                value = EnableStatScaling ? (int)Math.Floor((float)value / STATS_SCALING) : value;
                 ScrTraceCode.scrSetIntReturnValue(value);
                 __result = 1;
                 return false;
@@ -665,7 +665,7 @@ namespace ModernStatsSystem
                 param = datCalc.datGetNakamaParam(id, param);
 
                 // Scale it properly, then return.
-                param = EnableStatScaling ? (int)Math.Floor((float)param / (Math.Ceiling((float)MAXSTATS / 40f))) : param;
+                param = EnableStatScaling ? (int)Math.Floor((float)param / STATS_SCALING) : param;
                 ScrTraceCode.scrSetIntReturnValue(param);
                 __result = 1;
                 return false;
