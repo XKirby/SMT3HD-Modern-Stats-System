@@ -717,13 +717,17 @@ namespace ModernStatsSystem
         }
 
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetSakePow))]
-        private class PatchGetAccuracyPow
+        private class PatchGetMagicAccuracy
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
                 // Result init.
                 // Grabs the user's Level and Agi and does some math.
                 __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f);
+
+                // If enabled, performs Int scaling instead.
+                if (EnableIntStat)
+                { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f); }
 
                 // Grabs the user's Luc.
                 int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
@@ -743,7 +747,7 @@ namespace ModernStatsSystem
         }
 
         [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetMagicHitPow))]
-        private class PatchGetMagicAccuracy
+        private class PatchGetMagicDodge
         {
             private static bool Prefix(out int __result, datUnitWork_t work)
             {
@@ -751,9 +755,9 @@ namespace ModernStatsSystem
                 // Grabs Level, Mag, and Agi and does some math.
                 __result = (int)((float)work.level + ((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) * 2f + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) * 2f) / (EnableStatScaling ? STATS_SCALING : 1f));
 
-                // If enabled, adds Int scaling.
+                // If enabled, performs Int scaling instead.
                 if (EnableIntStat)
-                    { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 4f / (EnableStatScaling ? STATS_SCALING : 1f)); }
+                { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 4f / (EnableStatScaling ? STATS_SCALING : 1f)); }
 
                 // Grabs Luc.
                 int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
@@ -796,10 +800,6 @@ namespace ModernStatsSystem
                 if (datSkill.tbl.Length <= nskill)
                 { return true; }
 
-                // If the Skill's Effect Type is not zero (Physical Damage), return and do the original function instead.
-                if (datNormalSkill.tbl[nskill].koukatype != 0)
-                { return true; }
-
                 // If the Skill's "Program" is anything that isn't a normal Skill.
                 if (datNormalSkill.tbl[nskill].program != 0)
                 { return true; }
@@ -814,43 +814,52 @@ namespace ModernStatsSystem
 
                 // More flag nonsense.
                 if (((a.stat + 1) >> 2 & 1) != 0 &&
-                    (attacker.flag >> 5 & 1) != 0)
+                (attacker.flag >> 5 & 1) != 0)
                 {
                     // A bit more flag nonsense.
                     // If this all passes, return a result of 0xb (11).
                     if (((a.form[dformindex].stat + 1) >> 4 & 1) != 0)
-                        { __result = 0xb; return false; }
+                    { __result = 0xb; return false; }
 
                     // Checks if the Skill Attribute is a Utility Skill.
                     // Also checks if there's more than 1 enemy party I'm guessing. Not sure.
                     else if (datSkill.tbl[nskill].skillattr != 0xe && a.enemypcnt != 1)
-                        { __result = 5; return false; }
+                    { __result = 5; return false; }
                 }
 
                 // Grab the Skill's accuracy and do some math.
                 float basepower = datNormalSkill.tbl[nskill].hitlevel;
-                float multi = 1f;
-
-                // If Difficulty is specifically Hard, lower it to 0.7.
-                if (dds3ConfigMain.cfgGetBit(9) == 2)
-                    { multi = 0.7f; }
-                basepower *= multi;
 
                 // I'm assuming these line up with Agi and Vit respectively.
                 // I could be wrong, they might both be Agi.
                 float atkBuffs = nbCalc.nbGetHojoRitu(sformindex, 8);
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
+                float hitChanceCalc = 0f;
 
-                // Grab both users' Agi and math out the difference.
-                float atkAgiCalc = (float)Math.Clamp(datCalc.datGetParam(attacker, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
-                float defAgiCalc = (float)Math.Clamp(datCalc.datGetParam(defender, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
+                // If the Skill's Effect Type is zero (Physical Damage).
+                if (datNormalSkill.tbl[nskill].koukatype == 0)
+                {
+                    // Grab both users' Agi and math out the difference.
+                    float atkAgiCalc = (float)Math.Clamp(datCalc.datGetParam(attacker, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
+                    float defAgiCalc = (float)Math.Clamp(datCalc.datGetParam(defender, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
 
-                // Calculate the overall hit chance.
-                float hitChanceCalc = (basepower - (defAgiCalc - atkAgiCalc) * 6.25f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
+                    // Calculate the overall hit chance.
+                    hitChanceCalc = (basepower - (defAgiCalc - atkAgiCalc) * 6.25f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
+                }
+                // If the Skill's Effect Type is not zero (Magical Damage)
+                else
+                {
+                    // Grab both users' Agi and math out the difference.
+                    float atkIntCalc = datCalc.datGetSakePow(attacker);
+                    float defIntCalc = datCalc.datGetMagicHitPow(defender);
+
+                    // Calculate the overall hit chance.
+                    hitChanceCalc = (basepower - (defIntCalc - atkIntCalc) * 6.25f) * atkBuffs * defBuffs;
+                }
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
                 if ((attacker.badstatus & 0xFFF) == 0x100)
-                    { hitChanceCalc *= 0.25f; }
+                { hitChanceCalc *= 0.25f; }
 
                 // If the defender has any of these statuses, they can't dodge.
                 if ((defender.badstatus & 0xFFF) == 1 ||
@@ -858,19 +867,19 @@ namespace ModernStatsSystem
                     (defender.badstatus & 0xFFF) == 4 ||
                     (defender.badstatus & 0xFFF) == 8 ||
                     (defender.badstatus & 0xFFF) == 0x10)
-                        { hitChanceCalc = 10000.0f; }
+                { hitChanceCalc = 10000.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
                 int hitCheck = (int)(rng.NextDouble() * 100f);
                 if (hitCheck >= hitChanceCalc)
-                    { __result = 0; return false; }
+                { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's not zero, return a different result.
                 if ((nbCalc.nbGetDevilFormatFlag(dformindex) & 0x800) != 0)
-                    { __result = 5; return false; }
-                
+                { __result = 5; return false; }
+
                 return false;
             }
         }
