@@ -793,7 +793,7 @@ namespace ModernStatsSystem
                     float defStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - (defStrAgiCalc - atkStrAgiCalc) * 2f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
+                    hitChanceCalc = (basepower - Math.Clamp(defStrAgiCalc - atkStrAgiCalc, -95f, 95f) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
                 }
                 // If the Skill's Effect Type is not zero (Magical Damage)
                 else
@@ -809,7 +809,7 @@ namespace ModernStatsSystem
                     }
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - (defIntLucCalc - atkIntLucCalc) * 2f) * atkBuffs * defBuffs;
+                    hitChanceCalc = (basepower - Math.Clamp(defIntLucCalc - atkIntLucCalc, -95f, 95f)) * atkBuffs * defBuffs;
                 }
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
@@ -910,7 +910,7 @@ namespace ModernStatsSystem
                 { defCritChance = defCritStat / atkCritLevel; }
 
                 // Set total Crit Value.
-                float critValue = (atkCritChance - defCritChance) * 6.25f;
+                float critValue = Math.Clamp((atkCritChance - defCritChance) * 6.25f, -100f, 100f);
 
                 // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
                 // If "Critical Point" is 0, the Skill can't crit.
