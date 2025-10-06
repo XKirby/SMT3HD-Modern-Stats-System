@@ -120,65 +120,65 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[28].badlevel = 30;
                 datNormalSkill.tbl[28].hpn = 50;
                 datNormalSkill.tbl[28].hptype = 1;
-                datNormalSkill.tbl[28].mpn = 20;
+                datNormalSkill.tbl[28].mpn = 60;
                 datNormalSkill.tbl[28].mptype = 1;
-                datNormalSkill.tbl[28].magiclimit = 120;
+                datNormalSkill.tbl[28].magiclimit = 20;
 
                 // Hamaon
                 datNormalSkill.tbl[29].badlevel = 50;
                 datNormalSkill.tbl[29].hpn = 75;
                 datNormalSkill.tbl[29].hptype = 1;
-                datNormalSkill.tbl[29].mpn = 40;
+                datNormalSkill.tbl[29].mpn = 120;
                 datNormalSkill.tbl[29].mptype = 1;
-                datNormalSkill.tbl[29].magiclimit = 160;
+                datNormalSkill.tbl[29].magiclimit = 40;
 
                 // Mahama
                 datNormalSkill.tbl[30].badlevel = 30;
-                datNormalSkill.tbl[30].hpn = 35;
+                datNormalSkill.tbl[30].hpn = 40;
                 datNormalSkill.tbl[30].hptype = 1;
-                datNormalSkill.tbl[30].mpn = 16;
+                datNormalSkill.tbl[30].mpn = 50;
                 datNormalSkill.tbl[30].mptype = 1;
-                datNormalSkill.tbl[30].magiclimit = 100;
+                datNormalSkill.tbl[30].magiclimit = 10;
 
                 // Mahamaon
                 datNormalSkill.tbl[31].badlevel = 50;
                 datNormalSkill.tbl[31].hpn = 60;
                 datNormalSkill.tbl[31].hptype = 1;
-                datNormalSkill.tbl[31].mpn = 32;
+                datNormalSkill.tbl[31].mpn = 100;
                 datNormalSkill.tbl[31].mptype = 1;
-                datNormalSkill.tbl[31].magiclimit = 140;
+                datNormalSkill.tbl[31].magiclimit = 30;
 
                 // Mudo
                 datNormalSkill.tbl[32].badlevel = 30;
-                datNormalSkill.tbl[32].hpn = 70;
+                datNormalSkill.tbl[32].hpn = 120;
                 datNormalSkill.tbl[32].hptype = 1;
-                datNormalSkill.tbl[32].mpn = 11;
+                datNormalSkill.tbl[32].mpn = 10;
                 datNormalSkill.tbl[32].mptype = 1;
-                datNormalSkill.tbl[32].magiclimit = 120;
+                datNormalSkill.tbl[32].magiclimit = 20;
 
                 // Mudoon
                 datNormalSkill.tbl[33].badlevel = 50;
-                datNormalSkill.tbl[33].hpn = 90;
+                datNormalSkill.tbl[33].hpn = 180;
                 datNormalSkill.tbl[33].hptype = 1;
-                datNormalSkill.tbl[33].mpn = 22;
+                datNormalSkill.tbl[33].mpn = 20;
                 datNormalSkill.tbl[33].mptype = 1;
-                datNormalSkill.tbl[33].magiclimit = 160;
+                datNormalSkill.tbl[33].magiclimit = 40;
 
                 // Mamudo
                 datNormalSkill.tbl[34].badlevel = 30;
-                datNormalSkill.tbl[34].hpn = 55;
+                datNormalSkill.tbl[34].hpn = 100;
                 datNormalSkill.tbl[34].hptype = 1;
-                datNormalSkill.tbl[34].mpn = 8;
+                datNormalSkill.tbl[34].mpn = 5;
                 datNormalSkill.tbl[34].mptype = 1;
-                datNormalSkill.tbl[34].magiclimit = 100;
+                datNormalSkill.tbl[34].magiclimit = 10;
 
                 // Mamudoon
                 datNormalSkill.tbl[35].badlevel = 50;
-                datNormalSkill.tbl[35].hpn = 77;
+                datNormalSkill.tbl[35].hpn = 150;
                 datNormalSkill.tbl[35].hptype = 1;
-                datNormalSkill.tbl[35].mpn = 16;
+                datNormalSkill.tbl[35].mpn = 10;
                 datNormalSkill.tbl[35].mptype = 1;
-                datNormalSkill.tbl[35].magiclimit = 140;
+                datNormalSkill.tbl[35].magiclimit = 30;
 
                 // Mana Drain
                 datNormalSkill.tbl[191].mpn = 25;
@@ -828,16 +828,13 @@ namespace ModernStatsSystem
                 }
 
                 // Grab the Skill's accuracy and do some math.
-                float basepower = datNormalSkill.tbl[nskill].hitlevel * 0.01f;
-                float multi = basepower;
-
-                // Set the basepower to 1.
-                basepower = 1f;
+                float basepower = datNormalSkill.tbl[nskill].hitlevel;
+                float multi = 1f;
 
                 // If Difficulty is specifically Hard, lower it to 0.7.
                 if (dds3ConfigMain.cfgGetBit(9) == 2)
-                    { basepower = 0.7f; }
-                multi *= basepower;
+                    { multi = 0.7f; }
+                basepower *= multi;
 
                 // I'm assuming these line up with Agi and Vit respectively.
                 // I could be wrong, they might both be Agi.
@@ -849,29 +846,25 @@ namespace ModernStatsSystem
                 float defAgiCalc = (float)Math.Clamp(datCalc.datGetParam(defender, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
 
                 // Calculate the overall hit chance.
-                float hitChanceCalc = multi * atkBuffs * defBuffs * ((defAgiCalc - atkAgiCalc) * 6.25f + (100 - nbCalc.GetFailpoint(nskill)));
+                float hitChanceCalc = (basepower - (defAgiCalc - atkAgiCalc) * 6.25f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
                 if ((attacker.badstatus & 0xFFF) == 0x100)
                     { hitChanceCalc *= 0.25f; }
 
-                // Make sure it's a maximum of 95% to miss.
-                if (hitChanceCalc >= 95.0f)
-                    { hitChanceCalc = 95.0f; }
-
-                // If you have any of these statuses, you can't dodge.
+                // If the defender has any of these statuses, they can't dodge.
                 if ((defender.badstatus & 0xFFF) == 1 ||
                     (defender.badstatus & 0xFFF) == 2 ||
                     (defender.badstatus & 0xFFF) == 4 ||
                     (defender.badstatus & 0xFFF) == 8 ||
                     (defender.badstatus & 0xFFF) == 0x10)
-                        { hitChanceCalc = -1.0f; }
+                        { hitChanceCalc = 10000.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you don't hit, set the result to zero.
                 System.Random rng = new();
                 int hitCheck = (int)(rng.NextDouble() * 100f);
-                if (hitCheck < hitChanceCalc)
+                if (hitCheck >= hitChanceCalc)
                     { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's not zero, return a different result.

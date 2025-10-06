@@ -17,6 +17,8 @@ Includes the following:
 - You can find the Cursed Gospel and Stat Incense items for sale in the final shop of the game. Go nuts.
 - Even more stuff I probably forgot.
 
+For full data dumps posted in a Google Sheets Doc, [click here](https://docs.google.com/spreadsheets/d/1HeZxeYkSgBEeS4FzkcopwK9mEqVL1boGyVQ_ED5ibnA/edit?usp=sharing).
+
 ### How to Install
 - Install SMT3HD from your Steam Account.
 - Install MelonLoader v0.7 onto SMT3HD.

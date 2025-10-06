@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.1", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.2", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -788,7 +788,7 @@ namespace ModernStatsSystem
 
                 // If enabled, scale differently.
                 if (EnableStatScaling)
-                { result = (int)(((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 4f); }
+                { result = (int)((float)(Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) / (float)STATS_SCALING + (float)work.level) * 4f); }
 
                 // Return the result.
                 return result;
