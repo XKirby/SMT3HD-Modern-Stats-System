@@ -111,6 +111,15 @@ namespace ModernStatsSystem
             { return 150f / (150f + (((float)work.param[param] + (float)work.mitamaparam[param]) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level)); }
         }
 
+        public class HitRateHelper
+        {
+            public static float GetHitRate(datUnitWork_t work, int powparam, int spdparam)
+            {
+                float value = ((work.badstatus & 0xFFF) == 0x200 && spdparam == 5) ? 1f : ((float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING);
+                return (((float)datCalc.datGetParam(work, powparam) / STATS_SCALING + (float)work.level) + value);
+            }
+        }
+
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
         private class PatchSkillValues
         {
@@ -716,66 +725,6 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetSakePow))]
-        private class PatchGetMagicAccuracy
-        {
-            private static bool Prefix(out int __result, datUnitWork_t work)
-            {
-                // Result init.
-                // Grabs the user's Level and Agi and does some math.
-                __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f);
-
-                // If enabled, performs Int scaling instead.
-                if (EnableIntStat)
-                { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f); }
-
-                // Grabs the user's Luc.
-                int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
-
-                // If it's under 2 or some weird "badstatus" flag nonsense is true, set Luc to 1.
-                if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
-                    { luc = 1; }
-
-                // Adjust the Result by some additional math found in the original formula.
-                __result += 5;
-                __result = (int)((float)__result * 1.5f);
-
-                // Add Luc + 10 to the result.
-                __result += luc + 10;
-                return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(datCalc), nameof(datCalc.datGetMagicHitPow))]
-        private class PatchGetMagicDodge
-        {
-            private static bool Prefix(out int __result, datUnitWork_t work)
-            {
-                // Result init.
-                // Grabs Level, Mag, and Agi and does some math.
-                __result = (int)((float)work.level + ((float)Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS) * 2f + (float)Math.Clamp(datCalc.datGetParam(work, 4), 0, MAXSTATS) * 2f) / (EnableStatScaling ? STATS_SCALING : 1f));
-
-                // If enabled, performs Int scaling instead.
-                if (EnableIntStat)
-                { __result = (int)((float)work.level + (float)Math.Clamp(datCalc.datGetParam(work, 1), 0, MAXSTATS) * 4f / (EnableStatScaling ? STATS_SCALING : 1f)); }
-
-                // Grabs Luc.
-                int luc = (int)((float)Math.Clamp(datCalc.datGetParam(work, 5), 0, MAXSTATS) / (EnableStatScaling ? STATS_SCALING : 1f));
-
-                // If under 2 or flag nonsense, set Luc to 1.
-                if (luc < 2 || (work.badstatus & 0xFFF) == 0x200)
-                    { luc = 1; }
-
-                // Adjust Luc by 5.
-                // This was really stupid originally.
-                int luckValue = luc + 5;
-
-                // Bitshift the above result by 1 and add 15.
-                __result += luckValue >> 1 + 0xf;
-                return false;
-            }
-        }
-
         [HarmonyPatch(typeof(nbCalc), nameof(nbCalc.nbGetKoukaType))]
         private class PatchTargetHitRate
         {
@@ -839,22 +788,28 @@ namespace ModernStatsSystem
                 // If the Skill's Effect Type is zero (Physical Damage).
                 if (datNormalSkill.tbl[nskill].koukatype == 0)
                 {
-                    // Grab both users' Agi and math out the difference.
-                    float atkAgiCalc = (float)Math.Clamp(datCalc.datGetParam(attacker, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)defender.level / 5f + 3f);
-                    float defAgiCalc = (float)Math.Clamp(datCalc.datGetParam(defender, 4), 0, MAXSTATS) / (float)STATS_SCALING / ((float)attacker.level / 5f + 3f);
+                    // Grab both Hit Rates and math out the difference.
+                    float atkStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
+                    float defStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - (defAgiCalc - atkAgiCalc) * 6.25f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
+                    hitChanceCalc = (basepower - (defStrAgiCalc - atkStrAgiCalc) * 2f - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
                 }
                 // If the Skill's Effect Type is not zero (Magical Damage)
                 else
                 {
-                    // Grab both users' Agi and math out the difference.
-                    float atkIntCalc = datCalc.datGetSakePow(attacker);
-                    float defIntCalc = datCalc.datGetMagicHitPow(defender);
+                    // Grab both Hit Rates and math out the difference.
+                    float atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 2, 5);
+                    float defIntLucCalc = HitRateHelper.GetHitRate(attacker, 2, 5);
+
+                    if (EnableIntStat)
+                    {
+                        atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 1, 5);
+                        defIntLucCalc = HitRateHelper.GetHitRate(attacker, 1, 5);
+                    }
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - (defIntCalc - atkIntCalc) * 6.25f) * atkBuffs * defBuffs;
+                    hitChanceCalc = (basepower - (defIntLucCalc - atkIntLucCalc) * 2f) * atkBuffs * defBuffs;
                 }
 
                 // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
