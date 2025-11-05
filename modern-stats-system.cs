@@ -5,12 +5,13 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
+using Il2CppSystem.Linq;
 using Il2CppTMPro;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.2", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.3", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -497,6 +498,544 @@ namespace ModernStatsSystem
                     fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemNum = 0;
                     fldGlobal.fldHitData._fldItemBoxTbl[id]._Trap = 1;
                     fldGlobal.fldHitData._fldItemBoxTbl[id]._Param = 194;
+                }
+            }
+        }
+        */
+
+        /*
+        [HarmonyPatch(typeof(effPart), nameof(effPart.dds3EffectPartCreate))]
+        private class PatchCreatePart
+        {
+            public static void Prefix(ushort type, Il2CppSystem.Object pData, int bPos = 0)
+            {
+                MelonLogger.Msg("[PatchCreatePart]");
+                MelonLogger.Msg("Has Part Data: " + (pData != null));
+                MelonLogger.Msg("Type: " + type);
+                MelonLogger.Msg("Position: " + bPos);
+                return;
+            }
+        }
+
+        [HarmonyPatch(typeof(effPart), nameof(effPart.dds3EffectPCPDataGetDataUnityOffSet))]
+        private class PatchGetEffectPartUnityOffset
+        {
+            public static void Prefix(Il2CppSystem.Object hData, int offset, int type)
+            {
+                MelonLogger.Msg("[PatchGetEffectPartUnityOffset]");
+                MelonLogger.Msg("Has Handle Data: " + (hData != null));
+                MelonLogger.Msg("Offset: " + offset);
+                MelonLogger.Msg("Type: " + type);
+                return;
+            }
+        }
+
+        [HarmonyPatch(typeof(effPart), nameof(effPart.dds3EffectPartCopy))]
+        private class PatchCopyEffectPart
+        {
+            public static void Prefix(ref effPartHandle_t hEffPartSrc, int bPos)
+            {
+                MelonLogger.Msg("[PatchCopyEffectPart]");
+                MelonLogger.Msg("Has Part Source: " + (hEffPartSrc != null));
+                MelonLogger.Msg("Has Part Handle: " + (hEffPartSrc.pHandle != null));
+                MelonLogger.Msg("Type: " + hEffPartSrc.type);
+                MelonLogger.Msg("Position: " + bPos);
+                return;
+            }
+        }
+        */
+
+        /*
+        [HarmonyPatch(typeof(nbActionProcess), nameof(nbActionProcess.SetAction_READY))]
+        private class PatchSetActionReady
+        {
+            public static bool Prefix(ref nbActionProcessData_t a)
+            {
+                // Return the orginal function if this ability can't use a SOBED.
+                if (a.work.nowcommand != 1 && a.work.nowcommand != 5)
+                { return true; }
+
+                // Included in original function.
+                // Probably just does some music stuff.
+                nbSound.nbBgmTrans();
+
+                // Before we even read which Command we're using, we need to do some cleanup.
+                a.press = 0.0f;
+                a.runerr = 0;
+                a.jyokyomes = 0;
+                a.skilltime = 0;
+                a.autoskill = 0;
+                a.allhpdamage = 0;
+                a.allmpdamage = 0;
+                nbActionProcess.ClearTimeList(ref a);
+
+                // Set the Time List HP Values.
+                nbActionProcess.SetHpForTimeList(ref a);
+
+                // Grab the Unit Visual and set a defaul Framerate for it.
+                datUnitVisual_t unitVis = nbMisc.nbGetUnitVisual(a.work);
+                float visRate = 1.0f;
+
+                // If the Stat, bitshifted 7 and 1, is 0.
+                if ((a.stat >> 7 & 1) == 0)
+                {
+                    // If the Stat, bitshifted 8 and 1, is 0.
+                    // If it is, update the Visual Framerate.
+                    if ((a.stat >> 8 & 1) != 0)
+                    { visRate = 1.5f; }
+                }
+
+                // Check if your Status Ailments interrupt your selected action.
+                int badActionSeq = 0;
+                if((a.stat >> 2 & 1) == 0)
+                {
+                    if (nbCalc.nbGetBadStat(a.form.formindex) == 8 && a.type != 3)
+                    {
+                        badActionSeq = nbCalc.nbCheckBadPanicAction(a.work);
+                        if (badActionSeq == 0)
+                        { badActionSeq = 4; }
+                        else
+                        {
+                            badActionSeq = nbCalc.nbCheckBadCurse(a.form.formindex);
+                            if (badActionSeq != 0 && dds3KernelCore.dds3GetRandIntA(4) == 0)
+                            {
+                                badActionSeq = 4;
+                            }
+                        }
+                    }
+                }
+
+                // Immediately return if it did.
+                if (badActionSeq > 0)
+                { nbActionProcess.SetActionSeq(ref a, badActionSeq); return false; }
+
+                // Switch-Case to check Command type.
+                int itemSkillNo = 0;
+                switch(a.work.nowcommand)
+                {
+                    case 1:
+                        {
+                            // Set a Message based on the Skill's Use Check.
+                            int skillUseCheck = nbCalc.nbCheckSkillUse(a.form.formindex, a.work.nowindex);
+                            if (skillUseCheck == 3)
+                            {
+                                a.runerr = 1;
+                                skillUseCheck = 0xc;
+                            }
+                            else if (skillUseCheck == 2)
+                            {
+                                a.runerr = 1;
+                                skillUseCheck = 0xe;
+                            }
+                            else
+                            {
+                                if (skillUseCheck != 1)
+                                { break; }
+                                a.runerr = 1;
+                                skillUseCheck = 0x3c;
+                            }
+                            nbMisc.nbSetJyokyoMes(ref a, skillUseCheck, -1, 0);
+                            break;
+                        }
+                    case 5:
+                        {
+                            // Grab the Item's Skill ID.
+                            itemSkillNo = nbMisc.nbGetItemSkillNo(a, a.work.nowindex);
+                            break;
+                        }
+                    default:
+                        { return true; }
+                }
+
+                
+                // If you're using an Item.
+                if (a.work.nowcommand == 5)
+                {
+                    // If the Item exists in the Item Table and it's a consumable.
+                    if (datItem.tbl.Length > a.work.nowindex && (datItem.tbl[a.work.nowindex].use >> 2 & 1) == 0)
+                    {
+                        // Remove a copy of the item.
+                        datCalc.datAddItem(a.work.nowindex, -1);
+                    }
+                }
+
+                // Check the Normal Skill Visuals for a SOBED of ID over 0.
+                datNormalSkillVisual_t vis = datNormalSkillVisual.Get(a.work.nowindex);
+                if (vis.bedno > 0)
+                {
+                    // Grab the SOBED.
+                    // If it doesn't exist, return original function.
+                    nbActionProcess.SOBED bed = nbActionProcess.GetSOBED(a.work.nowindex);
+                    if (bed == null)
+                    { return true; }
+
+                    // These keys determine where the SOBED Data is found.
+                    // It links to an AssetBundle in the StreamingAssets/PC folder.
+                    string key = "";
+                    string key2 = "";
+
+                    // These are internal AssetBundle directories.
+                    string sobedPath = "dds3data/sobed/";
+                    string pbPath = "dds3data/";
+
+                    // Variables for referencing.
+                    Il2CppStructArray<byte> bedData = new Il2CppStructArray<byte>(new byte[] { });
+                    AssetBundleCtrl.Data[] data = { null, null };
+
+                    // Attempt to get the data from the AssetBundleCtrl objects within GlobalData.
+                    // It exports the data to, well, the "data" variable.
+                    // If it fails at all, just return the original function.
+                    bool[] gotData = { GlobalData.asset_bc.assetbundle.TryGetValue("sobed_dds2", out data[0]), GlobalData.asset_bc.assetbundle.TryGetValue("sobed_pb_dds2", out data[1]) };
+                    if (!gotData[0] || !gotData[1])
+                    { return true; }
+
+                    // Check if the SOBED filename matches something in the AssetBundle.
+                    // If it produces no names, return original function.
+                    bool assetMatch = false;
+                    AssetBundle[] ab = AssetBundle.GetAllLoadedAssetBundles().ToArray().Where(a => a.name.Contains("_dds2")).ToArray();
+                    if (ab == null)
+                    { return true; }
+                    if (ab.Length < 2)
+                    { return true; }
+                    string[] dataNames = ab[1].GetAllAssetNames().Where(s => s.Contains(bed.bed_fname)).ToArray();
+                    if (dataNames == null)
+                    { return true; }
+                    if (dataNames.Length == 0)
+                    { return true; }
+                    for (int i = 0; i < dataNames.Length; i++)
+                    { MelonLogger.Msg(dataNames[i]); }
+                    if (dataNames.Length > 0 && dataNames[0].Contains(bed.bed_fname))
+                    { assetMatch = true; }
+
+                    // If it does, change both keys.
+                    // This is INCREDIBLY important.
+                    if (assetMatch)
+                    { key = data[0].ld.aname; key2 = data[1].ld.aname; }
+
+                    // Check if the key defaults to the original key, then return to original function is so.
+                    else
+                    { return true; }
+
+                    // Load the file.
+                    Il2CppSystem.Object o = sdfDevFile.sdfDevLoadFileUnity(sobedPath + bed.bed_fname, ref bedData, 0, key);
+
+                    // Check if the file generated no data, then return to original function if so.
+                    if (bedData == null)
+                    { return true; }
+
+                    // Mark indices.
+                    sdfPacBin.MarkTmxIndex(ref bedData);
+                    sdfPacBin.MarkPibIndex(ref bedData);
+
+                    // Set SOBED data to what was loaded.
+                    a.hBed = bedData;
+
+                    // Check for textures.
+                    if (bed.tga_fname.Length > 0)
+                    {
+                        // Loop through Textures in the TGA Filename list.
+                        for (int i = 0; i < bed.tga_fname.Length; i++)
+                        {
+                            // Load a Texture.
+                            Texture t = (Texture)GlobalData.asset_bc.LoadFileObject(key, sobedPath + bed.tga_fname[i]).TryCast<Texture>();
+
+                            // If it isn't null, add it to the Process' texture list.
+                            if (t != null)
+                            {
+                                Texture.DontDestroyOnLoad(t);
+                                // If the Texture list is null.
+                                if (a.pTexture == null)
+                                { a.pTexture = new Texture[] { }; }
+
+                                // If "i" is larger than the texture list size, append.
+                                if (a.pTexture.Length <= i)
+                                { a.pTexture = a.pTexture.Append(new()).ToArray(); }
+
+                                // Set the texture.
+                                a.pTexture[i] = t;
+                            }
+                        }
+                    }
+
+                    // Clear some SOBED Data that might be leftover.
+                    nbActionProcess.SobedClear();
+
+                    // Loop through the SOBED's PB Data.
+                    for (int i = 0; i < bed.pbdata.Length; i++)
+                    {
+                        // Load the Prefab.
+                        GameObject g = GlobalData.asset_bc.LoadPrefab("sobed_pb_dds2", pbPath, bed.pbdata[i].prefab_name);
+                        if (g == null)
+                        {
+                            MelonLogger.Msg("Attempting to fix.");
+                            UnityEngine.Object o2 = ab[0].LoadAsset(ab[0].GetAllAssetNames().Where(a => a.Contains(bed.pbdata[i].prefab_name)).ToArray()[0]);
+                            if (o2 == null)
+                            { MelonLogger.Msg("Prefab is null. Killing function."); return false; }
+                            g = (GameObject)o2.TryCast<GameObject>();
+                        }
+
+                        if (g != null)
+                        {
+                            GameObject.DontDestroyOnLoad(g);
+                            // If the Process' SOBED_PB_LIST is null.
+                            if (nbActionProcess.sobed_pb_all == null)
+                            { nbActionProcess.sobed_pb_all = new SOBED_PB_LIST[] { }; }
+
+                            // If the Process' SOBED_PB_LIST object list is smaller than i, append.
+                            if (nbActionProcess.sobed_pb_all.Length <= i)
+                            { nbActionProcess.sobed_pb_all = nbActionProcess.sobed_pb_all.Append(new()).ToArray(); }
+
+                            // Then change its value, regardless of whether or not it appended.
+                            nbActionProcess.sobed_pb_all[i].reversePB = bed.pbdata[i].reversePB;
+                        }
+                    }
+
+                    // Change the Sound FX string names.
+                    a.se0_name = bed.se0_str;
+                    a.se1_name = bed.se1_str;
+
+                    // Motion value.
+                    int motion = 0;
+
+                    // Grab the Skill's motion value.
+                    motion = vis.motion;
+
+                    // Formation value for later.
+                    nbFormation_t form = a.form;
+
+                    // Delete whatever these Number Effects are.
+                    nbKoukaProcess.nbDelAllMojiNumEffectKoukaPacket(ref form, motion);
+
+                    // Add a Flag On-Off Packet with the above Formation value.
+                    nbMakePacket.nbAddFormFlagOnOffPacket(0, a.uniqueid, ref form, 0, 0x2000);
+
+                    // Bitflag nonsense again.
+                    if ((a.stat & 0xe) == 1)
+                    {
+                        // I have no idea what this is doing.
+                        // Probably necessary though.
+                        a.stat = a.stat & 0xffffbfff;
+                    }
+
+                    // Set the original Formation's Motion End Type.
+                    a.form.motendtype = (short)nbUnitProcess.nbGetMotionEndType(ref form, motion);
+
+                    // Set some Motion Data values.
+                    a.motion = nbUnitProcess.nbGetMotionNo(ref form, motion);
+                    a.motionO = nbUnitProcess.nbGetMotionNoOrg(ref form, motion);
+
+                    // Check if the new Motion End Type is 2 and if the Motion End Data is above -1.
+                    if (a.form.motendtype == 2 && a.form.motenddata > -1)
+                    {
+                        // Get the Motion's Animation Speed.
+                        float spd = nbUnitProcess.nbGetMotionSpeed(ref form, motion, visRate);
+
+                        // Make a FadeOut Packet.
+                        nbMakePacket.nbMakeUnitFadeOutPacket((int)((float)a.form.motenddata / spd), a.uniqueid, ref form, 0, 2, 4, 4);
+                    }
+
+                    // Set a Timer value.
+                    a.timer = 0x23;
+
+                    // Set the Camera's State to 3.
+                    nbCameraProcess.nbCameraSetState(3);
+
+                    // Some Packet. Not sure what exactly.
+                    nbMakePacket.nbAddMojiEffKoukaPacket(0, 0x1e, a.uniqueid, ref form, 0);
+
+                    // If this value is 0. I'm assuming it's an Error value.
+                    if (a.runerr == 0)
+                    {
+                        int costType = datNormalSkill.tbl[a.work.nowindex].costtype;
+                        int cost = datCalc.datGetSkillCost(a.work, a.work.nowindex);
+
+                        // If the currently used Skill's Cost Type is 2 (MP).
+                        if (costType == 2)
+                        {
+                            // Set the Skill Cost Packet.
+                            nbMakePacket.nbAddHpMpKoukaPacket(1, a.uniqueid, ref form, cost, 1);
+                        }
+
+                        // If the currently used Skill's Cost Type is 1 (HP).
+                        else if (costType == 1)
+                        {
+                            // If this flag nonsense is true.
+                            if ((datNormalSkill.tbl[a.work.nowindex].flag >> 3 & 1) == 0)
+                            {
+                                // Set the Skill Cost Packet.
+                                nbMakePacket.nbAddHpMpKoukaPacket(1, a.uniqueid, ref form, cost, 0);
+                            }
+                            // Otherwise, make the skill kill you.
+                            // Self-Destruct Skill Cost Type, basically.
+                            else
+                            {
+                                // For some reason there's some Timer values in the original code.
+                                int TimerValue = 0x3c;
+
+                                // If this Formula ends up under 1.
+                                // Effectively, it's checking for specific Skill IDs in a wonky fashion.
+                                if (a.work.nowindex - 0x74 < 1)
+                                {
+                                    // A Longer Timer is set if true.
+                                    TimerValue = 0x53;
+                                }
+
+                                // Make sure it fucking kills you.
+                                // *This is in the actual code*.
+                                cost = 0xffff;
+                                nbMakePacket.nbAddHpMpKoukaPacket((int)a.timer + TimerValue, a.uniqueid, ref form, cost, 0);
+                            }
+
+                            // Check if the Timelist Length is over the Formation's Index.
+                            // This prevents it from overshooting.
+                            if (a.timelist.Length > form.formindex)
+                            {
+                                // Remove the Skill Cost from your HP.
+                                // Make sure this clamps too.
+                                a.timelist[form.formindex].hp = (ushort)Math.Clamp(a.timelist[form.formindex].hp - cost, 0, MAXHPMP);
+                            }
+                        }
+                    }
+
+                    // Make an Effect Packet.
+                    nbMakePacket.nbAddHatudoEffectKoukaPacket(0, (int)a.timer, a.uniqueid, ref form, vis.hatudo, a.form.motcate, a.work.nowindex);
+
+                    // Set "Normal Skill 0", whatever that is.
+                    nbMisc.nbSetNormalSkill0(a.work);
+
+                    // Delete all Packets of Type 0xE (14).
+                    nbKoukaProcess.nbDelAllKoukaPacketType(0xE);
+
+                    // End whatever Skill was active.
+                    effBattle.effBTLSkillEnd();
+
+                    // Set the Formation Info.
+                    effBattle.effBTLSkillSetFormationInfo((ushort)a.party.formindex, a.select);
+
+                    // Start the Skill!
+                    effBattle.effBTLSkillStart(a.work.nowindex, 0);
+
+                    // Make a Move Packet.
+                    nbMakePacket.nbMakeUnitMovePacket(1, a.uniqueid, ref form, a.select, 0, visRate);
+
+                    // Update the Formation data.
+                    a.form = form;
+
+                    // If the Error value is 0.
+                    if (a.runerr == 0)
+                    {
+                        // Loop through the Data Formations List.
+                        for (int i = 0; i < 0xe; i++)
+                        {
+                            // Flag shenanigans to check for who's getting struck.
+                            if (((a.party.flag >> 1 & 1) == 0 && i > 3) ||
+                                ((a.party.flag >> 1 & 1) != 0 && i < 4))
+                            {
+                                // Check if the Data Formations List is smaller than "i".
+                                if (a.data.form.Length <= i)
+                                { break; }
+
+                                // I have NO IDEA what this does.
+                                if ((a.data.form[i].stat & 0x49) != 0)
+                                {
+                                    // Add to some form of counter.
+                                    nbCalc.nbSetHojoAddCounter(i, 0x10, 1, 0);
+                                }
+                            }
+                        }
+                    }
+
+                    // Ohboy bitshit
+                    // I didn't make this typo on purpose LOL
+                    if ((a.stat >> 2 & 1) == 0)
+                    {
+                        // SHOW ALL THE PANELS!!
+                        nbPanelProcess.nbPanelAllShow();
+                    }
+
+                    // Show the Press Turn Gauge.
+                    // Because the above check could get skipped for reasons.
+                    nbPanelProcess.nbPanelPressGaugeShow();
+
+                    // Blame the game for the bullshit below.
+                    // Also we're going to need this variable.
+                    int skillNameID = a.work.nowindex;
+
+                    if (a.work.nowcommand == 5)
+                    { nbHelpProcess.nbDispItemName(skillNameID); }
+                    else
+                    {
+                        switch (a.work.id)
+                        {
+                            // Anyway, these are for Skill IDs of some sort.
+                            // More than likely for the "Gathering" Skills used by certain Bosses.
+                            case 0x159:
+                                {
+                                    if (a.work.nowindex == 0xe2)
+                                    { skillNameID = 499; }
+                                    break;
+                                }
+                            case 0x15a:
+                                {
+                                    if (a.work.nowindex == 0xe2)
+                                    { skillNameID = 0x1f0; }
+                                    break;
+                                }
+                            case 0x15b:
+                                {
+                                    if (a.work.nowindex == 0xe2)
+                                    { skillNameID = 0x1f1; }
+                                    break;
+                                }
+                            case 0x15c:
+                                {
+                                    if (a.work.nowindex == 0xe2)
+                                    { skillNameID = 0x1f2; }
+                                    break;
+                                }
+                            default:
+                                { break; }
+                        }
+
+                        // Exclude this Skill ID's name entirely.
+                        if (skillNameID == 0xf7)
+                        { return false; }
+
+                        // Display Skill Name.
+                        nbHelpProcess.nbDispSkillName(skillNameID);
+                    }
+
+                    // Finally, just return false so nothing breaks, hopefully.
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        */
+
+        /*
+        [HarmonyPatch(typeof(fldMain), nameof(fldMain.fldFirstInit))]
+        private class PatchAssetBundles
+        {
+            public static void Postfix()
+            {
+                // SOBED DATA TEST :O
+                GlobalData.asset_bc.Load("sobed_dds2", "sobed_dds2");
+                GlobalData.asset_bc.Load("sobed_pb_dds2", "sobed_pb_dds2");
+                int id = 1; // Agi
+
+                // Load SOBED Data Bundles
+                nbActionProcess.sobedtbl[id].keyname = "00b";
+                nbActionProcess.sobedtbl[id].bed_fname = "00b/00b.bed.bytes";
+                nbActionProcess.sobedtbl[id].tga_fname[0] = "00b/00b.0_1.tga";
+                for (int i = 1; i < nbActionProcess.sobedtbl[id].tga_fname.Length; i++)
+                { nbActionProcess.sobedtbl[id].tga_fname[i] = "00b/00b.1_1.tga"; }
+                for (int i = 0; i < nbActionProcess.sobedtbl[id].pbdata.Length; i++)
+                {
+                    nbActionProcess.sobedtbl[id].pbdata[i].prefab_name = "sobed_pb/prefabs/00b_" + i;
+                    nbActionProcess.sobedtbl[id].pbdata[i].type = 0;
+                    nbActionProcess.sobedtbl[id].pbdata[i].reversePB = 1;
                 }
             }
         }
@@ -1052,8 +1591,8 @@ namespace ModernStatsSystem
                     // Copy the Demon into your Stock.
                     fclCombineCalcCore.cmbCopyDefaultDevilToStock((ushort)DemonID, pEvoDevil);
 
-                    // If the new demon is a higher level.
-                    if (pStock.level < pEvoDevil.level)
+                    // If the new demon is a lower level.
+                    if (pStock.level > pEvoDevil.level)
                     {
                         // Recalculate the new demon's Experience.
                         pEvoDevil.exp = rstCalcCore.cmbCalcLevelUpExp(ref pEvoDevil, pStock.level);
@@ -1081,6 +1620,9 @@ namespace ModernStatsSystem
                             i++;
                         }
                         while (i < Math.Abs(pStock.level - pEvoDevil.level) * (EnableStatScaling ? POINTS_PER_LEVEL : 1));
+
+                        // Forcibly set the new Demon's level to what it should be so that it doesn't trigger Level Ups.
+                        pEvoDevil.level = pStock.level;
                     }
                 }
 

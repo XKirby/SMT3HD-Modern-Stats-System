@@ -108,16 +108,13 @@ namespace ModernStatsSystem
             // Damage Mitigation Formula.
             // Requires a work unit and one of the parameter IDs.
             public static float Get(datUnitWork_t work, int param)
-            { return 150f / (150f + (((float)work.param[param] + (float)work.mitamaparam[param]) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level)); }
+            { return 150f / (150f + (((float)datCalc.datGetParam(work, param) / (EnableStatScaling ? STATS_SCALING : 1f) * 2f) + Math.Min(99f, (float)work.level))); }
         }
 
         public class HitRateHelper
         {
             public static float GetHitRate(datUnitWork_t work, int powparam, int spdparam)
-            {
-                float value = ((work.badstatus & 0xFFF) == 0x200 && spdparam == 5) ? 1f : ((float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING);
-                return (((float)datCalc.datGetParam(work, powparam) / STATS_SCALING + (float)work.level) + value);
-            }
+            { return (float)datCalc.datGetParam(work, powparam) / STATS_SCALING + (float)work.level + (((work.badstatus & 0xFFF) == 0x200) ? 1f : (float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING); }
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
@@ -212,6 +209,22 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[287].magiclimit = 400;
             }
         }
+
+        /*
+        [HarmonyPatch(typeof(nbCommSelProcess), nameof(nbCommSelProcess.DispCommandList2))]
+        private class NewCommandsPatch
+        {
+            private static void Prefix(ref nbCommSelProcessData_t s, ref int type, ref int ox, ref int oy, ref int a)
+            {
+                //Test - Add all skills
+                var skillCommands = new ushort[287];
+                for (ushort i = 1; i < 288; i++)
+                { skillCommands[i-1] = i; }
+                s.commlist[0] = skillCommands;
+                s.commcnt[0] = 287;
+            }
+        }
+        */
 
         [HarmonyPatch(typeof(datSkillHelp_msg), nameof(datSkillHelp_msg.Get))]
         private class PatchSkillDescriptions
@@ -790,7 +803,7 @@ namespace ModernStatsSystem
                 {
                     // Grab both Hit Rates and math out the difference.
                     float atkStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
-                    float defStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
+                    float defStrAgiCalc = HitRateHelper.GetHitRate(defender, 0, 4);
 
                     // Calculate the overall hit chance.
                     hitChanceCalc = (basepower - Math.Clamp(defStrAgiCalc - atkStrAgiCalc, -95f, 95f) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
@@ -800,21 +813,21 @@ namespace ModernStatsSystem
                 {
                     // Grab both Hit Rates and math out the difference.
                     float atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 2, 5);
-                    float defIntLucCalc = HitRateHelper.GetHitRate(attacker, 2, 5);
+                    float defIntLucCalc = HitRateHelper.GetHitRate(defender, 2, 5);
 
                     if (EnableIntStat)
                     {
                         atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 1, 5);
-                        defIntLucCalc = HitRateHelper.GetHitRate(attacker, 1, 5);
+                        defIntLucCalc = HitRateHelper.GetHitRate(defender, 1, 5);
                     }
 
                     // Calculate the overall hit chance.
                     hitChanceCalc = (basepower - Math.Clamp(defIntLucCalc - atkIntLucCalc, -95f, 95f)) * atkBuffs * defBuffs;
                 }
 
-                // Drop the attacker's hit chance to 25% if you have whatever status byte this is.
+                // Multiply the attacker's miss chance by 4 times if you have whatever status byte this is.
                 if ((attacker.badstatus & 0xFFF) == 0x100)
-                { hitChanceCalc *= 0.25f; }
+                { hitChanceCalc *= 4f; }
 
                 // If the defender has any of these statuses, they can't dodge.
                 if ((defender.badstatus & 0xFFF) == 1 ||
@@ -847,7 +860,7 @@ namespace ModernStatsSystem
                 // Hit Types are as followed:
                 // 0 -> Normal
                 // 1 -> Critical
-                // 2 -> Weakness
+                // 2 -> Weakness 
 
                 // Grab units from form indices.
                 datUnitWork_t attacker = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
