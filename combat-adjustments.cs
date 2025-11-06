@@ -840,11 +840,7 @@ namespace ModernStatsSystem
                     (defender.badstatus & 0xFFF) == 4 ||
                     (defender.badstatus & 0xFFF) == 8 ||
                     (defender.badstatus & 0xFFF) == 0x10)
-                { hitChanceCalc = 0.0f; }
-
-                // If the Base Power is 255, the skill is automatically guaranteed to hit.
-                if (basepower == 255f)
-                { hitChanceCalc = 100f; }
+                { hitChanceCalc = 100.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you hit, set the result to zero.
