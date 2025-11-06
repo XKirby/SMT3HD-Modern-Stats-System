@@ -743,6 +743,11 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(int nskill, int sformindex, int dformindex, out int __result)
             {
+                // Kouka Types are as followed:
+                // 0 = Hit
+                // 4 = Whiff (normal Miss, no text)
+                // 5 = Miss (with Miss text)
+
                 // Result init.
                 __result = 0;
 
@@ -796,7 +801,7 @@ namespace ModernStatsSystem
                 // I could be wrong, they might both be Agi.
                 float atkBuffs = nbCalc.nbGetHojoRitu(sformindex, 8);
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
-                float hitChanceCalc = 0f;
+                float hitChanceCalc = 100f;
 
                 // If the Skill's Effect Type is zero (Physical Damage).
                 if (datNormalSkill.tbl[nskill].koukatype == 0)
@@ -806,7 +811,7 @@ namespace ModernStatsSystem
                     float defStrAgiCalc = HitRateHelper.GetHitRate(defender, 0, 4);
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - Math.Clamp(defStrAgiCalc - atkStrAgiCalc, -95f, 95f) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs;
+                    hitChanceCalc = Math.Clamp((basepower - (defStrAgiCalc - atkStrAgiCalc) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs, 0f, 100f);
                 }
                 // If the Skill's Effect Type is not zero (Magical Damage)
                 else
@@ -822,12 +827,12 @@ namespace ModernStatsSystem
                     }
 
                     // Calculate the overall hit chance.
-                    hitChanceCalc = (basepower - Math.Clamp(defIntLucCalc - atkIntLucCalc, -95f, 95f)) * atkBuffs * defBuffs;
+                    hitChanceCalc = Math.Clamp((basepower - (defIntLucCalc - atkIntLucCalc) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs, 0f, 100f);
                 }
 
-                // Multiply the attacker's miss chance by 4 times if you have whatever status byte this is.
+                // Divide the attacker's miss chance by 4 if you have whatever status byte this is.
                 if ((attacker.badstatus & 0xFFF) == 0x100)
-                { hitChanceCalc *= 4f; }
+                { hitChanceCalc *= 0.25f; }
 
                 // If the defender has any of these statuses, they can't dodge.
                 if ((defender.badstatus & 0xFFF) == 1 ||
@@ -835,19 +840,22 @@ namespace ModernStatsSystem
                     (defender.badstatus & 0xFFF) == 4 ||
                     (defender.badstatus & 0xFFF) == 8 ||
                     (defender.badstatus & 0xFFF) == 0x10)
-                { hitChanceCalc = 10000.0f; }
+                { hitChanceCalc = 0.0f; }
 
                 // Check hit chance against a random integer from 0 to 99.
-                // If you don't hit, set the result to zero.
+                // If you hit, set the result to zero.
                 System.Random rng = new();
                 int hitCheck = (int)(rng.NextDouble() * 100f);
-                if (hitCheck >= hitChanceCalc)
+
+                if (hitCheck < (int)hitChanceCalc)
                 { __result = 0; return false; }
 
                 // Whatever this "Devil Format Flag" is, if it's not zero, return a different result.
                 if ((nbCalc.nbGetDevilFormatFlag(dformindex) & 0x800) != 0)
                 { __result = 5; return false; }
 
+                // Change the result to a hit.
+                __result = 4;
                 return false;
             }
         }
