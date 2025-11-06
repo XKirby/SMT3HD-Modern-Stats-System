@@ -204,9 +204,9 @@ namespace ModernStatsSystem
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
-                datNormalSkill.tbl[287].hpn = 80;
+                datNormalSkill.tbl[287].hpn = 280;
                 datNormalSkill.tbl[287].hptype = 1;
-                datNormalSkill.tbl[287].magiclimit = 400;
+                datNormalSkill.tbl[287].magiclimit = 100;
             }
         }
 
@@ -745,7 +745,7 @@ namespace ModernStatsSystem
             {
                 // Kouka Types are as followed:
                 // 0 = Hit
-                // 4 = Whiff (normal Miss, no text)
+                // 4 = Dodge (no text)
                 // 5 = Miss (with Miss text)
 
                 // Result init.
@@ -801,7 +801,7 @@ namespace ModernStatsSystem
                 // I could be wrong, they might both be Agi.
                 float atkBuffs = nbCalc.nbGetHojoRitu(sformindex, 8);
                 float defBuffs = nbCalc.nbGetHojoRitu(dformindex, 6);
-                float hitChanceCalc = 100f;
+                float hitChanceCalc = 0f;
 
                 // If the Skill's Effect Type is zero (Physical Damage).
                 if (datNormalSkill.tbl[nskill].koukatype == 0)

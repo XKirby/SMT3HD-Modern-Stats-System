@@ -1614,7 +1614,7 @@ namespace ModernStatsSystem
 
                             // Otherwise, break loop.
                             else
-                            { continue; }
+                            { break; }
 
                             // Increment.
                             i++;
@@ -1623,6 +1623,10 @@ namespace ModernStatsSystem
 
                         // Forcibly set the new Demon's level to what it should be so that it doesn't trigger Level Ups.
                         pEvoDevil.level = pStock.level;
+
+                        // Flag Nonsense that's included normally.
+                        // Fixes their Skills from being removed from their Level Up Skill List.
+                        pEvoDevil.flag |= 0x200;
                     }
                 }
 
