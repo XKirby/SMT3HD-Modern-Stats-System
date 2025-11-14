@@ -114,7 +114,10 @@ namespace ModernStatsSystem
         public class HitRateHelper
         {
             public static float GetHitRate(datUnitWork_t work, int powparam, int spdparam)
-            { return (float)datCalc.datGetParam(work, powparam) / STATS_SCALING + (float)work.level + (((work.badstatus & 0xFFF) == 0x200) ? 1f : (float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING); }
+            { return ((float)datCalc.datGetParam(work, powparam) + (float)work.level / 2f) / 2f + (((work.badstatus & 0xFFF) == 0x200) ? 1f : (float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING); }
+
+            public static float GetDodgeRate(datUnitWork_t work, int powparam, int spdparam)
+            { return ((float)datCalc.datGetParam(work, powparam) + (float)work.level / 4f) / 2f + (((work.badstatus & 0xFFF) == 0x200) ? 1f : (float)datCalc.datGetParam(work, spdparam) * 2f / STATS_SCALING); }
         }
 
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
@@ -808,7 +811,7 @@ namespace ModernStatsSystem
                 {
                     // Grab both Hit Rates and math out the difference.
                     float atkStrAgiCalc = HitRateHelper.GetHitRate(attacker, 0, 4);
-                    float defStrAgiCalc = HitRateHelper.GetHitRate(defender, 0, 4);
+                    float defStrAgiCalc = HitRateHelper.GetDodgeRate(defender, 0, 4);
 
                     // Calculate the overall hit chance.
                     hitChanceCalc = Math.Clamp((basepower - (defStrAgiCalc - atkStrAgiCalc) - nbCalc.GetFailpoint(nskill)) * atkBuffs * defBuffs, 0f, 100f);
@@ -818,12 +821,12 @@ namespace ModernStatsSystem
                 {
                     // Grab both Hit Rates and math out the difference.
                     float atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 2, 5);
-                    float defIntLucCalc = HitRateHelper.GetHitRate(defender, 2, 5);
+                    float defIntLucCalc = HitRateHelper.GetDodgeRate(defender, 2, 5);
 
                     if (EnableIntStat)
                     {
                         atkIntLucCalc = HitRateHelper.GetHitRate(attacker, 1, 5);
-                        defIntLucCalc = HitRateHelper.GetHitRate(defender, 1, 5);
+                        defIntLucCalc = HitRateHelper.GetDodgeRate(defender, 1, 5);
                     }
 
                     // Calculate the overall hit chance.
@@ -915,12 +918,12 @@ namespace ModernStatsSystem
                 { ad.autoskill = 301; val += 0.5f; }
 
                 // Set Attacker's Crit Chance values.
-                float atkCritLevel = (float)attacker.level / 5f + 3f;
+                float atkCritLevel = (float)attacker.level / 2f + 3f;
                 float atkCritStat = (float)Math.Clamp(datCalc.datGetParam(attacker, 5), 0, MAXSTATS) / (float)STATS_SCALING;
                 float atkCritChance = atkCritStat;
 
                 // Set Defender's Crit Chance values.
-                float defCritLevel = (float)defender.level / 5f + 3f;
+                float defCritLevel = (float)defender.level / 4f + 3f;
                 float defCritStat = (float)Math.Clamp(datCalc.datGetParam(defender, 5), 0, MAXSTATS) / (float)STATS_SCALING;
                 float defCritChance = defCritStat;
 
@@ -931,7 +934,7 @@ namespace ModernStatsSystem
                 { defCritChance = defCritStat / atkCritLevel; }
 
                 // Set total Crit Value.
-                float critValue = Math.Clamp((atkCritChance - defCritChance) * 6.25f, -100f, 100f);
+                float critValue = Math.Clamp((atkCritChance - defCritChance) * 6.25f, 0f, 100f);
 
                 // Adjust the Crit Value by the "val" multiplier and the Skill's "Critical Point" value.
                 // If "Critical Point" is 0, the Skill can't crit.
