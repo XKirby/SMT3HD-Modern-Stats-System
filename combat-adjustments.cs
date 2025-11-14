@@ -204,7 +204,7 @@ namespace ModernStatsSystem
 
                 // God's Bow
                 datNormalSkill.tbl[287].badlevel = 60;
-                datNormalSkill.tbl[287].hpn = 280;
+                datNormalSkill.tbl[287].hpn = 430;
                 datNormalSkill.tbl[287].hptype = 1;
                 datNormalSkill.tbl[287].magiclimit = 100;
             }

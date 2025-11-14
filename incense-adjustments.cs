@@ -18,12 +18,12 @@ namespace ModernStatsSystem
                 datItem.tbl[0x27].use = 1;
 
                 // Change the Incense Buy Prices.
-                datItem.tbl[0x26].price = 20000u;
-                datItem.tbl[0x27].price = 20000u;
-                datItem.tbl[0x28].price = 20000u;
-                datItem.tbl[0x29].price = 20000u;
-                datItem.tbl[0x2a].price = 20000u;
-                datItem.tbl[0x2b].price = 20000u;
+                datItem.tbl[0x26].price = 7500u;
+                datItem.tbl[0x27].price = 7500u;
+                datItem.tbl[0x28].price = 7500u;
+                datItem.tbl[0x29].price = 7500u;
+                datItem.tbl[0x2a].price = 7500u;
+                datItem.tbl[0x2b].price = 7500u;
 
                 // If Enabled, add the Int Incense to the Lucky Ticket Prizes.
                 if (EnableIntStat)
@@ -108,12 +108,12 @@ namespace ModernStatsSystem
                 {
                     if(ItemID < datItem.tbl.Length)
                     {
-                        // Set the Sell Price.
-                        __result = (int)(datItem.tbl[ItemID].price >> 1);
-
                         // If the item is an Incense, adjust the Sell Price.
                         if (ItemID > 0x25 && ItemID < 0x2c)
                         { __result = 2000; }
+
+                        // Set the Sell Price.
+                        __result = (int)(datItem.tbl[ItemID].price >> 1);
 
                         // Return.
                         return false;
