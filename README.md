@@ -17,7 +17,7 @@ Includes the following:
 - You can find the Cursed Gospel and Stat Incense items for sale in the final shop of the game. Go nuts.
 - Even more stuff I probably forgot.
 
-For full data dumps posted in a Google Sheets Doc, [click here](https://docs.google.com/spreadsheets/d/1HeZxeYkSgBEeS4FzkcopwK9mEqVL1boGyVQ_ED5ibnA/edit?usp=sharing).
+For full data dumps of Demon data, Skill data, and Magatama data, I've included an OpenOffice/LibreOffice calc sheet (It's the .ods file).
 
 ### How to Install
 - Install SMT3HD from your Steam Account.
