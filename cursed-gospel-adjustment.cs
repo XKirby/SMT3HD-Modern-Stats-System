@@ -16,8 +16,8 @@ namespace ModernStatsSystem
                 // Add the Cursed Gospel from Matthiew Purple's mod.
                 // Unfortunately I had to completely copy it and adjust it for the Stat adjustments.
                 // I couldn't figure out how else to implement the fix to it.
-                datItem.tbl[60].flag = 0;
-                datItem.tbl[60].price = 100000u;
+                datItem.tbl[60].flag = 4;
+                datItem.tbl[60].price = 5000u;
                 datItem.tbl[60].skillid = 95;
                 datItem.tbl[60].use = 1;
                 datSkill.tbl[95].capacity = 4;
@@ -31,15 +31,13 @@ namespace ModernStatsSystem
         }
 
         [HarmonyPatch(typeof(fclShopCalc), nameof(fclShopCalc.shpCreateItemList))]
-        private class PatchFinalShopAddCursedGospel
+        private class PatchShopAddCursedGospel
         {
             public static void Postfix(ref fclDataShop_t pData)
             {
-                // Add the Cursed Gospel to the final shop of the game.
-                if (pData.Place == 6 && dds3GlobalWork.DDS3_GBWK.item[60] == 0)
-                {
-                    pData.BuyItemList[pData.BuyItemCnt++] = 60;
-                }
+                // Add the Cursed Gospel to Asakusa, Manikin Collector and Tower of Kagatsuchi Shops.
+                if (pData.Place >= 4 && pData.Place <= 6)
+                { pData.BuyItemList[pData.BuyItemCnt++] = 60; }
             }
         }
 

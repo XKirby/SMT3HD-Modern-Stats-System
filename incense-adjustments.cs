@@ -14,8 +14,16 @@ namespace ModernStatsSystem
         {
             private static void Postfix()
             {
-                // Set the Intelligence Incense to use the same skill as the other Incense items.
+                // Set the Intelligence Incense to be usable.
                 datItem.tbl[0x27].use = 1;
+
+                // Change the Incense Buy Prices.
+                datItem.tbl[0x26].price = 20000u;
+                datItem.tbl[0x27].price = 20000u;
+                datItem.tbl[0x28].price = 20000u;
+                datItem.tbl[0x29].price = 20000u;
+                datItem.tbl[0x2a].price = 20000u;
+                datItem.tbl[0x2b].price = 20000u;
 
                 // If Enabled, add the Int Incense to the Lucky Ticket Prizes.
                 if (EnableIntStat)
@@ -84,6 +92,39 @@ namespace ModernStatsSystem
             }
         }
 
+        [HarmonyPatch(typeof(fclShopCalc), nameof(fclShopCalc.shpCalcItemPrice))]
+        private class PatchShopIncensePrice
+        {
+            private static bool Prefix(ref int __result, int Index, sbyte Mode)
+            {
+                // Basic Result
+                __result = 0;
+
+                // Grab the Item ID
+                int ItemID = fclShopCalc.shpGetItemID(Index, Mode);
+
+                // If the Mode is 1.
+                if(Mode == 1)
+                {
+                    if(ItemID < datItem.tbl.Length)
+                    {
+                        // Set the Sell Price.
+                        __result = (int)(datItem.tbl[ItemID].price >> 1);
+
+                        // If the item is an Incense, adjust the Sell Price.
+                        if (ItemID > 0x25 && ItemID < 0x2c)
+                        { __result = 2000; }
+
+                        // Return.
+                        return false;
+                    }
+                }
+                
+                // Return original function otherwise.
+                return true;
+            }
+        }
+
         [HarmonyPatch(typeof(fclShopCalc), nameof(fclShopCalc.shpCreateItemList))]
         private class PatchFinalShopAddIncense
         {
@@ -95,10 +136,9 @@ namespace ModernStatsSystem
                     // Loop through the Incense items and add them to the shop.
                     for (int i = 0; i < 6; i++)
                     {
-                        if (!EnableIntStat && i == 0)
+                        if (!EnableIntStat && i == 1)
                             { continue; }
-                        pData.BuyItemList[pData.BuyItemCnt] = (byte)(0x26 + i);
-                        pData.BuyItemCnt++;
+                        pData.BuyItemList[pData.BuyItemCnt++] = (byte)(0x26 + i);
                     }
                 }
             }
