@@ -23,7 +23,7 @@ namespace ModernStatsSystem
                 datSkill.tbl[95].capacity = 4;
                 datSkill.tbl[95].skillattr = 15;
                 datNormalSkill.tbl[95].koukatype = 1;
-                datNormalSkill.tbl[95].program = 14u;
+                datNormalSkill.tbl[95].program = 14;
                 datNormalSkill.tbl[95].targetcntmax = 1;
                 datNormalSkill.tbl[95].targetcntmin = 1;
                 datNormalSkill.tbl[95].targettype = 3;
@@ -75,41 +75,48 @@ namespace ModernStatsSystem
                     { return; }
 
                 // Grab Demi-Fiend and check his Level.
-                // If it's 1 or lower, return and run the original function.
                 datUnitWork_t work = dds3GlobalWork.DDS3_GBWK.unitwork[0];
-                if (work.level <= 1)
-                    { return; }
-                
-                // Lower Level by 1.
-                work.level--;
 
-                // Set EXP needed to exactly 1 before the next level.
-                work.exp = rstCalcCore.GetNextExpDisp(work, 0) - 1;
+                // If his Level is over 1.
+                if (work.level > 1)
+                {
+                    // Set EXP needed to exactly 1 before the next level.
+                    work.exp = rstCalcCore.GetNextExpDisp(work, 0) - 1;
 
-                // Create a list of Stat IDs, then remove 1 if EnableIntStat is false.
-                List<int> statlist = new List<int> { 0, 1, 2, 3, 4, 5 };
-                if (!EnableIntStat)
+                    // Create a list of Stat IDs, then remove 1 if EnableIntStat is false.
+                    List<int> statlist = new List<int> { 0, 1, 2, 3, 4, 5 };
+                    if (!EnableIntStat)
                     { statlist.Remove(1); }
 
-                // Iterate through Stats and reduce them at random a number of times equal to the current Stat points per level.
-                // If EnableStatScaling is false, it's just 1 point.
-                int changes = 1 * (EnableStatScaling ? POINTS_PER_LEVEL : 1);
-                System.Random rng = new();
-                while (changes > 0 && statlist.Count > 0)
-                {
-                    // Randomize the Stat ID.
-                    int statID = statlist[rng.Next(statlist.Count)];
-
-                    // If the Base Stat is over 1, decrement it and the change count.
-                    if (work.param[statID] - tblHearts.fclHeartsTbl[dds3GlobalWork.DDS3_GBWK.heartsequip].GrowParamTbl[statID] > 1)
+                    // Iterate through Stats and reduce them at random a number of times equal to the current Stat points per level.
+                    // If EnableStatScaling is false, it's just 1 point.
+                    int changes = 1 * (EnableStatScaling ? POINTS_PER_LEVEL : 1);
+                    System.Random rng = new();
+                    while (changes > 0 && statlist.Count > 0)
                     {
-                        work.param[statID]--;
-                        changes--;
+                        // Randomize the Stat ID.
+                        int statID = statlist[rng.Next(statlist.Count)];
+
+                        // If the Base Stat is over 1, decrement it and the change count.
+                        if (work.param[statID] - tblHearts.fclHeartsTbl[dds3GlobalWork.DDS3_GBWK.heartsequip].GrowParamTbl[statID] > 1)
+                        {
+                            work.param[statID]--;
+                            changes--;
+                        }
+
+                        // Remove anything that can't be reduced from being potentially chosen again.
+                        else
+                        { statlist.Remove(statID); }
                     }
 
-                    // Remove anything that can't be reduced from being potentially chosen again.
-                    else
-                        { statlist.Remove(statID); }
+                    // Fix HP/MP calculations.
+                    work.maxhp = (ushort)datCalc.datGetMaxHp(work);
+                    work.maxmp = (ushort)datCalc.datGetMaxMp(work);
+                    work.hp = (ushort)Math.Clamp(work.hp, 0u, work.maxhp);
+                    work.mp = (ushort)Math.Clamp(work.mp, 0u, work.maxmp);
+
+                    // Set Demi-Fiend's object to the changed unit.
+                    dds3GlobalWork.DDS3_GBWK.unitwork[0] = work;
                 }
             }
         }
