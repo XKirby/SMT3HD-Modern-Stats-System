@@ -11,7 +11,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.5.5", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.6.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -472,7 +472,8 @@ namespace ModernStatsSystem
         // Menu manipulation variables
         private static bool SettingAsignParam;
 
-        /* Fight Cube in Asakusa for testing purposes
+        /*
+        // Treasure Chest/Cube Additions
         [HarmonyPatch(typeof(fldFileResolver), nameof(fldFileResolver.fldLoadFile))]
         private class fldLoadFilePatch
         {
@@ -485,19 +486,37 @@ namespace ModernStatsSystem
 
             public static void Postfix(string pFileName, string akey)
             {
+                // Check Field and Area IDs.
+                MelonLogger.Msg("Field ID: " + fldGlobal.fldGb.fieldID);
+                MelonLogger.Msg("Area ID: " + fldGlobal.fldGb.areaID);
+
+                // Expand the Treasure Chest/Cube Table
+                for (int i = fldGlobal.fldHitData._fldItemBoxTbl.Count; i < 1000; i++)
+                {
+                    fldGlobal.fldHitData._fldItemBoxTbl.Add(new fldTakaraTbl_t());
+                    fldGlobal.fldHitData._fldItemBoxTbl[i]._Type = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[i]._ItemID = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[i]._ItemNum = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[i]._Trap = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[i]._Param = 0;
+                }
+
                 if (pFileName == "dds3data/fld/f/f027/f027_001") // Asakusa 1
                 {
                     // Co-ordinates are divided by 100 in-game, y co-ordinate is reversed
-                    // 4.0364 0.2 31.4621
-                    int id = 351;
+                    // 4.0364 0.2 31.
+
+                    // Chest ID
+                    int id = 352;
 
                     fld_Npc.fldItemBoxAdd(id, -403.64f, -20f, 3146.21f, new Vector4(0, 0, 0, 1)); // Add Item Box in Asakusa
 
-                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Type = 2;
-                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemID = 0;
-                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemNum = 0;
-                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Trap = 1;
-                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Param = 194;
+                    // Set Item to Intelligence Incense.
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Type = 1;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemID = 0x27;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._ItemNum = 1;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Trap = 0;
+                    fldGlobal.fldHitData._fldItemBoxTbl[id]._Param = 0;
                 }
             }
         }
@@ -1016,11 +1035,11 @@ namespace ModernStatsSystem
 
         /*
         [HarmonyPatch(typeof(fldMain), nameof(fldMain.fldFirstInit))]
-        private class PatchAssetBundles
+        private class PatchFirstInit
         {
             public static void Postfix()
             {
-                // SOBED DATA TEST :O
+                // Sobed Data Test
                 GlobalData.asset_bc.Load("sobed_dds2", "sobed_dds2");
                 GlobalData.asset_bc.Load("sobed_pb_dds2", "sobed_pb_dds2");
                 int id = 1; // Agi
@@ -1288,7 +1307,7 @@ namespace ModernStatsSystem
             {
                 // Returns the base stat of the given parameter.
                 int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam + work.mitamaparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype]);
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype]);
                 return false;
             }
         }
@@ -3025,15 +3044,6 @@ namespace ModernStatsSystem
                 ReworkParamGauge(pBaseCol, StepY, Pos, ParamOfs, FlashMode, pStock, stsObj);
                 return false;
             }
-            private static void Postfix(int X, int Y, uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
-            {
-                // If no demon or status object, return.
-                if (pStock == null || stsObj == null)
-                { return; }
-                // Rework the Stat Bar.
-                ReworkParamGauge(pBaseCol, StepY, Pos, ParamOfs, FlashMode, pStock, stsObj);
-                return;
-            }
 
             public static void ReworkParamGauge(uint[] pBaseCol, int StepY, sbyte Pos, sbyte ParamOfs, sbyte FlashMode, datUnitWork_t pStock, GameObject stsObj)
             {
@@ -3145,13 +3155,6 @@ namespace ModernStatsSystem
                     }
                 }
 
-                // Magatama Value.
-                int heartValue = 0;
-                if ((pStock.flag >> 2 & 1) == 0)
-                    { heartValue = 0; }
-                else
-                    { heartValue = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs); }
-
                 // Stat Value
                 int paramValue = pStock.param[ParamOfs];
 
@@ -3161,8 +3164,18 @@ namespace ModernStatsSystem
                 // LevelUp Value.
                 int levelupValue = pStock.levelupparam[ParamOfs];
 
+                // Magatama/Extra Mitama Bonus Value.
+                int heartValue = 0;
+                if ((pStock.flag >> 2 & 1) == 0)
+                { heartValue = pStock.skillparam[ParamOfs]; }
+                else
+                {
+                    heartValue = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, ParamOfs);
+                    paramValue -= heartValue;
+                }
+
                 // Set up the values into a list.
-                int[] values = new int[] { Math.Max(paramValue - heartValue, 0), levelupValue, mitamaValue, heartValue };
+                int[] values = new int[] { paramValue, levelupValue, mitamaValue, heartValue };
 
                 // Iterate through the Animator list to set the correct scale and position.
                 float posOffset = 0;
@@ -3189,7 +3202,7 @@ namespace ModernStatsSystem
                     stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].gameObject.transform.localPosition = barPos;
 
                     // Set the Animator Color
-                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].SetInteger("sstatusbar_color", (len >= 2 ? 3 : len + 1));
+                    stsObj.GetComponentsInChildren<sstatusbarUI>()[stat].gameObject.GetComponentsInChildren<Animator>()[len].SetInteger("sstatusbar_color", len + 1);
                 }
 
                 // If Stat Position is greater than or equal to Blink que length, cap it.
