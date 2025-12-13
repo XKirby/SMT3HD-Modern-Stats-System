@@ -413,16 +413,18 @@ namespace ModernStatsSystem
             }
         }
 
-        [HarmonyPatch(typeof(fclCombineCalcCore), nameof(fclCombineCalcCore.cmbAddCustomDevilToStock))]
-        private class PatchAddDevilToStock
+        [HarmonyPatch(typeof(fclCombineUpdate), nameof(fclCombineUpdate.cmbUpdateDecideDevil))]
+        private class PatchUpdateDecideDevil
         {
-            private static void Postfix(datUnitWork_t pDevil, Il2CppReferenceArray<datUnitWork_t> pStock, byte StockNums, int ofs = 0)
+            private static void Postfix()
             {
+                datUnitWork_t pDevil = fclCombineInit.CMB_GBWK.BirthDevil;
                 for (int i = 0; i < pDevil.skillparam.Length; i++)
                 {
                     pDevil.mitamaparam[i] += pDevil.skillparam[i];
                     pDevil.skillparam[i] = 0;
                 }
+                fclCombineInit.CMB_GBWK.BirthDevil = pDevil;
             }
         }
 
