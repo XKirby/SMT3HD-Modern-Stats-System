@@ -5,11 +5,11 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2Cppnewbattle_H;
 using Il2Cppnewdata_H;
 using Il2Cppresult2_H;
-using Il2CppSystem.Linq;
 using Il2CppTMPro;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
+using static Il2Cpp.SteamDlcFileUtil;
 
 [assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.6.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
@@ -400,7 +400,7 @@ namespace ModernStatsSystem
             30, // Kaiwan (Probably unused)
             18, // Nekomata
             26, // Troll
-            5,  // Will o' Wisp
+            3,  // Will o' Wisp
             5,  // Preta
             47, // Bishamonten
             81, // Mara
@@ -1103,9 +1103,9 @@ namespace ModernStatsSystem
             // Search through all of the demons.
             for (int i = 1; i < datDevilFormat.tbl.Length; i++)
             {
-                // Change the first Will o' Wisps encounter's Strength to 1.
+                // Change the first Will o' Wisps encounter's Strength to 3.
                 if (i == 318)
-                { datDevilFormat.tbl[i].param[0] = 1; }
+                { datDevilFormat.tbl[i].param[0] = 3; }
 
                 // If enabled, give the demons Int equal to their Mag.
                 if (EnableIntStat)
@@ -1269,7 +1269,7 @@ namespace ModernStatsSystem
                         int luck = EnableStatScaling ? (int)((float)datCalc.datGetParam(work, 5) / STATS_SCALING) : datCalc.datGetParam(work, 5);
 
                         // If the Demon has Lucky Find as a Skill.
-                        if(datCalc.datCheckSyojiSkill(work, 0x161) != 0)
+                        if (datCalc.datCheckSyojiSkill(work, 0x161) != 0)
                         {
                             // A random integer check to see if the Demon's ID is returned.
                             uint randomChance = dds3KernelCore.dds3GetRandIntA(0x20);
@@ -1313,7 +1313,8 @@ namespace ModernStatsSystem
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
                 // Just returns the parameter of the given type.
-                __result = work.param[paratype] + work.levelupparam[paratype];
+                int heartParam = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype);
+                __result = work.param[paratype] - heartParam + work.levelupparam[paratype];
                 return false;
             }
         }
@@ -1324,7 +1325,8 @@ namespace ModernStatsSystem
             private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
                 // Returns the total value of the given parameter type.
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype] + work.skillparam[paratype], 0, MAXSTATS + work.mitamaparam[paratype] + work.skillparam[paratype]);
+                int heartParam = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype);
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype]);
                 return false;
             }
         }
@@ -1599,7 +1601,7 @@ namespace ModernStatsSystem
         [HarmonyPatch(typeof(rstCalcCore), nameof(rstCalcCore.cmbCalcEvoEvent))]
         private class PatchCalcEvoEvent
         {
-            private static bool Prefix(datUnitWork_t pStock, Il2CppReferenceArray<Il2Cppresult2_H.fclSkillParam_t> pEvent, sbyte EvtBufFlag, datUnitWork_t pEvoDevil)
+            private static bool Prefix(datUnitWork_t pStock, Il2CppReferenceArray<fclSkillParam_t> pEvent, sbyte EvtBufFlag, datUnitWork_t pEvoDevil)
             {
                 // If the event's Buffer Flag(?) is zero or the length of the event is under 2, return.
                 if (EvtBufFlag == 0 || pEvent.Length < 2)
@@ -2197,7 +2199,7 @@ namespace ModernStatsSystem
             private static void Postfix()
             {
                 // Check if you have no messages open.
-                if(fclMisc.fclChkMessage() == 0)
+                if (fclMisc.fclChkMessage() == 0)
                 {
                     // Grab the current Demon (should be the Demifiend).
                     datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
@@ -2480,7 +2482,7 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // If there's no 6th base.
-                if(!GameObject.Find("magUI(Clone)/magstatus/magstatus_base06"))
+                if (!GameObject.Find("magUI(Clone)/magstatus/magstatus_base06"))
                 {
                     // Find the first one.
                     GameObject orig = GameObject.Find("magUI(Clone)/magstatus/magstatus_base01");
@@ -2590,7 +2592,7 @@ namespace ModernStatsSystem
                 fclDraw.fclDrawParts(0, 0x28 + i * 0xd0, 0, new(4), 0xb, 1, cmpInitDH.GBWK.TexHandle, etcSprTbl.cmpSprTblArry, 0x47);
 
                 // Grab a color.
-                uint color = fclMisc.fclGetBlendColor(0x80808080,0x40404080,(uint)pHeartsInfo.Timer);
+                uint color = fclMisc.fclGetBlendColor(0x80808080, 0x40404080, (uint)pHeartsInfo.Timer);
 
                 // Set a list to that color.
                 uint[] colorptr = { color, color, color, color };
@@ -2610,7 +2612,7 @@ namespace ModernStatsSystem
                         { break; }
 
                     // Grab Magatama Status Item object.
-                    g = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i+1));
+                    g = GameObject.Find("magUI(Clone)/magstatus/magstatus_item0" + (i + 1));
 
                     // If null, increment and continue.
                     if (g == null)
@@ -2727,8 +2729,9 @@ namespace ModernStatsSystem
                     }
                 }
 
+                // If there's Counter objects in the Status Menu's children, set up their values and colors.
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
-                    { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(Math.Clamp(datCalc.datGetParam(pStock, ctr2), 0, MAXSTATS), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+                { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(Math.Clamp(datCalc.datGetParam(pStock, ctr2), 0, MAXSTATS), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
 
                 // If your Cursor Position is over -1, set the FlashMode to 2.
                 // Not sure what this does.
@@ -2811,12 +2814,12 @@ namespace ModernStatsSystem
                             Vector3 newPos = g3.transform.localPosition;
 
                             // Adjust.
-                            newPos.x *= 1;
+                            newPos.x *= 1f;
                             newPos.y *= 0.9f;
-                            newPos.x *= 1;
-                            newScale.x *= 1;
+                            newPos.x *= 1f;
+                            newScale.x *= 1f;
                             newScale.y *= 0.9f;
-                            newScale.z *= 1;
+                            newScale.z *= 1f;
 
                             // Set to new values.
                             g3.transform.localScale = newScale;
@@ -2921,12 +2924,12 @@ namespace ModernStatsSystem
                             Vector3 newPos = g3.transform.localPosition;
 
                             // Adjust
-                            newPos.x *= 1;
+                            newPos.x *= 1f;
                             newPos.y *= 0.9f;
-                            newPos.x *= 1;
-                            newScale.x *= 1;
+                            newPos.x *= 1f;
+                            newScale.x *= 1f;
                             newScale.y *= 0.9f;
-                            newScale.z *= 1;
+                            newScale.z *= 1f;
 
                             // Set to new.
                             g3.transform.localScale = newScale;
@@ -2990,7 +2993,7 @@ namespace ModernStatsSystem
                 for (int i = 0; i < bars; i++)
                 {
                     // Grab the bar.
-                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum0" + (i+1));
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum0" + (i + 1));
 
                     // If null, continue.
                     if (g2 == null)
@@ -3053,11 +3056,11 @@ namespace ModernStatsSystem
                         { continue; }
 
                     // If this particular Status UI bar doesn't exist, continue.
-                    if (stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i-1 : i] == null)
+                    if (stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i - 1 : i] == null)
                         { continue; }
 
                     // If it's disabled, continue.
-                    if (!stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i-1 : i].gameObject.activeSelf)
+                    if (!stsObj.GetComponentsInChildren<sstatusbarUI>()[(i > 0 && !EnableIntStat) ? i - 1 : i].gameObject.activeSelf)
                         { continue; }
 
                     // Create the Stat Bar.
