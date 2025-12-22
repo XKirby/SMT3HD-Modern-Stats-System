@@ -469,11 +469,11 @@ namespace ModernStatsSystem
             0
         };
 
-		/*
         // Menu manipulation variables
         private static bool SettingAsignParam;
 
-        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCheckHeartsEvent))]
+        /*
+		[HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCheckHeartsEvent))]
         private class PatchCheckHeartsEvent
         {
             private static bool Prefix(ref sbyte __result)
