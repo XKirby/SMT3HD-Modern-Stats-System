@@ -472,6 +472,26 @@ namespace ModernStatsSystem
         // Menu manipulation variables
         private static bool SettingAsignParam;
 
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCheckHeartsEvent))]
+        private class PatchCheckHeartsEvent
+        {
+            private static bool Prefix(ref sbyte __result)
+            {
+                __result = 1;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCalcHeartsEvent))]
+        private class PatchCalcHeartsEvent
+        {
+            private static bool Prefix(ref sbyte __result)
+            {
+                __result = 0;
+                return false;
+            }
+        }
+
         /*
         // Treasure Chest/Cube Additions
         [HarmonyPatch(typeof(fldFileResolver), nameof(fldFileResolver.fldLoadFile))]
@@ -1160,29 +1180,28 @@ namespace ModernStatsSystem
                 __result = 0;
 
                 // If your stats are not capped completely, return.
-                if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS)
+                if (datCalc.datGetBaseParam(pStock, 0) < MAXSTATS) { return false; }
+                if (EnableIntStat && datCalc.datGetBaseParam(pStock, 1) < MAXSTATS) { return false; }
+                if (datCalc.datGetBaseParam(pStock, 2) < MAXSTATS) { return false; }
+                if (datCalc.datGetBaseParam(pStock, 3) < MAXSTATS) { return false; }
+                if (datCalc.datGetBaseParam(pStock, 4) < MAXSTATS) { return false; }
+                if (datCalc.datGetBaseParam(pStock, 5) < MAXSTATS) { return false; }
+
+                // If you got to this point, your stats are completely maxed out.
+                // Additionally, if this is true, recalculate your HP/MP.
+                if (paramSet)
                 {
-                    if (EnableIntStat && datCalc.datGetBaseParam(pStock, 1) < MAXSTATS) { return false; }
-                    if (datCalc.datGetBaseParam(pStock, 2) < MAXSTATS) { return false; }
-                    if (datCalc.datGetBaseParam(pStock, 3) < MAXSTATS) { return false; }
-                    if (datCalc.datGetBaseParam(pStock, 4) < MAXSTATS) { return false; }
-                    if (datCalc.datGetBaseParam(pStock, 5) < MAXSTATS) { return false; }
+                    pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                    pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
-                    // If you got to this point, your stats are completely maxed out.
-                    // Additionally, if this is true, recalculate your HP/MP.
-                    if (paramSet)
-                    {
-                        pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
-                        pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
-
-                        // Make sure both HP/MP don't overshoot.
-                        pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
-                        pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
-                    }
-
-                    // Make sure to return 1 to tell the game your stats are capped.
-                    __result = 1;
+                    // Make sure both HP/MP don't overshoot.
+                    pStock.hp = pStock.hp > pStock.maxhp ? pStock.maxhp : pStock.hp;
+                    pStock.mp = pStock.mp > pStock.maxmp ? pStock.maxmp : pStock.mp;
                 }
+
+                // Make sure to return 1 to tell the game your stats are capped.
+                __result = 1;
+
                 return false;
             }
         }
@@ -1294,8 +1313,7 @@ namespace ModernStatsSystem
             private static bool Prefix(ref int __result, datUnitWork_t work, int paratype)
             {
                 // Just returns the parameter of the given type.
-                int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
-                __result = Math.Clamp(work.param[paratype] - heartParam + work.levelupparam[paratype], 0, MAXSTATS); ;
+                __result = work.param[paratype] + work.levelupparam[paratype];
                 return false;
             }
         }
@@ -1305,9 +1323,8 @@ namespace ModernStatsSystem
         {
             private static bool Prefix(out int __result, datUnitWork_t work, int paratype)
             {
-                // Returns the base stat of the given parameter.
-                int heartParam = work.id == 0 ? rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)paratype) : 0;
-                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype], 0, MAXSTATS + heartParam + work.mitamaparam[paratype] + work.skillparam[paratype]);
+                // Returns the total value of the given parameter type.
+                __result = Math.Clamp(datCalc.datGetBaseParam(work, paratype) + work.mitamaparam[paratype] + work.skillparam[paratype], 0, MAXSTATS + work.mitamaparam[paratype] + work.skillparam[paratype]);
                 return false;
             }
         }
@@ -1462,11 +1479,6 @@ namespace ModernStatsSystem
                     if (paramChecks[ctr] == true)
                     { continue; }
 
-                    // If this somehow happened, return 0x7f.
-                    // This is probably an error code.
-                    if (pStock.levelupparam.Length <= ctr)
-                    { return 0x7f; }
-
                     // If Mode is zero, increment the LevelUp Stat.
                     if (Mode == 0)
                     { pStock.levelupparam[ctr]++; }
@@ -1477,7 +1489,7 @@ namespace ModernStatsSystem
                 while (true);
 
                 // If you got to here, the function broke somehow, so just make sure it assigns nothing.
-                return 6;
+                return -1;
             }
 
             private static bool Prefix(out sbyte __result, ref datUnitWork_t pStock, sbyte Mode)
@@ -1547,7 +1559,7 @@ namespace ModernStatsSystem
                     { continue; }
 
                     // Add to the demon's stats.
-                    pStock.levelupparam[paramID] += 1;
+                    pStock.levelupparam[paramID]++;
 
                     // Set a boolean to true if the stat becomed capped out.
                     // Also forcibly set the stat to its new cap.
@@ -1978,6 +1990,7 @@ namespace ModernStatsSystem
             public static sbyte NoResponse()
             {
                 // Return that you said no.
+                PatchResetAsignParam.ResetParam();
                 return 0;
             }
             private static bool Prefix(ref datUnitWork_t pStock)
@@ -2130,7 +2143,7 @@ namespace ModernStatsSystem
                     || (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.R) && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.R) == true))
                 {
                     // If your Stat plus the LevelUp stats exceed or go up to the maximum, then play a sound and skip the rest of the function.
-                    if (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS)
+                    if (datCalc.datGetBaseParam(pStock, cursorParam) >= MAXSTATS)
                     { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
 
                     // If you still have points to assign, assing one.
@@ -2183,6 +2196,34 @@ namespace ModernStatsSystem
         {
             private static void Postfix()
             {
+                // Check if you have no messages open.
+                if(fclMisc.fclChkMessage() == 0)
+                {
+                    // Grab the current Demon (should be the Demifiend).
+                    datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                    // Distributes Levelup points added by the Magatama (hopefully).
+                    for (int i = 0; i < pStock.param.Length; i++)
+                    {
+                        pStock.param[i] += pStock.levelupparam[i];
+                        pStock.levelupparam[i] = 0;
+                    }
+
+                    // Recalculate HP/MP.
+                    pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                    pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsEvent))]
+        private class PatchStandbyMagatamaEvent
+        {
+            private static bool Prefix(out sbyte __result, ref sbyte EventType)
+            {
+                // Result Init.
+                __result = 0;
+
                 // Grab the current Demon (should be the Demifiend).
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
@@ -2196,66 +2237,61 @@ namespace ModernStatsSystem
                 // Recalculate HP/MP.
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+
+                switch (EventType)
+                {
+                    case 0:
+                        {
+                            // Grab whether or not it added a Stat Point to Demifiend.
+                            int AddedPoint = rstupdate.rstStandbyHeartsAddPoint();
+                            if (AddedPoint >= 0 && AddedPoint <= 5)
+                            {
+                                // Put the Hearts Event Data value above the list size.
+                                rstinit.GBWK.HeartsEventData = (ushort)AddedPoint;
+
+                                // Also, turn it's mode to -1.
+                                rstinit.GBWK.HeartsEventMode = -1;
+
+                                // Grab the Currently equipped Magatama's Name.
+                                string heartName = datHeartsName.Get(dds3GlobalWork.DDS3_GBWK.heartsequip);
+
+                                // Message Display setup
+                                fclMisc.fclSetMessageVar(0xc, heartName);
+                                string paramName = cmpMisc.cmpGetParamName((sbyte)AddedPoint);
+                                fclMisc.fclSetMessageVar(8, paramName);
+                                fclMisc.fclSetMessageVar(9, "1");
+                                fclMisc.fclStartMessage(0x1e);
+                                
+                                // Recalculate HP/MP.
+                                pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
+                                pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
+                                __result = 1;
+                            }
+                            return false;
+                        }
+                    default:
+                        { break; }
+                }
+
+                return true;
             }
         }
 
         [HarmonyPatch(typeof(rstupdate), nameof(rstupdate.rstStandbyHeartsAddPoint))]
         private class PatchMagatamaAddPoint
         {
-            private static bool Prefix()
+            private static bool Prefix(out int __result)
             {
+                // Basic Result
+                __result = -1;
+
                 // Grab the current Demon (should be the Demifiend).
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
 
-                // This is a list of Stats it needs to check.
-                bool[] paramChecks = { false, false, false, false, false, false };
-
-                // Iterate a loop through Stats and checks for if the stat's capped already and set a boolean.
-                for (int i = 0; i < pStock.param.Length; i++)
-                {
-                    if (i == 1 && !EnableIntStat)
-                    { continue; }
-                    if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
-                    { paramChecks[i] = true; }
-                }
-
-                // Loop until you find a stat to increase.
-                int param = -1;
-                do
-                {
-                    // If your stats are completely capped out, break.
-                    if (EnableIntStat &&
-                        paramChecks[0] == true &&
-                        paramChecks[1] == true &&
-                        paramChecks[2] == true &&
-                        paramChecks[3] == true &&
-                        paramChecks[4] == true &&
-                        paramChecks[5] == true)
-                    { break; }
-                    if (!EnableIntStat &&
-                        paramChecks[0] == true &&
-                        paramChecks[2] == true &&
-                        paramChecks[3] == true &&
-                        paramChecks[4] == true &&
-                        paramChecks[5] == true)
-                    { break; }
-
-                    // Grab a stat at random to add to.
-                    param = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 1);
-
-                    // If a stat couldn't be found, break.
-                    if (param > 5 || param < 0)
-                    { break; }
-
-                    // if it's capped, search again.
-                    if (datCalc.datGetBaseParam(pStock, param) >= MAXSTATS)
-                    { paramChecks[param] = true; continue; }
-
-                    // Increase their LevelUp points.
-                    pStock.levelupparam[param]++;
-                    break;
-                }
-                while (param < 0 || param > 5);
+                // Grab a stat at random to add to.
+                __result = rstCalcCore.cmbAddLevelUpParamEx(ref pStock, 0);
+                if (__result < 0 || __result > 5)
+                { __result = -1; }
 
                 // Recalculate HP/MP.
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
