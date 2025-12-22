@@ -473,7 +473,7 @@ namespace ModernStatsSystem
         private static bool SettingAsignParam;
 
         /*
-		[HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCheckHeartsEvent))]
+        [HarmonyPatch(typeof(rstcalc), nameof(rstcalc.rstCheckHeartsEvent))]
         private class PatchCheckHeartsEvent
         {
             private static bool Prefix(ref sbyte __result)
