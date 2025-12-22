@@ -469,6 +469,7 @@ namespace ModernStatsSystem
             0
         };
 
+		/*
         // Menu manipulation variables
         private static bool SettingAsignParam;
 
@@ -492,7 +493,6 @@ namespace ModernStatsSystem
             }
         }
 
-        /*
         // Treasure Chest/Cube Additions
         [HarmonyPatch(typeof(fldFileResolver), nameof(fldFileResolver.fldLoadFile))]
         private class fldLoadFilePatch
