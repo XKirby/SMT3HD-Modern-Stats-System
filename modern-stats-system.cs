@@ -9,9 +9,8 @@ using Il2CppTMPro;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
-using static Il2Cpp.SteamDlcFileUtil;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.6.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.6.1", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
