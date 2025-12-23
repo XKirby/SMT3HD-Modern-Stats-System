@@ -1985,6 +1985,10 @@ namespace ModernStatsSystem
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                 pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
 
+                // Remove the stat cursor
+                GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
+                GameObject.Find(stsObj.name + "/sstatusbar_cursur").active = false;
+
                 // Return that you said yes.
                 return 1;
             }
