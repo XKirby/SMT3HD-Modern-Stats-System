@@ -2734,7 +2734,7 @@ namespace ModernStatsSystem
 
                 // If there's Counter objects in the Status Menu's children, set up their values and colors.
                 if (stsObj.GetComponentsInChildren<CounterCtr>() != null)
-                { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(Math.Clamp(datCalc.datGetParam(pStock, ctr2), 0, MAXSTATS), Color.white, (CursorMode == 2 && CursorPos > -1) ? 1 : 0); }
+                { stsObj.GetComponentsInChildren<CounterCtr>()[(ctr2 > 1 && !EnableIntStat) ? ctr2 - 1 : ctr2].Set(Math.Clamp(datCalc.datGetParam(pStock, ctr2), 0, MAXSTATS), Color.white, (CursorMode == 2 && CursorPos == ctr2) ? 1 : 0); }
 
                 // If your Cursor Position is over -1, set the FlashMode to 2.
                 // Not sure what this does.
