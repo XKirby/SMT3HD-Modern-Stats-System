@@ -34,7 +34,7 @@ namespace ModernStatsSystem
         private static string[] paramNames = { "Str", "Int", "Mag", "Vit", "Agi", "Luc" };
         private static bool ShowFusionStats = false;
         private const string barSpriteName = "sstatusbar_base";
-        private static string[] StatusBarValues = { "shpnum_current", "shpnum_full", "smpnum_current", "smpnum_full" };
+        private static string[] StatusBarValues = { "sinfo_basic/shpbar/shpnum_current", "sinfo_basic/shpbar/shpnum_full", "sinfo_basic/smpbar/smpnum_current", "sinfo_basic/smpbar/smpnum_full" };
         private static string[] StockBarValues = { "barhp", "barmp" };
         private static string[] AnalyzeBarValues = { "banalyze_hp_known", "banalyze_mp_known" };
         private static string[] PartyBarValues = { "barhp", "barmp" };
