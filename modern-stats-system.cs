@@ -2759,7 +2759,7 @@ namespace ModernStatsSystem
                 int[] StatusStats = new int[] { pStock.hp, pStock.maxhp, pStock.mp, pStock.maxmp };
 
                 // Grab the Status Menu object.
-                GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
+                GameObject stsObj = GameObject.Find("statusUI(Clone)");
 
                 // If this is null, return.
                 if (stsObj == null)
@@ -2770,17 +2770,17 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // If you have a Status Bar cursor and Int is enabled, scale the cursor down.
-                if (GameObject.Find(stsObj.name + "/sstatusbar_cursur") && EnableIntStat)
+                if (GameObject.Find(stsObj.name + "/sstatus/sstatusbar_cursur") && EnableIntStat)
                 {
                     Vector3 newScale = new(1, 0.9f, 1);
-                    GameObject.Find(stsObj.name + "/sstatusbar_cursur").transform.localScale = newScale;
+                    GameObject.Find(stsObj.name + "/sstatus/sstatusbar_cursur").transform.localScale = newScale;
                 }
 
                 // If there's no 6th Status Bar and Int is enabled.
-                if (!GameObject.Find(stsObj.name + "/sstatusbar06") && EnableIntStat)
+                if (!GameObject.Find(stsObj.name + "/sstatus/sstatusbar06") && EnableIntStat)
                 {
                     // Grab the first bar.
-                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusbar01");
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatus/sstatusbar01");
 
                     // If it exists.
                     if (g2 != null)
@@ -2832,10 +2832,10 @@ namespace ModernStatsSystem
                 }
 
                 // If there's no 6th Stat Bar number and Int is enabled.
-                if (!GameObject.Find(stsObj.name + "/sstatusnum06") && EnableIntStat)
+                if (!GameObject.Find(stsObj.name + "/sstatus/sstatusnum06") && EnableIntStat)
                 {
                     // Get the first one.
-                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum01");
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatus/sstatusnum01");
 
                     // If it exists.
                     if (g2 != null)
@@ -2887,10 +2887,10 @@ namespace ModernStatsSystem
                 }
 
                 // If there's no 6th Stat Name object and Int is enabled.
-                if (!GameObject.Find(stsObj.name + "/Text_stat06TM") && EnableIntStat)
+                if (!GameObject.Find(stsObj.name + "/sstatus/Text_stat06TM") && EnableIntStat)
                 {
                     // Grab.
-                    GameObject g2 = GameObject.Find(stsObj.name + "/Text_stat01TM");
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatus/Text_stat01TM");
 
                     // If it exists.
                     if (g2 != null)
@@ -2996,7 +2996,7 @@ namespace ModernStatsSystem
                 for (int i = 0; i < bars; i++)
                 {
                     // Grab the bar.
-                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatusnum0" + (i + 1));
+                    GameObject g2 = GameObject.Find(stsObj.name + "/sstatus/sstatusnum0" + (i + 1));
 
                     // If null, continue.
                     if (g2 == null)
