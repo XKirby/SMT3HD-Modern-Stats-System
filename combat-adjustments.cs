@@ -374,7 +374,7 @@ namespace ModernStatsSystem
                 int macca = devil.dropmakka;
 
                 // Get the Demi-Fiend's current Luck and do some math for scaling Drop Rates.
-                float dropRateMult = EnableStatScaling ? 0.75f + ((float)Math.Clamp(datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5), 0, MAXSTATS) / STATS_SCALING) : 1f;
+                float dropRateMult = EnableStatScaling ? 0.75f + ((float)Math.Clamp(datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5), 0, MAXSTATS) / (STATS_SCALING * 50f)) : 1f;
 
                 // If the enemy has an Item.
                 int droppedItem = 0;
