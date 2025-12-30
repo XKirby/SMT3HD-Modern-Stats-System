@@ -61,7 +61,8 @@ namespace ModernStatsSystem
                         pStock.param[statID]++;
                         pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);
                         pStock.maxmp = (ushort)datCalc.datGetMaxMp(pStock);
-                        pStock.hp = pStock.maxhp;
+                        if (pStock.hp > 0)
+                        { pStock.hp = pStock.maxhp; }
                         pStock.mp = (ushort)Math.Clamp(pStock.mp, 0u, pStock.maxmp);
                         return false;
                     }
