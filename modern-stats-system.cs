@@ -1721,7 +1721,7 @@ namespace ModernStatsSystem
                     }
 
                     // Set the object's color to white and set it to the proper Stat's value.
-                    g2.GetComponent<CounterCtr>().Set(StockStats[i], Color.white, 0);
+                    g2.GetComponent<CounterCtr>().Set(StockStats[i]);
                 }
             }
         }
@@ -1794,7 +1794,7 @@ namespace ModernStatsSystem
                         }
 
                         // Set color to white and set it up with the demon's stats.
-                        g2.GetComponent<CounterCtrBattle>().Set(PartyStats[k], Color.white, 0);
+                        g2.GetComponent<CounterCtrBattle>().Set(PartyStats[k]);
                     }
                 }
 
@@ -1926,7 +1926,7 @@ namespace ModernStatsSystem
                         }
 
                         // Set Counter's value and color.
-                        g2.GetComponent<CounterCtr>().Set(AnalyzeStats[i], Color.white, 0);
+                        g2.GetComponent<CounterCtr>().Set(AnalyzeStats[i]);
                     }
                 }
             }
@@ -2981,7 +2981,7 @@ namespace ModernStatsSystem
                         GameObject.DontDestroyOnLoad(g);
                     }
                     // Set Stat value and color.
-                    g2.GetComponent<CounterCtr>().Set(StatusStats[i], Color.white, 0);
+                    g2.GetComponent<CounterCtr>().Set(StatusStats[i]);
                 }
 
                 // Check the bar count.
