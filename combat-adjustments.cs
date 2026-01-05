@@ -686,7 +686,7 @@ namespace ModernStatsSystem
 
                     // If enabled, do a different one.
                     if (EnableStatScaling)
-                        { baseform = ((float)w.level / 5f + (float)luck / STATS_SCALING) / (100f + ((float)work.level / 5f + (float)playerLuck / STATS_SCALING)); }
+                        { baseform = 1f + (((float)work.level / 5f + (float)playerLuck / STATS_SCALING) - ((float)w.level / 5f + (float)luck / STATS_SCALING)) / 1000f; }
 
                     // If you're under 1/1000, just set the adjustment to zero.
                     if (baseform < 0.001f)
@@ -712,7 +712,7 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = ((float)work.level / 5f + (float)playerLuck / STATS_SCALING) / (100f + ((float)w.level / 5f + (float)luck / STATS_SCALING)); }
+                        { baseform = 1f + (((float)w.level / 5f + (float)luck / STATS_SCALING) - ((float)work.level / 5f + (float)playerLuck / STATS_SCALING)) / 100f; }
 
                     // Grab the enemy's whole stack.
                     adjform = (float)devil.dropmakka * baseform;
@@ -726,7 +726,7 @@ namespace ModernStatsSystem
 
                 // If enabled, scale it differently.
                 if (EnableStatScaling)
-                    { __result = (int)Math.Clamp((0.9f + variance / 5f) * adjform, 0f, (w.flag >> 5 & 1) == 0 ? (float)macca / 5f : (float)devil.dropmakka / 4f); }
+                    { __result = (int)Math.Clamp((0.9f + variance / 5f) * adjform, 0f, (w.flag >> 5 & 1) == 0 ? (float)macca * 0.15f : (float)devil.dropmakka); }
 
                 // If difficulty bit is 1 or lower and some more flag nonsense, divide by 10.
                 if (dds3ConfigMain.cfgGetBit(9) <= 1 && (w.flag & 0x20) == 0)
@@ -735,6 +735,16 @@ namespace ModernStatsSystem
                 // If result is less than 1, set it to zero.
                 if (__result < 1)
                     { __result = 0; }
+
+                // Oh boy, MORE flag nonsense.
+                if ((w.flag >> 5 & 1) != 0)
+                {
+                    // If this is an enemy Demon, create a copy of the dropped Macca and give a copy to both that enemy and the Player.
+                    // This is so that the Macca gained from that demon doesn't drop out of existance at end-of-combat, instead granting the player both the correct reward and additional Macca if they get lucky!
+                    devil.dropmakka += (ushort)__result;
+                    dds3GlobalWork.DDS3_GBWK.maka += (ushort)__result;
+                }
+
                 return false;
             }
         }
