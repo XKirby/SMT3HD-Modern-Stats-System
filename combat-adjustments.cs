@@ -374,7 +374,7 @@ namespace ModernStatsSystem
                 int macca = devil.dropmakka;
 
                 // Get the Demi-Fiend's current Luck and do some math for scaling Drop Rates.
-                float dropRateMult = EnableStatScaling ? 0.75f + ((float)Math.Clamp(datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5), 0, MAXSTATS) / (STATS_SCALING * 50f)) : 1f;
+                float dropRateMult = EnableStatScaling ? 1f + ((float)Math.Clamp(datCalc.datGetParam(dds3GlobalWork.DDS3_GBWK.unitwork[0], 5), 0, MAXSTATS) / STATS_SCALING / 25f) : 1f;
 
                 // If the enemy has an Item.
                 int droppedItem = 0;
@@ -735,15 +735,6 @@ namespace ModernStatsSystem
                 // If result is less than 1, set it to zero.
                 if (__result < 1)
                     { __result = 0; }
-
-                // Oh boy, MORE flag nonsense.
-                if ((w.flag >> 5 & 1) != 0)
-                {
-                    // If this is an enemy Demon, create a copy of the dropped Macca and give a copy to both that enemy and the Player.
-                    // This is so that the Macca gained from that demon doesn't drop out of existance at end-of-combat, instead granting the player both the correct reward and additional Macca if they get lucky!
-                    devil.dropmakka += (ushort)__result;
-                    dds3GlobalWork.DDS3_GBWK.maka += (ushort)__result;
-                }
 
                 return false;
             }
