@@ -684,23 +684,15 @@ namespace ModernStatsSystem
                     // Do some math for the base formula.
                     baseform = Mathf.Abs((float)luck / ((float)w.level / 5.0f + 4.0f));
 
-                    // If enabled, do a different one.
+                    // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = 1f + (((float)work.level / 5f + (float)playerLuck / STATS_SCALING) - ((float)w.level / 5f + (float)luck / STATS_SCALING)) / 1000f; }
+                    { baseform = 1f + (((float)w.level / 5f + (float)luck / STATS_SCALING) - ((float)work.level / 5f + (float)playerLuck / STATS_SCALING)) / 1000f; }
 
-                    // If you're under 1/1000, just set the adjustment to zero.
-                    if (baseform < 0.001f)
-                        { adjform = 0; }
+                    adjform = (float)macca / 20.0f * baseform;
 
-                    // Otherwise, grab a small segment of your Macca.
-                    else
-                    {
-                        adjform = (float)macca / 20.0f * baseform;
-
-                        // If enabled, use your whole stack of Macca instead of 1/20.
-                        if (EnableStatScaling)
-                            { adjform = (float)macca * baseform; }
-                    }
+                    // If enabled, use your whole stack of Macca instead of 1/20.
+                    if (EnableStatScaling)
+                        { adjform = (float)macca * baseform; }
                 }
 
                 // If that flag was false.
@@ -712,7 +704,7 @@ namespace ModernStatsSystem
 
                     // If enabled, scale differently.
                     if (EnableStatScaling)
-                        { baseform = 1f + (((float)w.level / 5f + (float)luck / STATS_SCALING) - ((float)work.level / 5f + (float)playerLuck / STATS_SCALING)) / 100f; }
+                        { baseform = 1f + (((float)work.level / 5f + (float)playerLuck / STATS_SCALING) - ((float)w.level / 5f + (float)luck / STATS_SCALING)) / 100f; }
 
                     // Grab the enemy's whole stack.
                     adjform = (float)devil.dropmakka * baseform;
