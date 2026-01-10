@@ -315,11 +315,8 @@ namespace ModernStatsSystem
                 if (EnableStatScaling)
                     { finalvalue = 75.0f - (float)luckValue / 2f; }
 
-                // RNGesus Take the Wheel
-                System.Random rng = new();
-
                 // Return 1 if you hit the defender and killed them, otherwise return 0.
-                __result = finalvalue >= rng.Next(100) ? 1 : 0;
+                __result = finalvalue >= (float)(dds3KernelCore.dds3GetRandIntA(10000)) / 100f ? 1 : 0;
                 return false;
             }
         }
@@ -379,9 +376,6 @@ namespace ModernStatsSystem
                 // If the enemy has an Item.
                 int droppedItem = 0;
 
-                // Unseeded random number generator
-                System.Random rng = new();
-
                 // If the Level Difference is not zero.
                 if (leveldiff != 0)
                 {
@@ -418,7 +412,7 @@ namespace ModernStatsSystem
                 data.exp += (uint)exp;
 
                 // Check the Drop Chance
-                int chance = rng.Next(100);
+                float chance = (float)dds3KernelCore.dds3GetRandIntA(10000) / 100f;
 
                 // Keep looping until it finds an item and attempts to drop it.
                 do
@@ -432,7 +426,7 @@ namespace ModernStatsSystem
                     }
 
                     // Grab an item.
-                    int newItem = rng.Next(0, devil.dropitem.Length - 1);
+                    int newItem = (int)dds3KernelCore.dds3GetRandIntA((uint)devil.dropitem.Length);
 
                     // If it's not an item in the list, continue.
                     if (devil.dropitem[newItem] == 0 && found == true)
@@ -458,13 +452,13 @@ namespace ModernStatsSystem
                     { return false; }
 
                 // Check if a Bead drops.
-                chance = rng.Next(100);
+                chance = (float)dds3KernelCore.dds3GetRandIntA(10000) / 100f;
                 bool foundBead = false;
                 if ((float)devil.hougyokupoint * dropRateMult >= chance)
                 { foundBead = true; }
 
                 // Check if a LifeStone drops.
-                chance = rng.Next(100);
+                chance = (float)dds3KernelCore.dds3GetRandIntA(10000) / 100f;
                 bool foundLifeStone = false;
                 if ((float)devil.masekipoint * dropRateMult >= chance)
                 { foundLifeStone = true; }
@@ -626,9 +620,6 @@ namespace ModernStatsSystem
                 // Get the unit from the user index.
                 datUnitWork_t work = nbMainProcess.nbGetUnitWorkFromFormindex(sformindex);
 
-                // Unseeded random number generator.
-                System.Random rng = new();
-
                 // Get Mag
                 int param = Math.Clamp(datCalc.datGetParam(work, 2), 0, MAXSTATS);
 
@@ -662,9 +653,6 @@ namespace ModernStatsSystem
                 // Grab the player's total Macca.
                 int macca = dds3GlobalWork.DDS3_GBWK.maka;
                 int baseMacca = macca;
-
-                // Unseeded rng.
-                System.Random rng = new();
 
                 // Result init.
                 __result = 0;
@@ -711,7 +699,7 @@ namespace ModernStatsSystem
                 }
 
                 // Generate a number between 0.0 and 1.0.
-                float variance = (float)rng.NextDouble();
+                float variance = dds3KernelCore.dds3GetRandFloatA();
 
                 // Do some math and return the result later.
                 __result = (int)Mathf.Abs((variance - 0.5f) * 2f * 0.1f * ((float)adjform * 2.0f));
@@ -838,8 +826,7 @@ namespace ModernStatsSystem
 
                 // Check hit chance against a random integer from 0 to 99.
                 // If you hit, set the result to zero.
-                System.Random rng = new();
-                int hitCheck = (int)(rng.NextDouble() * 100f);
+                int hitCheck = (int)(dds3KernelCore.dds3GetRandFloatA() * 100f);
 
                 if (hitCheck < (int)hitChanceCalc)
                 { __result = 0; return false; }
@@ -938,8 +925,7 @@ namespace ModernStatsSystem
 
                 // Generate a random interger and compare to the Crit Value.
                 // If it's lower, it's a crit.
-                System.Random rng = new();
-                if (rng.Next(100) < critValue)
+                if ((float)dds3KernelCore.dds3GetRandIntA(10000) / 100f < critValue)
                 { __result = 1; }
 
                 // If it's not a crit, clear the autoskill
@@ -1042,9 +1028,6 @@ namespace ModernStatsSystem
                 }
                 while (i < 0xf);
 
-                // Unseeded rng.
-                System.Random rng = new();
-
                 // Get user's unit from form index.
                 datUnitWork_t user = nbMainProcess.nbGetUnitWorkFromFormindex(a.form.formindex);
 
@@ -1080,7 +1063,7 @@ namespace ModernStatsSystem
                 byte minhits = (byte)Math.Max(datNormalSkill.tbl[nskill].targetcntmin, maxhits / 3);
 
                 // Randomly set the hitcount.
-                int hitcount = rng.Next(datNormalSkill.tbl[nskill].targetcntmax + extrahits) + 1;
+                int hitcount = (int)dds3KernelCore.dds3GetRandIntA((uint)(datNormalSkill.tbl[nskill].targetcntmax + extrahits)) + 1;
 
                 // Loop through the currently available units in the Timelist and insert them into the Effectlist.
                 int foundcount = 0;
@@ -1126,7 +1109,7 @@ namespace ModernStatsSystem
                         { break; }
 
                     // Grab a random target ID
-                    sbyte target = possibleTargets[rng.Next(possibleTargets.Count)];
+                    sbyte target = possibleTargets[(int)dds3KernelCore.dds3GetRandIntA((uint)possibleTargets.Count)];
 
                     // Grab their current chance to be hit.
                     sbyte consecutiveOdds = TargetHitCountManager.targetData[target][2];
@@ -1135,7 +1118,7 @@ namespace ModernStatsSystem
                     if (consecutiveOdds < 100 && TargetHitCountManager.targetData[target][1] >= minhits)
                     {
                         // Check if we hit yet again.
-                        int rollForHit = rng.Next(100);
+                        int rollForHit = (int)((float)dds3KernelCore.dds3GetRandIntA(10000) / 100f);
                         if (rollForHit >= TargetHitCountManager.targetData[target][2])
                         {
                             // If we don't, remove the target and continue the loop.

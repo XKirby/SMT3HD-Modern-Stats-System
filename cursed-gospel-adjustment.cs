@@ -91,11 +91,10 @@ namespace ModernStatsSystem
                     // Iterate through Stats and reduce them at random a number of times equal to the current Stat points per level.
                     // If EnableStatScaling is false, it's just 1 point.
                     int changes = 1 * (EnableStatScaling ? POINTS_PER_LEVEL : 1);
-                    System.Random rng = new();
                     while (changes > 0 && statlist.Count > 0)
                     {
                         // Randomize the Stat ID.
-                        int statID = statlist[rng.Next(statlist.Count)];
+                        int statID = statlist[(int)dds3KernelCore.dds3GetRandIntA((uint)statlist.Count)];
 
                         // If the Base Stat is over 1, decrement it and the change count.
                         if (work.param[statID] - tblHearts.fclHeartsTbl[dds3GlobalWork.DDS3_GBWK.heartsequip].GrowParamTbl[statID] > 1)

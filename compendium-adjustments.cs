@@ -73,7 +73,7 @@ namespace ModernStatsSystem
                 else
                 {
                     discountFactor = 1 - (compendiumProgress * finalDiscount) / (100f * 100f);
-                    discountFactor *= 2; // To counteract the 50% discount of the vanilla game when the compendium is completed
+                    //discountFactor *= 2; // To counteract the 50% discount of the vanilla game when the compendium is completed. I don't think this worked in our favor though.
                 }
 
                 return discountFactor;
@@ -474,9 +474,6 @@ namespace ModernStatsSystem
                     datCalc.datGetBaseParam(pStock, 5) + pStock.mitamaparam[5] >= MAXSTATS)
                 { return false; }
 
-                // Unseeded random number generator.
-                System.Random rng = new();
-
                 // New Parameter Value
                 float paramNewValue = 0;
                 ushort paramID = 6;
@@ -487,7 +484,7 @@ namespace ModernStatsSystem
                     do
                     {
                         // Pull a random stat from whatever the Mitama's upgradable stat pool is.
-                        paramID = (ushort)(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType[rng.Next(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType.Length)] - 1);
+                        paramID = (ushort)(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType[(int)dds3KernelCore.dds3GetRandIntA((uint)(fclCombineTable.fclSpiritParamUpTbl[3 - mitama].ParamType.Length))] - 1);
 
                         // If it's somehow below zero or over 5, just return here and don't continue.
                         if (paramID < 0 || paramID > 5)

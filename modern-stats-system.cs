@@ -1128,6 +1128,17 @@ namespace ModernStatsSystem
                 }
             }
 
+            // Check the Demon's Stat Growths and adjust them.
+            if (EnableStatScaling)
+            {
+                for (int i = 1; i < tblSkill.fclSkillTbl.Length; i++)
+                {
+                    // The result of this code makes sure that the Stat Growths are at least 1 and cap out at around half of the Stat's base.
+                    for (int j = 0; j < tblSkill.fclSkillTbl[i].GrowParamTbl.Length; j++)
+                    { tblSkill.fclSkillTbl[i].GrowParamTbl[j] = (sbyte)Math.Ceiling(Math.Max(1, (double)(datDevilFormat.tbl[i].param[j] / 2))); }
+                }
+            }
+
             // Searche through al of the Magatamas.
             for (int i = 0; i < tblHearts.fclHeartsTbl.Length; i++)
             {
@@ -1440,12 +1451,14 @@ namespace ModernStatsSystem
             {
                 // This is a list of Stats it needs to check.
                 bool[] paramChecks = { false, false, false, false, false, false };
+                int paramGrowthCount = 0;
 
                 // Change the list's values to true if that Stat is capped.
                 for (int i = 0; i < paramChecks.Length; i++)
                 {
                     if (datCalc.datGetBaseParam(pStock, i) >= MAXSTATS)
                     { paramChecks[i] = true; }
+                    paramGrowthCount += tblSkill.fclSkillTbl[pStock.id].GrowParamTbl[i];
                 }
 
                 // Loop through the Stats.
@@ -1473,7 +1486,19 @@ namespace ModernStatsSystem
                     // Additionally, if it selects Int while Int is disabled, it'll loop again to try and unselect it.
                     int ctr = -1;
                     do
-                    { ctr = (int)(fclMisc.FCL_RAND() % paramChecks.Length); }
+                    {
+                        // Generate a random Integer based on the demon's Stat Growth table.
+                        int rng = (int)dds3KernelCore.dds3GetRandIntA((uint)paramGrowthCount);
+                        for (int i = 0; i < tblSkill.fclSkillTbl[pStock.id].GrowParamTbl.Length; i++)
+                        {
+                            // Reduce the value by the value found in the Stat Growth table.
+                            rng -= tblSkill.fclSkillTbl[pStock.id].GrowParamTbl[i];
+
+                            // If the value is under 0, use this Stat in particular.
+                            if (rng < 0)
+                            { ctr = i; break; }
+                        }
+                    }
                     while (ctr < 0 || ctr > 6 || ctr == 1 && !EnableIntStat);
 
                     // If it's capped, continue and do it again.
