@@ -10,7 +10,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "1.7.0", "X Kirby")]
+[assembly: MelonInfo(typeof(ModernStatsSystem.ModernStatsSystem), "Modern Stats System", "2.0.0", "X Kirby")]
 [assembly: MelonGame("アトラス", "smt3hd")]
 
 namespace ModernStatsSystem
@@ -1978,19 +1978,33 @@ namespace ModernStatsSystem
             }
             public static void ResetParam()
             {
-                // Recalculates your LevelUp Points and their Maximum distribution.
-                rstinit.GBWK.AsignParam = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
-                rstinit.GBWK.AsignParamMax = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
-
                 // Grab the current Stock Unit.
                 datUnitWork_t pStock = rstinit.GBWK.pCurrentStock;
+
+                // If your points are spent.
+                if (rstinit.GBWK.AsignParam == 0)
+                {
+                    // Checks if your points were actively distributed and confirmed.
+                    int ptCnt = 0;
+                    for (int i = 0; i < pStock.levelupparam.Length; i++)
+                    { ptCnt += pStock.levelupparam[i]; }
+
+                    // If they have been somehow, just return without resetting.
+                    if (ptCnt == 0)
+                    { rstinit.SetPointAnime(rstinit.GBWK.TargetCnt); SettingAsignParam = true; return; }
+                }
 
                 // Clears out whatever points you did distribute.
                 for (int i = 0; i < pStock.levelupparam.Length; i++)
                 { pStock.levelupparam[i] = 0; }
 
+                // Recalculates your LevelUp Points and their Maximum distribution.
+                rstinit.GBWK.AsignParam = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+                rstinit.GBWK.AsignParamMax = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
                 rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
+                SettingAsignParam = true;
             }
         }
 
@@ -1999,15 +2013,11 @@ namespace ModernStatsSystem
         {
             public static sbyte YesResponse()
             {
-                // I shit you not, this number is EXTREMELY important.
-                // Wihtout this, you can't leave the menu properly. I honestly have no idea why.
-                rstinit.GBWK.SeqInfo.Current = 0x18;
+                // Grab the player unit.
+                datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
 
                 // Clear the fact that you were setting stats.
                 SettingAsignParam = false;
-
-                // Grab the player unit.
-                datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
 
                 // Distribute the Player's level up points to proper points.
                 for (int i = 0; i < pStock.levelupparam.Length; i++)
@@ -2024,29 +2034,39 @@ namespace ModernStatsSystem
                 GameObject stsObj = GameObject.Find("statusUI(Clone)/sstatus");
                 GameObject.Find(stsObj.name + "/sstatusbar_cursur").active = false;
 
+                // I shit you not, this number is EXTREMELY important.
+                // Wihtout this, you can't leave the menu properly. I honestly have no idea why.
+                sbyte oldSeqID = rstinit.GBWK.SeqInfo.Current;
+                rstinit.GBWK.SeqInfo.Current = 0x18;
+                cmpMisc.cmpUpdateSeqInfo(rstinit.GBWK.SeqInfo, oldSeqID);
+
                 // Return that you said yes.
                 return 1;
             }
             public static sbyte NoResponse()
             {
+                // Grab the player unit.
+                datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
+
                 // Return that you said no.
+                fclMisc.fclEndMessageEx(1);
                 PatchResetAsignParam.ResetParam();
                 return 0;
             }
             private static bool Prefix(ref datUnitWork_t pStock)
             {
-                // If you're in the confirmation Message.
-                if (fclMisc.fclChkMessage() == 2)
+                // If the status object is null, immediately skip the entire process.
+                if (cmpStatus.statusObj == null)
+                { return false; }
+
+                // If you're in the Confirmation Message with a specific Choice Selection Message.
+                if (fclMisc.fclChkMessage() == 2 && fclMisc.fclChkSelMessage() > 0)
                 {
-                    // If you're at position zero and you hit the OK button.
+                    // If you're at position 0 and you hit the OK button.
                     if (fclMisc.fclGetSelMessagePos() == 0
                         && dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.OK)
                         && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true)
-                    {
-                        // If you're in a Selection Message, then respond.
-                        if (fclMisc.fclChkSelMessage() == 1)
-                        { YesResponse(); }
-                    }
+                    { YesResponse(); }
 
                     // If you're at position 1 and you hit the OK button or you hit the Cancel button.
                     if ((fclMisc.fclGetSelMessagePos() == 1
@@ -2054,30 +2074,21 @@ namespace ModernStatsSystem
                         && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.OK) == true) ||
                         (dds3PadManager.DDS3_PADCHECK_PRESS(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL)
                         && dds3PadManager.DDS3_PADCHECK_REP(Il2Cpplibsdf_H.SDF_PADMAP.CANCEL) == true))
-                    {
-                        // If you're in a Selection Message, then respond.
-                        if (fclMisc.fclChkSelMessage() == 1)
-                        { NoResponse(); }
-                    }
+                    { NoResponse(); }
 
                     // This is so it doesn't continue while you're in a message.
                     return false;
                 }
 
-                // If you're not assigning your Stats, reset them once and start assigning them.
-                if (SettingAsignParam == false)
-                {
-                    rstupdate.rstResetAsignParam();
-                    SettingAsignParam = true;
-                }
-
-                // If the status object is null, immediately skip the entire process.
-                if (cmpStatus.statusObj == null)
-                { YesResponse(); return false; }
-
                 // If you're in a Message, skip the rest.
                 if (fclMisc.fclChkMessage() != 0)
                 { return false; }
+
+                // If you're not assigning your Stats, reset them once and start assigning them.
+                if (SettingAsignParam == false && rstinit.GBWK.AsignParam > 0)
+                { rstupdate.rstResetAsignParam(); }
+                else
+                { }
 
                 // Grab the Cursor's index and adjust it accordingly.
                 int cursorIndex = cmpMisc.cmpGetCursorIndex(rstinit.GBWK.ParamCursor);
@@ -2167,10 +2178,10 @@ namespace ModernStatsSystem
                 {
                     // If your Stat plus the LevelUp stats exceed or go up to the maximum, then play a sound and skip the rest of the function.
                     if (datCalc.datGetBaseParam(pStock, cursorParam) >= MAXSTATS)
-                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
 
                     // If you still have points to assign, assing one.
-                    if (rstinit.GBWK.AsignParam > 0)
+                    else if (rstinit.GBWK.AsignParam > 0)
                     {
                         pStock.levelupparam[cursorParam]++;
                         rstinit.GBWK.AsignParam--;
@@ -2196,7 +2207,6 @@ namespace ModernStatsSystem
 
                         // This asks the player for Yes/No as their response.
                         fclMisc.fclStartSelMessage(0x2b);
-                        fclMisc.gSelMsgNo = 0x2b;
                     }
                 }
 
@@ -2207,7 +2217,7 @@ namespace ModernStatsSystem
                 {
                     // If this stat has no points assigned to it, play a sound and skip.
                     if (pStock.levelupparam[cursorParam] < 1)
-                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); return false; }
+                    { cmpMisc.cmpPlaySE(2 & 0xFFFF); }
 
                     // Otherwise, remove unassign a point to redistribute and play a sound.
                     else
