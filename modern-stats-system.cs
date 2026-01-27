@@ -2198,7 +2198,6 @@ namespace ModernStatsSystem
                         datCalc.datGetBaseParam(pStock, 3) >= MAXSTATS &&
                         datCalc.datGetBaseParam(pStock, 4) >= MAXSTATS &&
                         datCalc.datGetBaseParam(pStock, 5) >= MAXSTATS) || (datCalc.datGetBaseParam(pStock, 0) >= MAXSTATS &&
-                        datCalc.datGetBaseParam(pStock, 1) >= MAXSTATS &&
                         datCalc.datGetBaseParam(pStock, 2) >= MAXSTATS &&
                         datCalc.datGetBaseParam(pStock, 3) >= MAXSTATS &&
                         datCalc.datGetBaseParam(pStock, 4) >= MAXSTATS &&

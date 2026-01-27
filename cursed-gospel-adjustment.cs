@@ -32,7 +32,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[95].targettype = 3;
 
                 // Add the Tome of Rebirth, which allows you to respec the Demi-Fiend.
-                // I have no idea if this will even work.
                 datItem.tbl[59].flag = 4;
                 datItem.tbl[59].price = 50000u;
                 datItem.tbl[59].skillid = 175;
@@ -95,8 +94,7 @@ namespace ModernStatsSystem
             {
                 switch (nskill)
                 {
-                    // If this Skill is from the Tome of Rebirth item.
-                    // If it isn't, return and run the original function.
+                    // Tome of Rebirth Skill
                     case 175:
                         {
                             // Grab Demi-Fiend and check his Level.
@@ -109,7 +107,6 @@ namespace ModernStatsSystem
                             datCalc.datGetBaseParam(work, 3) >= MAXSTATS &&
                             datCalc.datGetBaseParam(work, 4) >= MAXSTATS &&
                             datCalc.datGetBaseParam(work, 5) >= MAXSTATS) || (datCalc.datGetBaseParam(work, 0) >= MAXSTATS &&
-                            datCalc.datGetBaseParam(work, 1) >= MAXSTATS &&
                             datCalc.datGetBaseParam(work, 2) >= MAXSTATS &&
                             datCalc.datGetBaseParam(work, 3) >= MAXSTATS &&
                             datCalc.datGetBaseParam(work, 4) >= MAXSTATS &&
@@ -168,6 +165,7 @@ namespace ModernStatsSystem
                             }
                             break;
                         }
+                    // Cursed Gospel Skill
                     case 95:
                         {
                             // Grab Demi-Fiend and check his Level.
