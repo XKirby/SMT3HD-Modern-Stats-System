@@ -1999,8 +1999,8 @@ namespace ModernStatsSystem
                 { pStock.levelupparam[i] = 0; }
 
                 // Recalculates your LevelUp Points and their Maximum distribution.
-                rstinit.GBWK.AsignParam = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
-                rstinit.GBWK.AsignParamMax = (short)(rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+                rstinit.GBWK.AsignParam = (short)(RespecPoints > 0 ? RespecPoints : rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
+                rstinit.GBWK.AsignParamMax = (short)(RespecPoints > 0 ? RespecPoints : rstinit.GBWK.LevelUpCnt * POINTS_PER_LEVEL);
 
                 // I dunno what this does, but I'm guessing it just makes the Stat Point number visually glow.
                 rstinit.SetPointAnime(rstinit.GBWK.TargetCnt);
@@ -2025,6 +2025,9 @@ namespace ModernStatsSystem
                     pStock.param[i] += (sbyte)pStock.levelupparam[i];
                     pStock.levelupparam[i] = 0;
                 }
+
+                // Empty the Respec Points value.
+                RespecPoints = 0;
 
                 // Recalculate HP/MP
                 pStock.maxhp = (ushort)datCalc.datGetMaxHp(pStock);

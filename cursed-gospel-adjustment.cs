@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Il2Cpp;
 using Il2Cppfacility_H;
+using Il2Cppkernel_H;
 using Il2Cppnewdata_H;
 using MelonLoader;
 
@@ -8,6 +9,8 @@ namespace ModernStatsSystem
 {
     internal partial class ModernStatsSystem : MelonMod
     {
+        private static int RespecPoints = 0;
+
         [HarmonyPatch(typeof(ModernStatsSystem), nameof(ModernStatsSystem.OnInitializeMelon))]
         private class PatchOnInitializeCursedGospel
         {
@@ -30,7 +33,6 @@ namespace ModernStatsSystem
 
                 // Add the Tome of Rebirth, which allows you to respec the Demi-Fiend.
                 // I have no idea if this will even work.
-                /*
                 datItem.tbl[59].flag = 4;
                 datItem.tbl[59].price = 50000u;
                 datItem.tbl[59].skillid = 175;
@@ -42,7 +44,6 @@ namespace ModernStatsSystem
                 datNormalSkill.tbl[175].targetcntmax = 1;
                 datNormalSkill.tbl[175].targetcntmin = 1;
                 datNormalSkill.tbl[175].targettype = 3;
-                */
             }
         }
 
@@ -51,9 +52,9 @@ namespace ModernStatsSystem
         {
             public static void Postfix(ref fclDataShop_t pData)
             {
-                // Add the Cursed Gospel to Asakusa, Manikin Collector and Tower of Kagatsuchi Shops.
+                // Add both the Cursed Gospel and Tome of Rebirth to Asakusa, Manikin Collector and Tower of Kagatsuchi Shops.
                 if (pData.Place >= 4 && pData.Place <= 6)
-                { pData.BuyItemList[pData.BuyItemCnt++] = 60; }
+                { pData.BuyItemList[pData.BuyItemCnt++] = 60; pData.BuyItemList[pData.BuyItemCnt++] = 59; }
             }
         }
 
@@ -64,8 +65,8 @@ namespace ModernStatsSystem
             {
                 // If the item ID is correct, rename the item.
                 // It's unused normally, so this is fine.
-                //if (id == 59)
-                //    { __result = "Tome of Rebirth"; }
+                if (id == 59)
+                    { __result = "Tome of Rebirth"; }
 
                 if (id == 60)
                     { __result = "Cursed Gospel"; }
@@ -78,8 +79,8 @@ namespace ModernStatsSystem
             public static void Postfix(ref int id, ref string __result)
             {
                 // If the item ID is correct, change the help message.
-                //if (id == 59)
-                //    { __result = "Resets the Demi-Fiend's stats \nthen levels him back up."; }
+                if (id == 59)
+                    { __result = "Resets the Demi-Fiend's stats \nand lets you reassign them."; }
 
                 // If the item ID is correct, change the help message.
                 if (id == 60)
@@ -96,7 +97,6 @@ namespace ModernStatsSystem
                 {
                     // If this Skill is from the Tome of Rebirth item.
                     // If it isn't, return and run the original function.
-                    /*
                     case 175:
                         {
                             // Grab Demi-Fiend and check his Level.
@@ -135,16 +135,12 @@ namespace ModernStatsSystem
                                 for (int i = 0; i < statlist.Count; i++)
                                 {
                                     sbyte heartParam = rstCalcCore.cmbGetHeartsParam((sbyte)dds3GlobalWork.DDS3_GBWK.heartsequip, (sbyte)statlist[i]);
-                                    ptCnt += work.param[statlist[i]] - 4 - heartParam;
-                                    work.param[statlist[i]] = (sbyte)(4 + heartParam);
+                                    ptCnt += work.param[statlist[i]] - (int)(2f * STATS_SCALING) - heartParam;
+                                    work.param[statlist[i]] = (sbyte)((int)(2f * STATS_SCALING) + heartParam);
                                 }
 
-                                // If the current Stat Points earned is over 0 and Demi-Fiend's original Level is over 1.
-                                if (ptCnt > 0 && prevLevel > 1)
-                                { ptCnt -= prevLevel * POINTS_PER_LEVEL; }
-
-                                // If you have Bonus Points from Incenses, make sure to saves those for the Level Up process.
-                                // IncensePoints = ptCnt > 0 ? ptCnt : 0;
+                                // Save Points for Respeccing during the Level Up Process.
+                                RespecPoints = ptCnt > 0 ? ptCnt : 0;
 
                                 // Fix HP/MP calculations.
                                 work.maxhp = (ushort)datCalc.datGetMaxHp(work);
@@ -154,11 +150,24 @@ namespace ModernStatsSystem
                                 
                                 // Set Demi-Fiend's object to the changed unit.
                                 dds3GlobalWork.DDS3_GBWK.unitwork[0] = work;
+
+                                // Kills the Pause Menu process immediately.
+                                dds3KernelCore.dds3KillProcessName("camp", 0);
+
+                                // Kills the Pause Menu Drawing process immediately.
+                                dds3KernelCore.dds3KillProcessName("camp_draw", 0);
+
+                                // Kills the Pause Menu Update process a little bit later, specifically because it errors out for some reason otherwise.
+                                dds3KernelCore.dds3KillProcessName("camp_update", 1);
+
+                                // Runs the Level Up Sequence. If I don't do it exactly like this it ends up causing a whole lot of weird shit to happen.
+                                // Like still being able to move on the overworld and interact with stuff.
+                                dds3AdminiProcess.dds3AdminiCallSequence(0xf, null, 0, 1);
+
                                 return false;
                             }
                             break;
                         }
-                    */
                     case 95:
                         {
                             // Grab Demi-Fiend and check his Level.
@@ -208,7 +217,7 @@ namespace ModernStatsSystem
                             break;
                         }
                 }
-            return true;
+                return true;
             }
         }
     }
