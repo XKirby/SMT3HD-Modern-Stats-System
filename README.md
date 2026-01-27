@@ -14,7 +14,8 @@ Includes the following:
 - Various menu adjustments, including the Stat bars being mostly retooled completely.
 - A separate Unity Asset Bundle to use for the Statpoint Bars.
 - Reworks of MatthiewPurple's *Cursed Gospel* and *Compendium Discounts* mods, specifically so that they work properly with this mod.
-- You can find the Cursed Gospel and Stat Incense items for sale in the final shop of the game. Go nuts.
+- Implemented an entirely unique new item called the *Tome of Rebirth*, which allows you to respec Demi-Fiend.
+- You can find the Tome of Rebirth and Cursed Gospel in a few shops, as well as Stat Incense items for sale in the final shop of the game. Go nuts.
 - Even more stuff I probably forgot.
 
 For full data dumps of Demon data, Skill data, and Magatama data, I've included an OpenOffice/LibreOffice calc sheet (It's the .ods file).
