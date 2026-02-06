@@ -2048,9 +2048,6 @@ namespace ModernStatsSystem
             }
             public static sbyte NoResponse()
             {
-                // Grab the player unit.
-                datUnitWork_t pStock = dds3GlobalWork.DDS3_GBWK.unitwork[0];
-
                 // Return that you said no.
                 fclMisc.fclEndMessageEx(1);
                 PatchResetAsignParam.ResetParam();
@@ -2090,8 +2087,6 @@ namespace ModernStatsSystem
                 // If you're not assigning your Stats, reset them once and start assigning them.
                 if (SettingAsignParam == false && rstinit.GBWK.AsignParam > 0)
                 { rstupdate.rstResetAsignParam(); }
-                else
-                { }
 
                 // Grab the Cursor's index and adjust it accordingly.
                 int cursorIndex = cmpMisc.cmpGetCursorIndex(rstinit.GBWK.ParamCursor);
@@ -2314,7 +2309,8 @@ namespace ModernStatsSystem
                                 __result = 1;
                                 return false;
                             }
-                            else { return true; }
+                            else
+                            { return true; }
                         }
                     default:
                         { break; }
