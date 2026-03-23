@@ -1226,6 +1226,10 @@ namespace ModernStatsSystem
                 // Get Player's Param ID.
                 int value = ScrTraceCode.scrGetIntPara(0);
 
+                // If Int is enabled and Mag is pulled, use Int instead.
+                if (EnableIntStat && value == 2)
+                { value = 1; }
+
                 // Get the Parameter's actual raw value.
                 value = datCalc.datGetPlayerParam(value);
 
@@ -1247,6 +1251,10 @@ namespace ModernStatsSystem
                 // Get Demon ID and Param ID.
                 int id = ScrTraceCode.scrGetIntPara(0);
                 int param = ScrTraceCode.scrGetIntPara(1);
+
+                // If Int is enabled and Mag is pulled, use Int instead.
+                if (EnableIntStat && param == 2)
+                { param = 1; }
 
                 // Grab the Parameter's actual raw value.
                 param = datCalc.datGetNakamaParam(id, param);
